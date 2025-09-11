@@ -16,7 +16,7 @@ async function checkAuthentication() {
         console.log('🔐 Verificando autenticación del usuario...');
         
         // Intentar cargar información del usuario actual
-        const response = await fetch('/gastos/api/me', {
+        const response = await fetch('/gastos/api/user', {
             method: 'GET',
             credentials: 'same-origin',
             headers: {
@@ -58,7 +58,7 @@ async function requireAuthentication() {
         
         // Redireccionar después de un breve delay
         setTimeout(() => {
-            window.location.href = '/gastos/login.html';
+            window.location.href = 'login.html';
         }, 2000);
         
         return false;
@@ -306,8 +306,41 @@ async function validateAndRefreshSession() {
     try {
         console.log('🔄 Validando sesión activa...');
         
-        const response = await fetch('/gastos/api/session/validate', {
-            method: 'POST',
+        const response = await fetch('/gastos/api/user', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log('✅ Sesión válida');
+                return true;
+            }
+        }
+
+        console.log('❌ Sesión inválida');
+        return false;
+        
+    } catch (error) {
+        console.error('❌ Error validando sesión:', error);
+        return false;
+    }
+}
+
+/**
+ * Refrescar la sesión del usuario
+ */
+async function refreshSession() {
+    try {
+        console.log('🔄 Verificando sesión...');
+        
+        const response = await fetch('/gastos/api/user', {
+            method: 'GET',
             credentials: 'same-origin',
             headers: {
                 'Accept': 'application/json'
@@ -323,45 +356,11 @@ async function validateAndRefreshSession() {
             }
         }
         
-        // Si la validación falla, intentar refrescar la sesión
-        console.log('⚠️ Sesión inválida, intentando refrescar...');
-        return await refreshSession();
-        
-    } catch (error) {
-        console.error('❌ Error validando sesión:', error);
-        return false;
-    }
-}
-
-/**
- * Refrescar la sesión del usuario
- */
-async function refreshSession() {
-    try {
-        console.log('🔄 Refrescando sesión...');
-        
-        const response = await fetch('/gastos/api/session/refresh', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success) {
-                console.log('✅ Sesión refrescada exitosamente');
-                return true;
-            }
-        }
-        
-        console.log('❌ No se pudo refrescar la sesión');
+        console.log('❌ Sesión inválida');
         return false;
         
     } catch (error) {
-        console.error('❌ Error refrescando sesión:', error);
+        console.error('❌ Error verificando sesión:', error);
         return false;
     }
 }
