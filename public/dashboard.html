@@ -52,7 +52,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
-                            <span id="userDisplayName">Usuario</span>
+                            <span id="userName">Usuario</span>
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" onclick="showUserProfile()">
@@ -170,7 +170,7 @@
                         </div>
                         <div class="card-body">
                             <div class="row align-items-center">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="companyFilter" class="form-label">
                                         <i class="fas fa-filter me-1"></i>Empresa
                                     </label>
@@ -180,16 +180,53 @@
                                         <option value="2">🚀 Symbiot Technologies</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="text-center">
                                         <div class="stat-number text-success" id="companyBalance">$0.00</div>
                                         <div class="stat-label">Balance Empresa</div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="text-center">
                                         <div class="stat-number text-warning" id="companyTransactions">0</div>
                                         <div class="stat-label">Transacciones</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="stat-number text-info" id="companyStudents">0</div>
+                                        <div class="stat-label">Alumnos Activos</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- RockstarSkull Specific Indicators (Hidden by default) -->
+                            <div id="rockstarSpecificIndicators" style="display: none;">
+                                <hr class="my-3">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-info" id="groupClasses">0</div>
+                                            <div class="stat-label">Clases Grupales</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-info" id="individualClasses">0</div>
+                                            <div class="stat-label">Clases Individuales</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-success" id="currentStudents">0</div>
+                                            <div class="stat-label">Al Corriente</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-danger" id="pendingStudents">0</div>
+                                            <div class="stat-label">Pendientes</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -229,7 +266,7 @@
                                 <!-- Classes Distribution -->
                                 <div class="mt-3">
                                     <small style="color: #E4E6EA !important;">Distribución por Clase:</small>
-                                    <div id="classDistribution" class="mt-2">
+                                    <div id="classDistributionContainer" class="mt-2">
                                         <!-- Se llena dinámicamente -->
                                     </div>
                                 </div>
@@ -246,7 +283,7 @@
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <div id="teachersOverview">
+                                <div id="teachersStatsContainer">
                                     <!-- Se llena dinámicamente -->
                                 </div>
                             </div>
@@ -460,7 +497,7 @@
         </div>
 
         <!-- Transaction Modal -->
-        <div class="modal fade" id="transactionModal" tabindex="-1">
+        <div class="modal fade" id="addTransactionModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content" style="background: rgba(25, 28, 36, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);">
                     <div class="modal-header">
@@ -470,7 +507,7 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="transactionForm">
+                        <form id="addTransactionForm">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="transactionDate" class="form-label">

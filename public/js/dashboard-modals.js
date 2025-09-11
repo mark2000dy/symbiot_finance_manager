@@ -334,38 +334,34 @@ function setupTransactionModalListeners() {
  * Mostrar modal de nueva transacción
  */
 function showAddTransactionModal() {
-    console.log('🆕 Abriendo modal nueva transacción...');
-
     try {
-        // Reset estado de edición
-        window.editingTransactionId = null;
-
-        // Cambiar texto del botón a "Guardar" para nueva transacción
-        const saveBtn = document.querySelector('#addTransactionModal .modal-footer .btn-primary');
-        if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Guardar Transacción';
-
+        console.log('🎭 Abriendo modal de nueva transacción');
+        
         // Limpiar formulario
-        document.getElementById('addTransactionForm').reset();
-
-        // Establecer fecha actual
-        const today = new Date();
-        const todayString = today.toISOString().split('T')[0];
-        document.getElementById('transactionDate').value = todayString;
-
-        // Limpiar total y precio
-        document.getElementById('transactionTotal').value = '$0.00';
-        document.getElementById('transactionPrice').value = '';
-
-        // Mostrar modal
-        if (addTransactionModalInstance) {
-            addTransactionModalInstance.show();
-        } else {
-            console.warn('⚠️ Modal instance no disponible');
+        const form = document.getElementById('addTransactionForm');
+        if (form) {
+            form.reset();
+            clearFormErrors('addTransactionForm');
         }
-
+        
+        // Establecer fecha actual
+        const dateInput = document.getElementById('transactionDate');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+        
+        // Mostrar modal
+        const modal = document.getElementById('addTransactionModal');
+        if (modal) {
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+        }
+        
+        console.log('✅ Modal de transacción abierto');
+        
     } catch (error) {
         console.error('❌ Error abriendo modal:', error);
-        showAlert('danger', 'Error abriendo modal de transacción');
     }
 }
 
@@ -374,54 +370,56 @@ function showAddTransactionModal() {
  */
 async function submitTransaction() {
     try {
-        console.log('💾 Guardando transacción...');
+        console.log('💾 Enviando nueva transacción');
         
         const form = document.getElementById('addTransactionForm');
-        
-        if (!form.checkValidity()) {
+        if (!form || !form.checkValidity()) {
             form.reportValidity();
             return;
         }
         
-        // Recopilar datos del formulario
+        // Recopilar datos
         const transactionData = {
             fecha: document.getElementById('transactionDate').value,
             concepto: document.getElementById('transactionConcept').value.trim(),
-            socio: document.getElementById('transactionSocio').value.trim(),
+            socio: document.getElementById('transactionPartner').value.trim(),
             empresa_id: parseInt(document.getElementById('transactionCompany').value),
-            forma_pago: document.getElementById('transactionPaymentMethod').value,
+            forma_pago: document.getElementById('transactionPayment').value,
             cantidad: parseFloat(document.getElementById('transactionQuantity').value),
-            precio_unitario: parseFloat(document.getElementById('transactionPrice').value),
-            tipo: 'G' // Por defecto gasto
+            precio_unitario: parseFloat(document.getElementById('transactionUnitPrice').value),
+            tipo: document.getElementById('transactionType').value
         };
         
         console.log('📤 Datos de transacción:', transactionData);
         
-        // Determinar si es nueva transacción o edición
-        if (window.editingTransactionId) {
-            // Actualizar transacción existente
-            await updateTransaction(window.editingTransactionId, transactionData);
-            showAlert('success', 'Transacción actualizada exitosamente');
-        } else {
-            // Crear nueva transacción
-            await createTransaction(transactionData);
+        // Enviar a API
+        const response = await fetch('/gastos/api/transacciones', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(transactionData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
             showAlert('success', 'Transacción creada exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addTransactionModal'));
+            if (modal) modal.hide();
+            
+            // Recargar datos
+            await loadDashboardData();
+            await loadRecentTransactions();
+        } else {
+            throw new Error(result.message || 'Error creando transacción');
         }
-        
-        // Cerrar modal
-        if (addTransactionModalInstance) {
-            addTransactionModalInstance.hide();
-        }
-        
-        // Recargar transacciones y estadísticas
-        await loadRecentTransactions(currentPage);
-        await loadDashboardStats(currentCompanyFilter);
-        
-        console.log('✅ Transacción guardada y datos actualizados');
         
     } catch (error) {
-        console.error('❌ Error guardando transacción:', error);
-        showAlert('danger', 'Error guardando transacción: ' + error.message);
+        console.error('❌ Error enviando transacción:', error);
+        showAlert('danger', 'Error creando transacción: ' + error.message);
     }
 }
 
@@ -666,6 +664,51 @@ function isModalOpen(modalId) {
     return false;
 }
 
+/**
+ * CORRECCIÓN: Funciones faltantes para transacciones
+ */
+function updateTransactionTypeStyle() {
+    const typeSelect = document.getElementById('transactionType');
+    if (typeSelect) {
+        const selectedType = typeSelect.value;
+        
+        // Cambiar estilo según el tipo
+        typeSelect.classList.remove('border-success', 'border-danger');
+        
+        if (selectedType === 'I') {
+            typeSelect.classList.add('border-success');
+        } else if (selectedType === 'G') {
+            typeSelect.classList.add('border-danger');
+        }
+    }
+}
+
+function calculateTotal() {
+    const quantity = parseFloat(document.getElementById('transactionQuantity').value) || 0;
+    const unitPrice = parseFloat(document.getElementById('transactionUnitPrice').value) || 0;
+    const total = quantity * unitPrice;
+    
+    const totalInput = document.getElementById('transactionTotal');
+    if (totalInput) {
+        totalInput.value = formatCurrency(total);
+    }
+}
+
+function refreshTransactions() {
+    if (typeof loadRecentTransactions === 'function') {
+        loadRecentTransactions(1);
+    } else {
+        console.error('❌ Función loadRecentTransactions no disponible');
+    }
+}
+
+function editTransactionFromDashboard(transactionId) {
+    console.log('📝 Editando transacción:', transactionId);
+    showAlert('info', 'Funcionalidad de edición en desarrollo');
+}
+
+
+
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
@@ -677,6 +720,11 @@ window.submitTransaction = submitTransaction;
 window.showModal = showModal;
 window.hideModal = hideModal;
 window.isModalOpen = isModalOpen;
+// Exponer funciones globalmente
+window.updateTransactionTypeStyle = updateTransactionTypeStyle;
+window.calculateTotal = calculateTotal;
+window.refreshTransactions = refreshTransactions;
+window.editTransactionFromDashboard = editTransactionFromDashboard;
 
 // Funciones de validación
 window.validateForm = validateForm;

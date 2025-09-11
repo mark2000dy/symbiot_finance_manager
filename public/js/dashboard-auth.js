@@ -103,13 +103,17 @@ function updateUserInterface() {
         return;
     }
     
-    // Actualizar nombre del usuario en navbar
-    const userNameElements = document.querySelectorAll('#userName, #userNameDisplay');
-    userNameElements.forEach(element => {
-        if (element) {
-            element.textContent = currentUser.nombre;
-        }
-    });
+    // Actualizar nombre en navbar (homologar con gastos.html e ingresos.html)
+    const userDisplayElement = document.getElementById('userName');
+    if (userDisplayElement && currentUser) {
+        userDisplayElement.textContent = currentUser.nombre;
+    }
+
+    // Actualizar también el banner de bienvenida si existe
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    if (userNameDisplay && currentUser) {
+        userNameDisplay.textContent = currentUser.nombre;
+    }
     
     // Actualizar información adicional si existe
     const userRoleElement = document.getElementById('userRole');

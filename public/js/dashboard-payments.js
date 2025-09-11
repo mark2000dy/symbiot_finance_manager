@@ -16,105 +16,115 @@ async function refreshPaymentAlerts() {
     try {
         console.log('🔔 Actualizando alertas de pagos...');
         
+        const container = document.getElementById('paymentAlertsContainer');
+        if (!container) {
+            console.warn('⚠️ Contenedor paymentAlertsContainer no encontrado');
+            return;
+        }
+        
         const empresaParam = currentCompanyFilter || 1;
         const response = await fetch(`/gastos/api/alertas-pagos?empresa_id=${empresaParam}`, { cache: 'no-store' });
         const data = await response.json();
         
         if (data.success) {
-            // Asegurar arrays
             let proximos_vencer = Array.isArray(data.data.proximos_vencer) ? data.data.proximos_vencer : [];
             let vencidos = Array.isArray(data.data.vencidos) ? data.data.vencidos : [];
 
-            console.log('📥 Respuesta alertas detallada:', { proximos_vencer, vencidos });
-
-            // Filtrar alumnos dados de baja (por si el backend los devuelve)
+            // Filtrar alumnos dados de baja
             proximos_vencer = proximos_vencer.filter(a => String(a.estatus || '').toLowerCase() !== 'baja');
             vencidos = vencidos.filter(a => String(a.estatus || '').toLowerCase() !== 'baja');
 
-            // =========================
-            // 1) Próximos a vencer (≤ 3 días antes de la fecha de corte)
-            // =========================
-            const proximosHTML = proximos_vencer.length > 0
-                ? proximos_vencer
-                    .filter(alumno => {
-                        if (String(alumno.estatus || '').toLowerCase() === 'baja') return false;
-
-                        const fechaProxRaw = alumno.proximo_pago || alumno.next_payment_date || alumno.proximoPago || alumno.next_due;
-                        let nextDate = fechaProxRaw ? new Date(fechaProxRaw) : null;
-
-                        if (!nextDate && (alumno.fecha_inscripcion || alumno.fechaInscripcion)) {
-                            const stub = Object.assign({}, alumno);
-                            stub.fechaInscripcion = alumno.fechaInscripcion || alumno.fecha_inscripcion;
-                            nextDate = getNextPaymentDate(stub);
-                        }
-
-                        if (!(nextDate instanceof Date) || isNaN(nextDate)) return false;
-
-                        const daysDiff = daysBetweenDates(new Date(), nextDate);
-                        return daysDiff > 0 && daysDiff <= 3; // Próximos 3 días
-                    })
-                    .map(alumno => {
-                        const fechaProxRaw = alumno.proximo_pago || alumno.next_payment_date || alumno.proximoPago || alumno.next_due;
-                        const nextDate = fechaProxRaw ? new Date(fechaProxRaw) : getNextPaymentDate(alumno);
-                        const daysUntilDue = daysBetweenDates(new Date(), nextDate);
-
-                        return `
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <small><strong>${alumno.nombre}</strong> - ${alumno.clase || ''}</small>
-                                <small class="text-warning">⏰ ${daysUntilDue} días</small>
+            // Generar HTML con dos columnas
+            let alertsHTML = `
+                <div class="row">
+                    <!-- COLUMNA IZQUIERDA: Próximos a Vencer -->
+                    <div class="col-md-6">
+                        <div class="payment-section upcoming">
+                            <h6 class="mb-3">
+                                <i class="fas fa-clock text-warning me-2"></i>
+                                Próximos a Vencer (${proximos_vencer.length})
+                            </h6>
+                            <div class="alerts-list" style="max-height: 300px; overflow-y: auto;">
+            `;
+            
+            if (proximos_vencer.length > 0) {
+                proximos_vencer.slice(0, 10).forEach(alumno => {
+                    const fechaProxRaw = alumno.proximo_pago || alumno.next_payment_date;
+                    const nextDate = fechaProxRaw ? new Date(fechaProxRaw) : getNextPaymentDate(alumno);
+                    const daysUntilDue = nextDate ? daysBetweenDates(new Date(), nextDate) : 'N/A';
+                    
+                    alertsHTML += `
+                        <div class="alert-item d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>${alumno.nombre}</strong><br>
+                                <small class="text-muted">${alumno.clase || 'Sin clase'}</small>
                             </div>
-                        `;
-                    }).join('')
-                : '<small class="text-muted">✅ No hay pagos próximos a vencer</small>';
-
-            // =========================
-            // 2) CORRECCIÓN CRÍTICA: Pagos vencidos (> 5 días después de fecha de corte)
-            // =========================
-            const vencidosHTML = vencidos.length > 0
-                ? vencidos
-                    .filter(alumno => {
-                        if (String(alumno.estatus || '').toLowerCase() === 'baja') return false;
-
-                        const fechaProxRaw = alumno.proximo_pago || alumno.next_payment_date || alumno.proximoPago || alumno.next_due;
-                        let nextDate = fechaProxRaw ? new Date(fechaProxRaw) : null;
-
-                        if (!nextDate && (alumno.fecha_inscripcion || alumno.fechaInscripcion)) {
-                            const stub = Object.assign({}, alumno);
-                            stub.fechaInscripcion = alumno.fechaInscripcion || alumno.fecha_inscripcion;
-                            nextDate = getNextPaymentDate(stub);
-                        }
-
-                        if (!(nextDate instanceof Date) || isNaN(nextDate)) return false;
-
-                        // CORRECCIÓN CRÍTICA: Cambiar orden de parámetros para calcular correctamente días vencidos
-                        const daysDiff = daysBetweenDates(nextDate, new Date()); // días desde fecha de vencimiento hasta hoy
-                        return daysDiff > 5; // Solo mostrar si ya pasaron más de 5 días después del vencimiento
-                    })
-                    .map(alumno => {
-                        const fechaProxRaw = alumno.proximo_pago || alumno.next_payment_date || alumno.proximoPago || alumno.next_due;
-                        const nextDate = fechaProxRaw ? new Date(fechaProxRaw) : getNextPaymentDate(alumno);
-                        // CORRECCIÓN: Usar el orden correcto de parámetros
-                        const daysOverdue = daysBetweenDates(nextDate, new Date());
-
-                        return `
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <small><strong>${alumno.nombre}</strong> - ${alumno.clase || ''}</small>
-                                <small class="text-danger">🚨 ${daysOverdue} días</small>
+                            <div class="text-end">
+                                <span class="badge bg-warning">${daysUntilDue} días</span>
                             </div>
-                        `;
-                    }).join('')
-                : '<small class="text-muted">✅ No hay pagos vencidos</small>';
-
-            // Actualizar DOM
-            document.getElementById('upcomingPayments').innerHTML = proximosHTML;
-            document.getElementById('overduePayments').innerHTML = vencidosHTML;
-
+                        </div>
+                    `;
+                });
+                
+                if (proximos_vencer.length > 10) {
+                    alertsHTML += `<small class="text-muted">... y ${proximos_vencer.length - 10} más</small>`;
+                }
+            } else {
+                alertsHTML += '<div class="text-center text-muted py-3">✅ No hay pagos próximos a vencer</div>';
+            }
+            
+            alertsHTML += `
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- COLUMNA DERECHA: Vencidos -->
+                    <div class="col-md-6">
+                        <div class="payment-section overdue">
+                            <h6 class="mb-3">
+                                <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                                Vencidos (${vencidos.length})
+                            </h6>
+                            <div class="alerts-list" style="max-height: 300px; overflow-y: auto;">
+            `;
+            
+            if (vencidos.length > 0) {
+                vencidos.slice(0, 10).forEach(alumno => {
+                    const fechaProxRaw = alumno.proximo_pago || alumno.next_payment_date;
+                    const nextDate = fechaProxRaw ? new Date(fechaProxRaw) : getNextPaymentDate(alumno);
+                    const daysOverdue = nextDate ? daysBetweenDates(nextDate, new Date()) : 'N/A';
+                    
+                    alertsHTML += `
+                        <div class="alert-item d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>${alumno.nombre}</strong><br>
+                                <small class="text-muted">${alumno.clase || 'Sin clase'}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-danger">${daysOverdue} días</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (vencidos.length > 10) {
+                    alertsHTML += `<small class="text-muted">... y ${vencidos.length - 10} más</small>`;
+                }
+            } else {
+                alertsHTML += '<div class="text-center text-muted py-3">✅ No hay pagos vencidos</div>';
+            }
+            
+            alertsHTML += `
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = alertsHTML;
+            
             const totalAlertas = proximos_vencer.length + vencidos.length;
             console.log(`✅ Alertas actualizadas: ${totalAlertas} alertas activas`);
-            
-            if (totalAlertas > 0) {
-                showAlert('info', `Alertas de pagos: ${proximos_vencer.length} próximos, ${vencidos.length} vencidos`);
-            }
             
         } else {
             throw new Error(data.error || 'Error obteniendo alertas');
@@ -122,13 +132,10 @@ async function refreshPaymentAlerts() {
         
     } catch (error) {
         console.error('❌ Error actualizando alertas:', error);
-        showAlert('error', 'Error actualizando alertas de pagos');
-        
-        // Fallback a mensajes estáticos
-        document.getElementById('upcomingPayments').innerHTML = 
-            '<small class="text-muted">⚠️ Error cargando alertas próximas</small>';
-        document.getElementById('overduePayments').innerHTML = 
-            '<small class="text-muted">⚠️ Error cargando alertas vencidas</small>';
+        const container = document.getElementById('paymentAlertsContainer');
+        if (container) {
+            container.innerHTML = '<div class="text-center text-muted py-3">⚠️ Error cargando alertas de pagos</div>';
+        }
     }
 }
 
