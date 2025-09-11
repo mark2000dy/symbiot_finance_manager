@@ -15,6 +15,9 @@ let currentUser = null;
 // Paginación general
 let currentPage = 1;
 
+// Filtro de empresa actual
+let currentCompanyFilter = null;
+
 // ============================================================
 // 🎓 VARIABLES PARA GESTIÓN DE ALUMNOS
 // ============================================================
@@ -56,9 +59,6 @@ let addTransactionModalInstance = null;
 // ============================================================
 // 🏢 VARIABLES PARA FILTRO DE EMPRESA
 // ============================================================
-
-// Filtro de empresa actual
-let currentCompanyFilter = '';
 
 // Datos específicos de RockstarSkull
 let rockstarStudentsData = [];
@@ -277,6 +277,25 @@ function debugLog(message, data = null) {
         console.log(`[${timestamp}] ${message}`);
     }
 }
+
+/**
+ * CORRECCIÓN CRÍTICA: Función para formatear moneda
+ */
+function formatCurrency(amount) {
+    try {
+        const number = parseFloat(amount) || 0;
+        return new Intl.NumberFormat('es-MX', {
+            style: 'currency',
+            currency: 'MXN',
+            minimumFractionDigits: 2
+        }).format(number);
+    } catch (error) {
+        return '$0.00';
+    }
+}
+
+// Exponer función globalmente
+window.formatCurrency = formatCurrency;
 
 // ============================================================
 // 🚀 INICIALIZACIÓN DE VARIABLES GLOBALES

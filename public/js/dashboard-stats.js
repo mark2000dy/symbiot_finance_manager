@@ -61,58 +61,47 @@ async function loadDashboardData() {
 }
 
 /**
- * Actualizar estadísticas principales en el dashboard
+ *Actualizar estadísticas principales con estructura correcta
  */
 function updateMainStats(data) {
     try {
-        // Actualizar balance general
-        const balanceElement = document.getElementById('balanceTotal');
-        if (balanceElement) {
-            const balance = data.balance_general || 0;
-            balanceElement.textContent = formatCurrency(balance);
-            
-            // Cambiar color según el balance
-            if (balance > 0) {
-                balanceElement.className = 'text-success mb-0';
-            } else if (balance < 0) {
-                balanceElement.className = 'text-danger mb-0';
+        console.log('📊 Datos recibidos para actualizar estadísticas:', data);
+        
+        // Extraer datos del resumen
+        const resumen = data.resumen || data;
+        
+        // Mapeo correcto de campos
+        const elements = {
+            'balanceTotal': resumen.balance || 0,
+            'totalIngresos': resumen.total_ingresos || 0, 
+            'totalGastos': resumen.total_gastos || 0,
+            'esteMes': resumen.balance || 0
+        };
+        
+        console.log('📊 Valores a actualizar:', elements);
+        
+        // Actualizar cada elemento en el DOM
+        Object.entries(elements).forEach(([elementId, value]) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                // Remover spinner de carga
+                const loadingSpinner = element.querySelector('.loading-spinner');
+                if (loadingSpinner) {
+                    loadingSpinner.remove();
+                }
+                
+                // Actualizar valor con formato de moneda
+                element.textContent = formatCurrency(value);
+                console.log(`✅ ${elementId} actualizado: ${formatCurrency(value)}`);
             } else {
-                balanceElement.className = 'text-info mb-0';
+                console.warn(`⚠️ Elemento ${elementId} no encontrado`);
             }
-        }
-        
-        // Actualizar total de ingresos
-        const ingresosElement = document.getElementById('totalIngresos');
-        if (ingresosElement) {
-            ingresosElement.textContent = formatCurrency(data.total_ingresos || 0);
-        }
-        
-        // Actualizar total de gastos
-        const gastosElement = document.getElementById('totalGastos');
-        if (gastosElement) {
-            gastosElement.textContent = formatCurrency(data.total_gastos || 0);
-        }
-        
-        // Actualizar balance del mes actual
-        const esteMesElement = document.getElementById('esteMes');
-        if (esteMesElement) {
-            const balanceMes = data.balance_mes_actual || 0;
-            esteMesElement.textContent = formatCurrency(balanceMes);
-            
-            // Cambiar color según el balance del mes
-            if (balanceMes > 0) {
-                esteMesElement.className = 'text-success mb-0';
-            } else if (balanceMes < 0) {
-                esteMesElement.className = 'text-danger mb-0';
-            } else {
-                esteMesElement.className = 'text-warning mb-0';
-            }
-        }
+        });
         
         console.log('✅ Estadísticas principales actualizadas');
         
     } catch (error) {
-        console.error('❌ Error actualizando estadísticas principales:', error);
+        console.error('❌ Error actualizando estadísticas:', error);
     }
 }
 
@@ -174,7 +163,7 @@ function updateCompanyStats(data) {
 /**
  * Manejar cambio de empresa en el selector
  */
-async function handleCompanyChange() {
+async function handleCompanyFilterChange() {
     const companySelect = document.getElementById('companyFilter');
     const selectedCompany = companySelect.value;
     currentCompanyFilter = selectedCompany;
@@ -615,3 +604,11 @@ window.renderTeachersStats = renderTeachersStats;
 window.renderClassDistribution = renderClassDistribution;
 
 console.log('✅ Dashboard Stats Module cargado - Funciones de estadísticas disponibles');
+
+// 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES CRÍTICAS
+window.handleCompanyChange = handleCompanyChange;
+window.loadDashboardData = loadDashboardData;
+window.handleCompanyFilterChange = handleCompanyChange; // Alias para compatibilidad
+
+// Exponer función global para el HTML
+window.handleCompanyFilterChange = handleCompanyFilterChange;
