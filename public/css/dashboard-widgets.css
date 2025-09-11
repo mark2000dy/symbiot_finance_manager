@@ -1,7 +1,7 @@
 /* ====================================================
    DASHBOARD WIDGETS STYLES - SYMBIOT FINANCIAL MANAGER
    Archivo: public/css/dashboard-widgets.css
-   Estilos específicos para widgets y componentes
+   ACTUALIZADO para corregir selector de empresa y widgets
    ==================================================== */
 
 /* 🎯 MEJORAR CONTRASTE DE TEXTOS GRISES */
@@ -29,81 +29,87 @@ small.text-muted,
     font-size: 0.8em !important;
 }
 
-/* 🎯 WIDGET MAESTROS - ESPECIALIDADES MÁS VISIBLES */
+/* ========================================= */
+/* 🔧 SELECTOR DE EMPRESA - CORREGIDO */
+/* ========================================= */
+.company-selector-widget {
+    background: rgba(25, 28, 36, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.company-selector-widget .form-select {
+    background: rgba(25, 28, 36, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.company-selector-widget .form-select:focus {
+    background: rgba(25, 28, 36, 0.9) !important;
+    border-color: #0DCAF0 !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 202, 240, 0.25) !important;
+    color: white !important;
+}
+
+.company-selector-widget .form-select option {
+    background-color: #191C24 !important;
+    color: white !important;
+}
+
+/* 🎯 STATS NUMBERS EN SELECTOR DE EMPRESA */
+.company-selector-widget .stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.company-selector-widget .stat-number.text-success {
+    color: #28a745 !important;
+}
+
+.company-selector-widget .stat-number.text-danger {
+    color: #dc3545 !important;
+}
+
+.company-selector-widget .stat-number.text-warning {
+    color: #ffc107 !important;
+}
+
+/* ========================================= */
+/* WIDGET MAESTROS - ESPECIALIDADES MÁS VISIBLES */
+/* ========================================= */
 .teacher-info small,
 .maestro-especialidad {
     color: #C8CCD0 !important;
     font-weight: 500 !important;
 }
 
-/* 🎯 ALERTAS DE PAGOS - TEXTO MÁS VISIBLE */
-.alert small {
-    color: #E5E7EB !important;
-    font-weight: 500 !important;
+.teachers-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 15px !important;
+    padding: 5px !important;
 }
 
-/* 🎯 TABLA DE ALUMNOS - TEXTO SECUNDARIO */
-.table small {
-    color: #D1D5DB !important;
-    font-weight: 500 !important;
+.teacher-card {
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 140px;
+    margin-bottom: 0 !important;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
 }
 
-/* 🎯 BADGES Y ELEMENTOS INFORMATIVOS */
-.badge small {
-    color: #F3F4F6 !important;
-}
-
-/* 🎯 DISTRIBUCIÓN DE CLASES - MEJORES CONTRASTES */
-.class-item small {
-    color: #C8CCD0 !important;
-    font-weight: 500 !important;
-}
-
-.class-stats small {
-    color: #D1D5DB !important;
-    font-weight: 500 !important;
-}
-
-/* 🎯 ELEMENTOS DE FORMULARIO - PLACEHOLDERS MÁS VISIBLES */
-.form-control::placeholder {
-    color: #9CA3AF !important;
-    opacity: 1 !important;
-}
-
-/* 🎯 TEXTO DE AYUDA Y HINTS */
-.form-text {
-    color: #C8CCD0 !important;
-}
-
-/* 🎯 ICONOS CON MEJOR VISIBILIDAD */
-.fas.text-muted,
-.far.text-muted {
-    color: #C8CCD0 !important;
-}
-
-/* 🎯 LOADING STATES CON MEJOR CONTRASTE */
-.loading-spinner p {
-    color: #E5E7EB !important;
-    font-weight: 500 !important;
-}
-
-/* 🎯 ESTADOS VACÍOS MÁS VISIBLES */
-.empty-state small {
-    color: #D1D5DB !important;
-    font-weight: 500 !important;
-}
-
-/* 🎯 HOVER EFFECTS MEJORADOS */
-.teacher-item:hover,
-.class-item:hover {
-    background: rgba(255,255,255,0.08) !important;
-    border-radius: 6px;
-    transition: background 0.2s ease;
-}
-
-/* 🎯 BORDES MÁS SUAVES */
-.card {
-    border: 1px solid rgba(255,255,255,0.1) !important;
+.teacher-card:hover {
+    background: rgba(255,255,255,0.15) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 /* ========================================= */
@@ -136,6 +142,12 @@ small.text-muted,
 .payment-section.overdue {
     background: rgba(220, 53, 69, 0.1);
     border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+/* 🎯 ALERTAS DE PAGOS - TEXTO MÁS VISIBLE */
+.alert small {
+    color: #E5E7EB !important;
+    font-weight: 500 !important;
 }
 
 /* ========================================= */
@@ -192,6 +204,12 @@ small.text-muted,
     padding: 0.75rem;
 }
 
+/* 🎯 TABLA DE ALUMNOS - TEXTO SECUNDARIO */
+.table small {
+    color: #D1D5DB !important;
+    font-weight: 500 !important;
+}
+
 /* ========================================= */
 /* WIDGET ESTADÍSTICAS */
 /* ========================================= */
@@ -200,22 +218,6 @@ small.text-muted,
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
-}
-
-.company-selector-widget {
-    background: rgba(25, 28, 36, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.company-selector select {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    border-radius: 8px;
-    padding: 0.75rem;
 }
 
 /* ========================================= */
@@ -247,6 +249,83 @@ small.text-muted,
 
 .transaction-amount.expense {
     color: #f1aeb5;
+}
+
+/* ========================================= */
+/* 🎯 BADGES Y ELEMENTOS INFORMATIVOS */
+/* ========================================= */
+.badge small {
+    color: #F3F4F6 !important;
+}
+
+/* 🎯 DISTRIBUCIÓN DE CLASES - MEJORES CONTRASTES */
+.class-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    transition: background 0.2s ease;
+}
+
+.class-item:hover {
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.class-item small {
+    color: #C8CCD0 !important;
+    font-weight: 500 !important;
+}
+
+.class-stats small {
+    color: #D1D5DB !important;
+    font-weight: 500 !important;
+}
+
+/* ========================================= */
+/* 🎯 ELEMENTOS DE FORMULARIO - PLACEHOLDERS MÁS VISIBLES */
+/* ========================================= */
+.form-control::placeholder {
+    color: #9CA3AF !important;
+    opacity: 1 !important;
+}
+
+/* 🎯 TEXTO DE AYUDA Y HINTS */
+.form-text {
+    color: #C8CCD0 !important;
+}
+
+/* 🎯 ICONOS CON MEJOR VISIBILIDAD */
+.fas.text-muted,
+.far.text-muted {
+    color: #C8CCD0 !important;
+}
+
+/* 🎯 LOADING STATES CON MEJOR CONTRASTE */
+.loading-spinner p {
+    color: #E5E7EB !important;
+    font-weight: 500 !important;
+}
+
+/* 🎯 ESTADOS VACÍOS MÁS VISIBLES */
+.empty-state small {
+    color: #D1D5DB !important;
+    font-weight: 500 !important;
+}
+
+/* 🎯 HOVER EFFECTS MEJORADOS */
+.teacher-item:hover,
+.class-item:hover {
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+/* 🎯 BORDES MÁS SUAVES */
+.card {
+    border: 1px solid rgba(255,255,255,0.1) !important;
 }
 
 /* ========================================= */
@@ -289,6 +368,19 @@ small.text-muted,
 }
 
 /* ========================================= */
+/* STUDENT STATS ESPECÍFICOS */
+/* ========================================= */
+.student-stat {
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.student-stat:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* ========================================= */
 /* RESPONSIVE HELPERS */
 /* ========================================= */
 .mobile-hidden {
@@ -315,5 +407,14 @@ small.text-muted,
     
     .students-filters .col-md-3 {
         margin-bottom: 1rem;
+    }
+    
+    .teachers-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .teacher-card {
+        min-height: auto !important;
     }
 }

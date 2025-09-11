@@ -48,8 +48,8 @@ async function loadRecentTransactions(page = 1) {
                 showTransactionsEmptyState('No hay transacciones registradas');
             } else {
                 // Renderizar tabla y paginación
-                renderTransactionsTable(response.data);
-                renderTransactionsPagination(response.pagination);
+                renderTransactions(response.data); 
+                renderPagination(response.pagination);
             }
             
         } else {
@@ -67,36 +67,47 @@ async function loadRecentTransactions(page = 1) {
 /**
  * Renderizar tabla de transacciones
  */
-function renderTransactionsTable(transactions) {
-    const container = document.getElementById('recentTransactionsContainer');
+function renderTransactions(transactions) {
+    const tbody = document.getElementById('transactionsBody');
+    const table = document.getElementById('transactionsTable');
+    const empty = document.getElementById('emptyState');
     
-    if (!container || !transactions || transactions.length === 0) {
-        showTransactionsEmptyState('No hay transacciones para mostrar');
+    if (!transactions || transactions.length === 0) {
+        table.style.display = 'none';
+        empty.style.display = 'block';
         return;
     }
     
-    container.innerHTML = `
-        <div class="table-responsive">
-            <table class="table table-dark table-hover table-sm">
-                <thead>
-                    <tr>
-                        <th><i class="fas fa-calendar me-1"></i>Fecha</th>
-                        <th><i class="fas fa-tag me-1"></i>Concepto</th>
-                        <th><i class="fas fa-user me-1"></i>Socio</th>
-                        <th><i class="fas fa-building me-1"></i>Empresa</th>
-                        <th><i class="fas fa-credit-card me-1"></i>Forma de Pago</th>
-                        <th><i class="fas fa-dollar-sign me-1"></i>Total</th>
-                        <th><i class="fas fa-cogs me-1"></i>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${transactions.map(transaction => renderTransactionRow(transaction)).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+    tbody.innerHTML = '';
+    transactions.forEach(transaction => {
+        const row = document.createElement('tr');
+        // Usar la lógica exacta del dashboard original aquí
+        row.innerHTML = `
+            <td>${formatDate(transaction.fecha)}</td>
+            <td>${transaction.concepto}</td>
+            <td>${transaction.socio}</td>
+            <td>${transaction.nombre_empresa || 'N/A'}</td>
+            <td><span class="badge ${transaction.tipo === 'I' ? 'badge-success' : 'badge-danger'}">
+                <i class="fas ${transaction.tipo === 'I' ? 'fa-arrow-up' : 'fa-arrow-down'} me-1"></i>
+                ${transaction.tipo === 'I' ? 'Ingreso' : 'Gasto'}
+            </span></td>
+            <td class="${transaction.tipo === 'I' ? 'text-success' : 'text-danger'}">
+                ${formatCurrency(transaction.total)}
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransactionFromDashboard(${transaction.id})" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteTransaction(${transaction.id})" title="Eliminar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
     
-    console.log(`✅ Tabla de transacciones renderizada con ${transactions.length} registros`);
+    table.style.display = 'block';
+    empty.style.display = 'none';
 }
 
 /**
@@ -164,20 +175,17 @@ function renderTransactionRow(transaction) {
 /**
  * Renderizar paginación de transacciones
  */
-function renderTransactionsPagination(pagination) {
-    const paginationContainer = document.getElementById('transactionsPagination');
-    const paginationNav = document.getElementById('transactionsPaginationNav');
+function renderPagination(pagination) {
+    const paginationContainer = document.getElementById('pagination');
     
     if (!pagination || pagination.total_pages <= 1) {
-        paginationNav.style.display = 'none';
+        paginationContainer.innerHTML = '';
         return;
     }
     
-    paginationNav.style.display = 'block';
-    
     let paginationHTML = '';
     
-    // Botón anterior
+    // Lógica exacta del dashboard original
     if (pagination.current_page > 1) {
         paginationHTML += `
             <li class="page-item">
@@ -188,7 +196,6 @@ function renderTransactionsPagination(pagination) {
         `;
     }
     
-    // Números de página
     const startPage = Math.max(1, pagination.current_page - 2);
     const endPage = Math.min(pagination.total_pages, pagination.current_page + 2);
     
@@ -201,7 +208,6 @@ function renderTransactionsPagination(pagination) {
         `;
     }
     
-    // Botón siguiente
     if (pagination.current_page < pagination.total_pages) {
         paginationHTML += `
             <li class="page-item">
@@ -223,20 +229,16 @@ function renderTransactionsPagination(pagination) {
  * Mostrar/ocultar estado de carga de transacciones
  */
 function showTransactionsLoadingState(show) {
-    const container = document.getElementById('recentTransactionsContainer');
+    const loading = document.getElementById('transactionsLoading');
+    const table = document.getElementById('transactionsTable');
+    const empty = document.getElementById('emptyState');
     
     if (show) {
-        container.innerHTML = `
-            <div class="loading-state">
-                <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
-                <p>Cargando transacciones...</p>
-            </div>
-        `;
-    }
-    
-    const paginationNav = document.getElementById('transactionsPaginationNav');
-    if (paginationNav) {
-        paginationNav.style.display = show ? 'none' : 'block';
+        loading.style.display = 'block';
+        table.style.display = 'none';
+        empty.style.display = 'none';
+    } else {
+        loading.style.display = 'none';
     }
 }
 
