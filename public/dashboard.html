@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard - Sistema de Gastos Symbiot</title>
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#191C24">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    
+    <!-- CSS MODULAR EXTRAÍDO -->
+    <link rel="stylesheet" href="css/dashboard-main.css">
+    <link rel="stylesheet" href="css/dashboard-widgets.css">
+    <link rel="stylesheet" href="css/dashboard-responsive.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>Symbiot Financial Manager
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/gastos">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/gastos/gastos.html">
+                            <i class="fas fa-minus-circle me-1"></i>Gastos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/gastos/ingresos.html">
+                            <i class="fas fa-plus-circle me-1"></i>Ingresos
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span id="userName">Usuario</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><span class="dropdown-item-text" id="userNameDisplay">Cargando...</span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/gastos/logout"><i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Container (Se crea dinámicamente) -->
+    <div id="alertContainer"></div>
+
+    <!-- Main Content -->
+    <div class="container-fluid main-content" style="margin-top: 76px;">
+        
+        <!-- Welcome Banner -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="text-white mb-1">
+                            <i class="fas fa-chart-pie me-2"></i>Dashboard Financiero
+                        </h2>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            <span id="currentDate">Cargando fecha...</span>
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <button class="btn btn-outline-primary btn-sm" onclick="loadDashboardData()">
+                            <i class="fas fa-sync-alt me-1"></i>Actualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row stats-grid mb-4">
+            <!-- Balance General -->
+            <div class="col-sm-6 col-xl-3 mb-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-balance-scale stat-icon text-info me-3"></i>
+                        <div>
+                            <h6 class="card-title">Balance General</h6>
+                            <h4 class="text-info mb-0" id="balanceTotal">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Ingresos -->
+            <div class="col-sm-6 col-xl-3 mb-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-arrow-up stat-icon text-success me-3"></i>
+                        <div>
+                            <h6 class="card-title">Total Ingresos</h6>
+                            <h4 class="text-success mb-0" id="totalIngresos">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Gastos -->
+            <div class="col-sm-6 col-xl-3 mb-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-arrow-down stat-icon text-danger me-3"></i>
+                        <div>
+                            <h6 class="card-title">Total Gastos</h6>
+                            <h4 class="text-danger mb-0" id="totalGastos">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Este Mes -->
+            <div class="col-sm-6 col-xl-3 mb-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="fas fa-calendar stat-icon text-warning me-3"></i>
+                        <div>
+                            <h6 class="card-title">Este Mes</h6>
+                            <h4 class="text-warning mb-0" id="esteMes">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Selector Widget -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card company-selector-widget">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="text-white mb-0">
+                            <i class="fas fa-building me-2"></i>Selector de Empresa
+                        </h6>
+                        <small class="text-muted">Filtrar datos por empresa</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <select class="form-select" id="companyFilter" onchange="handleCompanyChange()">
+                                    <option value="">🏢 Todas las Empresas</option>
+                                    <option value="1">🎸 Rockstar Skull</option>
+                                    <option value="2">💻 Symbiot Technologies</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-around text-center">
+                                    <div>
+                                        <small class="stat-label">Balance Empresa</small>
+                                        <div class="h5 mb-0" id="companyBalance">$0.00</div>
+                                    </div>
+                                    <div>
+                                        <small class="stat-label">Transacciones</small>
+                                        <div class="h5 mb-0" id="companyTransactions">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widgets específicos de RockstarSkull -->
+        <div id="rockstarSkullWidgets" style="display: none;">
+            
+            <!-- Widget Alertas de Pagos -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card payment-alert-card">
+                        <div class="card-header payment-alert-header d-flex justify-content-between align-items-center">
+                            <h6 class="text-white mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Alertas de Pagos
+                            </h6>
+                            <button class="btn btn-sm btn-outline-light" onclick="refreshPaymentAlerts()">
+                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="payment-section upcoming">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-clock text-warning me-2"></i>
+                                            Próximos a Vencer (3 días)
+                                        </h6>
+                                        <div id="upcomingPayments">
+                                            <small class="text-muted">Cargando...</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="payment-section overdue">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                                            Pagos Vencidos (+5 días)
+                                        </h6>
+                                        <div id="overduePayments">
+                                            <small class="text-muted">Cargando...</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widget Gestión de Alumnos -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card students-widget">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="text-white mb-0">
+                                <i class="fas fa-graduation-cap me-2"></i>Gestión de Alumnos - RockstarSkull
+                            </h6>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-info" onclick="exportStudentsList()">
+                                    <i class="fas fa-download me-1"></i>Exportar
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshStudentsList()">
+                                    <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="showAddStudentModal()">
+                                    <i class="fas fa-plus me-1"></i>Nuevo Alumno
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filtros -->
+                            <div class="students-filters">
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-filter me-1"></i>Filtrar por Maestro
+                                        </label>
+                                        <select class="form-select form-select-sm" id="teacherFilter" onchange="filterStudents()">
+                                            <option value="">👨‍🏫 Todos los Maestros</option>
+                                            <option value="1">🎸 Hugo Vazquez</option>
+                                            <option value="2">🥁 Julio Olvera</option>
+                                            <option value="3">🥁 Demian Andrade</option>
+                                            <option value="4">🎸 Irwin Hernandez</option>
+                                            <option value="5">🎤 Nahomy Perez</option>
+                                            <option value="6">🎸 Luis Blanquet</option>
+                                            <option value="7">🎹 Manuel Reyes</option>
+                                            <option value="8">🎹 Harim Lopez</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-toggle-on me-1"></i>Estatus
+                                        </label>
+                                        <select class="form-select form-select-sm" id="statusFilter" onchange="filterStudents()">
+                                            <option value="">📊 Todos los Estatus</option>
+                                            <option value="Activo">✅ Activos</option>
+                                            <option value="Baja">❌ Bajas</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-music me-1"></i>Instrumento
+                                        </label>
+                                        <select class="form-select form-select-sm" id="instrumentFilter" onchange="filterStudents()">
+                                            <option value="">🎼 Todos los Instrumentos</option>
+                                            <option value="Guitarra">🎸 Guitarra</option>
+                                            <option value="Teclado">🎹 Teclado</option>
+                                            <option value="Batería">🥁 Batería</option>
+                                            <option value="Bajo">🎸 Bajo</option>
+                                            <option value="Canto">🎤 Canto</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-calendar-exclamation me-1"></i>Pagos
+                                        </label>
+                                        <select class="form-select form-select-sm" id="paymentFilter" onchange="filterStudents()">
+                                            <option value="">💰 Todos los Pagos</option>
+                                            <option value="current">✅ Al Corriente</option>
+                                            <option value="upcoming">⚠️ Próximos (3 días)</option>
+                                            <option value="overdue">🚨 Vencidos (+5 días)</option>
+                                            <option value="inactive">❌ Alumnos Inactivos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Summary Stats -->
+                            <div class="filter-summary">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Filtros Aplicados:</strong>
+                                        <span id="filterSummary">Mostrando todos los alumnos</span>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-primary" id="filteredCount">0</span> de 
+                                        <span id="totalCount">0</span> alumnos
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Students Table -->
+                            <div class="students-table-container">
+                                <!-- Loading State -->
+                                <div id="studentsLoadingState" class="loading-state" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                                    <p>Cargando alumnos...</p>
+                                </div>
+
+                                <!-- Empty State -->
+                                <div id="studentsEmptyState" class="empty-state" style="display: none;">
+                                    <i class="fas fa-users fa-3x mb-3"></i>
+                                    <h5>No se encontraron alumnos</h5>
+                                    <p class="text-muted">No hay alumnos que coincidan con los filtros aplicados</p>
+                                </div>
+
+                                <!-- Students Table -->
+                                <div class="table-responsive" id="studentsTableContainer">
+                                    <table class="table table-dark table-hover table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th><i class="fas fa-user me-1"></i>Alumno</th>
+                                                <th><i class="fas fa-birthday-cake me-1"></i>Edad</th>
+                                                <th><i class="fas fa-chalkboard-teacher me-1"></i>Maestro</th>
+                                                <th><i class="fas fa-music me-1"></i>Clase</th>
+                                                <th><i class="fas fa-toggle-on me-1"></i>Inscripción</th>
+                                                <th><i class="fas fa-dollar-sign me-1"></i>Mensualidad</th>
+                                                <th><i class="fas fa-calendar-day me-1"></i>Próximo Pago</th>
+                                                <th><i class="fas fa-exclamation-triangle me-1"></i>Alerta</th>
+                                                <th><i class="fas fa-check-circle me-1"></i>Estatus</th>
+                                                <th><i class="fas fa-cogs me-1"></i>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="studentsTableBody">
+                                            <!-- Se llena dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                <nav id="studentsPaginationNav" style="display: none;">
+                                    <ul class="pagination justify-content-center" id="studentsPagination">
+                                        <!-- Se llena dinámicamente -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget Transacciones Recientes -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card transactions-widget">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="text-white mb-0">
+                            <i class="fas fa-clock me-2"></i>Transacciones Recientes
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="loadRecentTransactions()">
+                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="showAddTransactionModal()">
+                                <i class="fas fa-plus me-1"></i>Nueva Transacción
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentTransactionsContainer">
+                            <div class="loading-state">
+                                <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                                <p>Cargando transacciones...</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Paginación -->
+                        <nav id="transactionsPaginationNav" style="display: none;">
+                            <ul class="pagination justify-content-center" id="transactionsPagination">
+                                <!-- Se llena dinámicamente -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Nueva Transacción -->
+        <div class="modal fade" id="addTransactionModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-plus-circle me-2"></i>Nueva Transacción
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addTransactionForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="transactionDate" class="form-label">
+                                        <i class="fas fa-calendar me-1"></i>Fecha *
+                                    </label>
+                                    <input type="date" class="form-control" id="transactionDate" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="transactionCompany" class="form-label">
+                                        <i class="fas fa-building me-1"></i>Empresa *
+                                    </label>
+                                    <select class="form-select" id="transactionCompany" required>
+                                        <option value="">Selecciona empresa</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="transactionConcept" class="form-label">
+                                        <i class="fas fa-tag me-1"></i>Concepto *
+                                    </label>
+                                    <input type="text" class="form-control" id="transactionConcept" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="transactionSocio" class="form-label">
+                                        <i class="fas fa-user me-1"></i>Socio *
+                                    </label>
+                                    <input type="text" class="form-control" id="transactionSocio" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="transactionPaymentMethod" class="form-label">
+                                        <i class="fas fa-credit-card me-1"></i>Forma de Pago *
+                                    </label>
+                                    <select class="form-select" id="transactionPaymentMethod" required>
+                                        <option value="">Selecciona forma de pago</option>
+                                        <option value="Efectivo">Efectivo</option>
+                                        <option value="Transferencia">Transferencia</option>
+                                        <option value="TDC">Tarjeta de Crédito</option>
+                                        <option value="TDD">Tarjeta de Débito</option>
+                                        <option value="TPV">TPV</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="transactionQuantity" class="form-label">
+                                        <i class="fas fa-hashtag me-1"></i>Cantidad *
+                                    </label>
+                                    <input type="number" class="form-control" id="transactionQuantity" 
+                                           min="0" step="0.01" placeholder="1.00" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="transactionPrice" class="form-label">
+                                        <i class="fas fa-dollar-sign me-1"></i>Precio Unitario *
+                                    </label>
+                                    <input type="number" class="form-control" id="transactionPrice" 
+                                           min="0" step="0.01" placeholder="0.00" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="transactionTotal" class="form-label">
+                                        <i class="fas fa-calculator me-1"></i>Total
+                                    </label>
+                                    <input type="text" class="form-control" id="transactionTotal" 
+                                           placeholder="$0.00" readonly style="background-color: rgba(255,255,255,0.05);">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="submitTransaction()">
+                            <i class="fas fa-save me-1"></i>Guardar Transacción
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TODOS LOS MODALES DE ALUMNOS SE CARGARÁN DINÁMICAMENTE -->
+        <!-- Modal Editar Alumno -->
+        <div class="modal fade" id="editStudentModal" tabindex="-1">
+            <!-- Contenido del modal se carga dinámicamente -->
+        </div>
+
+        <!-- Modal Nuevo Alumno -->
+        <div class="modal fade" id="addStudentModal" tabindex="-1">
+            <!-- Contenido del modal se carga dinámicamente -->
+        </div>
+
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- JAVASCRIPT MODULAR - ORDEN DE CARGA CRÍTICO -->
+    <script src="js/dashboard-core.js"></script>
+    <script src="js/dashboard-auth.js"></script>
+    <script src="js/dashboard-api.js"></script>
+    <script src="js/dashboard-stats.js"></script>
+    <script src="js/dashboard-payments.js"></script>
+    <script src="js/dashboard-transactions.js"></script>
+    <script src="js/dashboard-modals.js"></script>
+    <script src="js/dashboard-students.js"></script>
+    <script src="js/dashboard-init.js"></script>
+
+</body>
+</html>

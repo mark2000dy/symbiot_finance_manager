@@ -1,0 +1,235 @@
+/* ====================================================
+   DASHBOARD MAIN STYLES - SYMBIOT FINANCIAL MANAGER
+   Archivo: public/css/dashboard-main.css
+   Extraído de dashboard.html - Sin modificaciones
+   ==================================================== */
+
+body {
+    background: linear-gradient(135deg, #000 0%, #191C24 50%, #000 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: white;
+}
+
+.navbar {
+    background: rgba(25, 28, 36, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-brand {
+    color: #EB1616 !important;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.8) !important;
+    transition: color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #EB1616 !important;
+}
+
+.main-content {
+    padding: 2rem 0;
+}
+
+.text-muted, .small, .stat-label {
+    color: #E4E6EA !important; /* Gris mucho más claro */
+}
+
+.stat-card {
+    background: rgba(25, 28, 36, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+}
+
+/* 🎨 MEJORA: Textos más claros para mejor visibilidad */
+.stat-card .card-title {
+    color: #B0B3B8 !important; /* Gris más claro */
+    font-weight: 500;
+}
+
+.stat-card h4 {
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.card {
+    background: rgba(25, 28, 36, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.card-header {
+    background: rgba(235, 22, 22, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-header h6 {
+    color: white;
+    margin: 0;
+}
+
+.btn-outline-primary {
+    border-color: #EB1616;
+    color: #EB1616;
+}
+
+.btn-outline-primary:hover {
+    background-color: #EB1616;
+    border-color: #EB1616;
+}
+
+.btn-primary {
+    background-color: #EB1616;
+    border-color: #EB1616;
+}
+
+.btn-primary:hover {
+    background-color: #C41414;
+    border-color: #C41414;
+}
+
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2rem;
+}
+
+.loading-spinner i {
+    color: #EB1616;
+    margin-right: 0.5rem;
+}
+
+.table-dark {
+    --bs-table-bg: rgba(25, 28, 36, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-dark td, .table-dark th {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #E4E6EA;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #EB1616;
+    box-shadow: 0 0 0 0.2rem rgba(235, 22, 22, 0.25);
+    color: white;
+}
+
+.form-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.form-select:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #EB1616;
+    box-shadow: 0 0 0 0.2rem rgba(235, 22, 22, 0.25);
+    color: white;
+}
+
+.modal-content {
+    background: rgba(25, 28, 36, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    color: white;
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.alert-info {
+    background-color: rgba(13, 202, 240, 0.1);
+    border-color: rgba(13, 202, 240, 0.2);
+    color: #9eeaf9;
+}
+
+.alert-success {
+    background-color: rgba(25, 135, 84, 0.1);
+    border-color: rgba(25, 135, 84, 0.2);
+    color: #a3cfbb;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.2);
+    color: #ffecb5;
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.2);
+    color: #f1aeb5;
+}
+
+.page-link {
+    background-color: rgba(25, 28, 36, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #E4E6EA;
+}
+
+.page-link:hover {
+    background-color: #EB1616;
+    border-color: #EB1616;
+    color: white;
+}
+
+.page-item.active .page-link {
+    background-color: #EB1616;
+    border-color: #EB1616;
+    color: white;
+}
+
+.breadcrumb {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.breadcrumb-item a {
+    color: #EB1616;
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: #E4E6EA;
+}
