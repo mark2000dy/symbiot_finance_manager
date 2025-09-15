@@ -85,7 +85,13 @@ async function loadStudentsList(page = 1) {
         
     } catch (error) {
         console.error('❌ Error cargando alumnos:', error);
-        showStudentsLoadingState(false);
+        // CORRECCIÓN: Verificar que el elemento existe antes de usarlo
+        const loadingElement = document.getElementById('studentsLoading');
+        if (loadingElement) {
+            loadingElement.style.display = 'block';
+        } else {
+            console.warn('⚠️ Elemento studentsLoading no encontrado');
+        }
         showStudentsEmptyState('Error cargando la lista de alumnos');
         showAlert('danger', 'Error cargando alumnos: ' + error.message);
     }

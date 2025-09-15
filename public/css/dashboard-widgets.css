@@ -418,3 +418,60 @@ small.text-muted,
         min-height: auto !important;
     }
 }
+
+/* ========================================= */
+/* CORRECCIÓN CRÍTICA: TEXTOS VISIBLES */
+/* ========================================= */
+
+/* Forzar texto blanco en elementos críticos */
+.payment-section h6,
+.payment-section .text-light,
+.alert-item strong {
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+}
+
+/* Texto secundario más visible */
+.alert-item small,
+.payment-section small {
+    color: #E5E7EB !important;
+    font-weight: 500 !important;
+}
+
+/* Teacher cards */
+.teacher-card .text-light {
+    color: #FFFFFF !important;
+}
+
+.teacher-card small {
+    color: #D1D5DB !important;
+}
+
+/* Students widgets */
+#totalStudents,
+#activeStudents,
+#inactiveStudents {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
+/* Company stats */
+#companyBalance,
+#companyTransactions,
+#companyStudents {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
+/* Badges más visibles */
+.badge {
+    font-weight: 600 !important;
+}
+
+.badge.bg-warning {
+    color: #000 !important;
+}
+
+.badge.bg-danger {
+    color: #FFF !important;
+}

@@ -707,7 +707,80 @@ function editTransactionFromDashboard(transactionId) {
     showAlert('info', 'Funcionalidad de edición en desarrollo');
 }
 
+/**
+ * Función de edición de transacciones
+ */
+function editTransactionFromDashboard(transactionId) {
+    console.log('📝 Editando transacción ID:', transactionId);
+    
+    try {
+        // Buscar la transacción en los datos cargados
+        const transaction = window.recentTransactionsCache?.find(t => t.id == transactionId);
+        
+        if (!transaction) {
+            showAlert('warning', 'Transacción no encontrada en caché. Recargando...');
+            if (typeof refreshTransactions === 'function') {
+                refreshTransactions();
+            }
+            return;
+        }
+        
+        // CORRECCIÓN: Cargar datos en modal de edición
+        loadTransactionInModal(transaction);
+        
+        // Mostrar modal
+        const modal = document.getElementById('editTransactionModal') || document.getElementById('addTransactionModal');
+        if (modal) {
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error editando transacción:', error);
+        showAlert('danger', 'Error abriendo editor de transacciones');
+    }
+}
 
+/**
+ * FUNCIÓN AUXILIAR: Cargar transacción en modal
+ */
+function loadTransactionInModal(transaction) {
+    // Cambiar título del modal
+    const modalTitle = document.querySelector('#addTransactionModal .modal-title');
+    if (modalTitle) {
+        modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transacción';
+    }
+    
+    // Cargar datos en formulario
+    const fields = {
+        'transactionDate': transaction.fecha,
+        'transactionType': transaction.tipo,
+        'transactionConcept': transaction.concepto,
+        'transactionPartner': transaction.socio,
+        'transactionCompany': transaction.empresa_id,
+        'transactionPayment': transaction.forma_pago,
+        'transactionQuantity': transaction.cantidad,
+        'transactionUnitPrice': transaction.precio_unitario
+    };
+    
+    Object.entries(fields).forEach(([fieldId, value]) => {
+        const field = document.getElementById(fieldId);
+        if (field && value !== null && value !== undefined) {
+            field.value = value;
+        }
+    });
+    
+    // Calcular total
+    if (typeof calculateTotal === 'function') {
+        calculateTotal();
+    }
+    
+    // Guardar ID para actualización
+    window.editingTransactionId = transaction.id;
+}
+
+// Exponer función globalmente
+window.editTransactionFromDashboard = editTransactionFromDashboard;
 
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES

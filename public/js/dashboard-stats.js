@@ -13,36 +13,33 @@
  */
 async function loadDashboardData() {
     try {
-        console.log('📊 Cargando estadísticas con filtro de empresa...');
+        console.log('📊 Cargando estadísticas REALES con filtro de empresa...');
         
-        // Inicializar widget de alumnos si aplica
-        console.log('🎓 Inicializando widget de gestión de alumnos...');
-        
-        // Construir query con filtro si existe
+        // CORRECCIÓN: Usar API de resumen real en lugar de dashboard
         let queryParam = '';
         if (currentCompanyFilter) {
             queryParam = `?empresa_id=${currentCompanyFilter}`;
         }
         
-        console.log('📡 Solicitando estadísticas:', `/gastos/api/dashboard${queryParam}`);
+        console.log('📡 Solicitando resumen REAL:', `/gastos/api/transacciones/resumen${queryParam}`);
         
-        const response = await fetch(`/gastos/api/dashboard${queryParam}`);
+        const response = await fetch(`/gastos/api/transacciones/resumen${queryParam}`);
         const data = await response.json();
         
         if (data.success) {
-            console.log('✅ Estadísticas cargadas:', data.data);
+            console.log('✅ Datos REALES cargados:', data.data);
             
-            // Actualizar estadísticas principales
-            updateMainStats(data.data);
+            // CORRECCIÓN: Usar estructura real de datos
+            const resumen = data.data;
+            updateMainStatsReal(resumen);
             
-            // Actualizar estadísticas de empresa si hay filtro
+            // CORRECCIÓN: Actualizar indicadores de empresa si hay filtro
             if (currentCompanyFilter) {
-                updateCompanyStats(data.data);
+                updateCompanyStatsReal(resumen);
                 
-                // Mostrar widgets específicos de RockstarSkull
+                // CORRECCIÓN: Cargar datos específicos de RockstarSkull
                 if (currentCompanyFilter === '1') {
-                    await loadRockstarSkullData();
-                    showRockstarSkullIndicators();
+                    await loadRockstarSkullDataReal();
                 }
             }
             
@@ -51,20 +48,187 @@ async function loadDashboardData() {
         }
         
     } catch (error) {
-        console.error('❌ Error cargando estadísticas del dashboard:', error);
-        
-        // Mostrar valores por defecto en caso de error
+        console.error('❌ Error cargando estadísticas REALES:', error);
         resetMainStats();
+        showAlert('warning', 'Error cargando estadísticas. Verifique su conexión.');
+    }
+}
+
+/**
+ * Actualizar estadísticas con datos REALES
+ */
+function updateMainStatsReal(resumen) {
+    try {
+        console.log('📊 Actualizando con datos REALES:', resumen);
         
-        showAlert('warning', 'Error cargando algunas estadísticas. Mostrando datos disponibles.');
+        // CORRECCIÓN: Usar datos reales del resumen
+        const elements = {
+            'balanceTotal': resumen.balance || 0,
+            'totalIngresos': resumen.ingresos || 0,
+            'totalGastos': resumen.gastos || 0,
+            'esteMes': resumen.balance || 0
+        };
+        
+        console.log('📊 Valores REALES a mostrar:', elements);
+        
+        // Actualizar cada elemento
+        Object.entries(elements).forEach(([elementId, value]) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                // Remover spinner
+                const spinner = element.querySelector('.loading-spinner');
+                if (spinner) spinner.remove();
+                
+                // Actualizar valor con datos reales
+                element.textContent = formatCurrency(value);
+                
+                // CORRECCIÓN: Color según valor
+                if (elementId === 'balanceTotal') {
+                    element.className = value >= 0 ? 'text-success mb-0' : 'text-danger mb-0';
+                }
+                
+                console.log(`✅ ${elementId} = ${formatCurrency(value)} (REAL)`);
+            }
+        });
+        
+        console.log('✅ Estadísticas REALES actualizadas');
+        
+    } catch (error) {
+        console.error('❌ Error actualizando estadísticas REALES:', error);
+    }
+}
+
+/**
+ * Cargar datos REALES de RockstarSkull
+ */
+async function loadRockstarSkullDataReal() {
+    try {
+        console.log('🎸 Cargando datos REALES de RockstarSkull...');
+        
+        // CORRECCIÓN: API real de alumnos
+        const response = await fetch('/gastos/api/dashboard/alumnos?empresa_id=1');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const stats = result.data.estadisticas;
+            const clases = result.data.distribucion_clases;
+            const maestros = result.data.distribucion_maestros;
+            const metricas = result.data.metricas_rockstar;
+            
+            console.log('📊 Datos REALES recibidos:', { stats, clases, maestros, metricas });
+            
+            // CORRECCIÓN: Actualizar con datos reales
+            if (stats) {
+                updateElement('totalStudents', stats.total_alumnos || 0);
+                updateElement('activeStudents', stats.alumnos_activos || 0);
+                updateElement('inactiveStudents', stats.alumnos_bajas || 0);
+                updateElement('companyStudents', stats.alumnos_activos || 0);
+            }
+            
+            // CORRECCIÓN: Métricas específicas
+            if (metricas) {
+                updateElement('groupClasses', metricas.clases_grupales || 0);
+                updateElement('individualClasses', metricas.clases_individuales || 0);
+                updateElement('currentStudents', metricas.alumnos_corriente || 0);
+                updateElement('pendingStudents', metricas.alumnos_pendientes || 0);
+                
+                // Mostrar indicadores específicos
+                const indicators = document.getElementById('rockstarSpecificIndicators');
+                if (indicators) indicators.style.display = 'block';
+            }
+            
+            // CORRECCIÓN: Actualizar maestros con datos reales
+            if (maestros && maestros.length > 0) {
+                updateTeachersOverviewReal(maestros);
+            }
+            
+            // CORRECCIÓN: Actualizar distribución de clases
+            if (clases && clases.length > 0) {
+                updateClassDistributionReal(clases);
+            }
+            
+            console.log('✅ Datos REALES de RockstarSkull actualizados');
+            
+        } else {
+            console.error('❌ Error en API alumnos:', result.message);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cargando datos REALES de RockstarSkull:', error);
+    }
+}
+
+/**
+ * Actualizar maestros con datos REALES
+ */
+function updateTeachersOverviewReal(maestros) {
+    console.log('👨‍🏫 Actualizando maestros con datos REALES:', maestros);
+    
+    const container = document.getElementById('teachersStatsContainer');
+    
+    if (!container) {
+        console.warn('⚠️ Contenedor teachersStatsContainer no encontrado');
+        return;
+    }
+    
+    if (!maestros || maestros.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-user-tie fa-2x text-muted mb-2"></i>
+                <p class="text-light">No hay datos de maestros disponibles</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // CORRECCIÓN: Generar HTML con datos reales
+    const html = `
+        <div class="teachers-grid">
+            ${maestros.map(maestro => `
+                <div class="teacher-card">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="${getClassIcon(maestro.especialidad)} fa-lg text-primary me-2"></i>
+                        <div>
+                            <div class="text-light fw-bold">${maestro.maestro}</div>
+                            <small class="text-light">${maestro.especialidad}</small>
+                        </div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="text-success fw-bold">${maestro.alumnos_activos || 0}</div>
+                            <small class="text-light">Activos</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-danger fw-bold">${maestro.alumnos_bajas || 0}</div>
+                            <small class="text-light">Bajas</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    console.log('✅ Maestros REALES actualizados');
+}
+
+/**
+ * FUNCIÓN AUXILIAR: Actualizar elemento de forma segura
+ */
+function updateElement(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = typeof value === 'number' && elementId.includes('Students') ? value : 
+                              typeof value === 'number' && elementId.includes('Classes') ? value :
+                              value;
+        console.log(`✅ ${elementId} = ${value}`);
+    } else {
+        console.warn(`⚠️ Elemento ${elementId} no encontrado`);
     }
 }
 
 /**
  *Actualizar estadísticas principales con estructura correcta
- */
-/**
- * CORRECCIÓN CRÍTICA: Actualizar estadísticas principales
  */
 function updateMainStats(data) {
     try {
