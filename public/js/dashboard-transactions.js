@@ -658,6 +658,69 @@ function filterTransactions(searchText) {
     }
 }
 
+/**
+ * Actualizar transacciones
+ */
+function refreshTransactions() {
+    console.log('🔄 Actualizando transacciones...');
+    if (typeof loadRecentTransactions === 'function') {
+        loadRecentTransactions(1);
+    } else {
+        showAlert('info', 'Función de transacciones en desarrollo');
+    }
+}
+
+/**
+ * Mostrar modal de nueva transacción
+ */
+function showAddTransactionModal() {
+    console.log('➕ Mostrando modal de nueva transacción...');
+    const modal = new bootstrap.Modal(document.getElementById('addTransactionModal'));
+    modal.show();
+}
+
+/**
+ * Calcular total en modal de transacción
+ */
+function calculateTotal() {
+    const quantity = parseFloat(document.getElementById('transactionQuantity')?.value) || 0;
+    const unitPrice = parseFloat(document.getElementById('transactionUnitPrice')?.value) || 0;
+    const total = quantity * unitPrice;
+    
+    const totalElement = document.getElementById('transactionTotal');
+    if (totalElement) {
+        totalElement.value = new Intl.NumberFormat('es-MX', {
+            style: 'currency',
+            currency: 'MXN'
+        }).format(total);
+    }
+}
+
+/**
+ * Actualizar estilo según tipo de transacción
+ */
+function updateTransactionTypeStyle() {
+    const typeSelect = document.getElementById('transactionType');
+    if (typeSelect) {
+        const type = typeSelect.value;
+        if (type === 'I') {
+            typeSelect.className = 'form-select border-success';
+        } else if (type === 'G') {
+            typeSelect.className = 'form-select border-danger';
+        } else {
+            typeSelect.className = 'form-select';
+        }
+    }
+}
+
+/**
+ * Enviar nueva transacción
+ */
+function submitTransaction() {
+    console.log('💾 Enviando nueva transacción...');
+    showAlert('info', 'Función de crear transacción en desarrollo');
+}
+
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
@@ -678,5 +741,11 @@ window.setupCalculationListeners = setupCalculationListeners;
 window.exportTransactionsToCSV = exportTransactionsToCSV;
 window.filterTransactions = filterTransactions;
 window.getCompanyName = getCompanyName;
+
+window.refreshTransactions = refreshTransactions;
+window.showAddTransactionModal = showAddTransactionModal;
+window.calculateTotal = calculateTotal;
+window.updateTransactionTypeStyle = updateTransactionTypeStyle;
+window.submitTransaction = submitTransaction;
 
 console.log('✅ Dashboard Transactions Module cargado - Funciones de transacciones disponibles');

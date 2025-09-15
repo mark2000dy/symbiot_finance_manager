@@ -483,6 +483,22 @@ function startSessionMonitoring() {
     console.log('✅ Monitoreo de sesión iniciado');
 }
 
+/**
+ * Mostrar perfil de usuario
+ */
+function showUserProfile() {
+    console.log('👤 Mostrando perfil de usuario...');
+    showAlert('info', 'Perfil de usuario en desarrollo');
+}
+
+/**
+ * Mostrar configuración
+ */
+function showSettings() {
+    console.log('⚙️ Mostrando configuración...');
+    showAlert('info', 'Configuración en desarrollo');
+}
+
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
@@ -506,5 +522,8 @@ window.startSessionMonitoring = startSessionMonitoring;
 // Funciones de utilidad
 window.updateUserInterface = updateUserInterface;
 window.handleInactivityLogout = handleInactivityLogout;
+
+window.showUserProfile = showUserProfile;
+window.showSettings = showSettings;
 
 console.log('✅ Dashboard Auth Module cargado - Funciones de autenticación disponibles');

@@ -12,6 +12,26 @@ body {
 }
 
 /* ========================================= */
+/* FIX CRÍTICO PARA DROPDOWN MENU Z-INDEX */
+/* ========================================= */
+.navbar {
+    z-index: 1030 !important;
+}
+
+.dropdown-menu {
+    z-index: 9999 !important;
+    position: absolute !important;
+}
+
+.dropdown-menu.show {
+    z-index: 9999 !important;
+}
+
+.welcome-banner {
+    z-index: 1000 !important;
+}
+
+/* ========================================= */
 /* FIX PARA DROPDOWN MENU Z-INDEX */
 /* ========================================= */
 .navbar .dropdown-menu {

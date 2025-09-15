@@ -78,11 +78,14 @@
             <!-- Welcome Banner -->
             <div class="row mb-4">
                 <div class="col-12">
-                    <div class="welcome-banner">
-                        <h4>
-                            <i class="fas fa-chart-pie me-2"></i>Dashboard Financiero
-                        </h4>
-                        <p class="mb-0" id="currentDate">miércoles, 10 de septiembre de 2025</p>
+                    <div class="welcome-banner" id="welcomeBanner">
+                        <h4 class="mb-1"><i class="fas fa-chart-pie me-2"></i>Dashboard Financiero</h4>
+                        <h4 class="mb-1">¡Bienvenido, <span id="userNameDisplay">Usuario</span>!</h4>
+                        <p class="mb-0 text-muted">
+                            <i class="fas fa-building me-1"></i>
+                            <span id="userCompany">Cargando...</span> • 
+                            <span id="currentDate"></span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -252,13 +255,13 @@
                                     <div class="col-6">
                                         <div class="student-stat" style="cursor: pointer;" onclick="filterStudentsByStatus('active')">
                                             <h4 class="text-success mb-1" id="activeStudents">0</h4>
-                                            <small style="color: #E4E6EA !important;">Activos</small>
+                                            <small style="color: #4ac711 !important;font-weight: 600;">Activos</small>
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="student-stat" style="cursor: pointer;" onclick="filterStudentsByStatus('inactive')">
                                             <h4 class="text-danger mb-1" id="inactiveStudents">0</h4>
-                                            <small style="color: #E4E6EA !important;">Bajas</small>
+                                            <small style="color: #dc1313 !important;font-weight: 600;">Bajas</small>
                                         </div>
                                     </div>
                                 </div>
@@ -380,7 +383,7 @@
                                 <!-- Students Table Container -->
                                 <div class="students-table-container">
                                     <!-- Loading State -->
-                                    <div class="loading-state" id="studentsLoading">
+                                    <div class="loading-state" id="studentsLoadingState">
                                         <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
                                         <p class="mt-2">Cargando lista de alumnos...</p>
                                     </div>
@@ -410,16 +413,23 @@
                                         </table>
                                     </div>
 
+                                    <div class="pagination-info mb-2">
+                                        <small>
+                                            Mostrando <span id="studentsShowingFrom">1</span> - <span id="studentsShowingTo">10</span> 
+                                            de <span id="studentsTotalRecords">0</span> alumnos
+                                        </small>
+                                    </div>
+
                                     <!-- Students Pagination -->
                                     <div class="pagination-container" id="studentsPaginationContainer" style="display: none;">
                                         <div class="pagination-info">
                                             <small>
-                                                Mostrando <span id="studentsFrom">1</span> - <span id="studentsTo">10</span> 
-                                                de <span id="studentsTotal">0</span> alumnos
+                                                Mostrando <span id="studentsShowingFrom">1</span> - <span id="studentsShowingTo">10</span> 
+                                                de <span id="studentsTotalRecords">0</span> alumnos
                                             </small>
                                         </div>
                                         <nav>
-                                            <ul class="pagination pagination-sm mb-0" id="studentsPagination">
+                                            <ul class="pagination pagination-sm mb-0" id="studentsPaginationList">
                                                 <!-- Se genera dinámicamente -->
                                             </ul>
                                         </nav>

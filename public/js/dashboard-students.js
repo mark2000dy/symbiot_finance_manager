@@ -8,11 +8,41 @@
 // 🎓 FUNCIONES PRINCIPALES DE GESTIÓN DE ALUMNOS
 // ============================================================
 
+
+
+/**
+ * Verificar si los elementos del DOM existen para el widget de alumnos
+ */
+function verifyStudentsElements() {
+    const requiredElements = [
+        'studentsLoadingState',
+        'studentsTableContainer', 
+        'studentsEmptyState',
+        'studentsTableBody'
+    ];
+    
+    const missingElements = requiredElements.filter(id => !document.getElementById(id));
+    
+    if (missingElements.length > 0) {
+        console.warn('⚠️ Elementos faltantes en widget de alumnos:', missingElements);
+        console.warn('⚠️ Widget de gestión de alumnos no disponible en esta vista');
+        return false;
+    }
+    
+    return true;
+}
+
 /**
  * Función principal para cargar lista de alumnos con paginación
  * CORRECCIÓN: Manejo mejorado de estado vacío y filtros
  */
 async function loadStudentsList(page = 1) {
+    // CORRECCIÓN: Verificar que los elementos existan antes de proceder
+    if (!verifyStudentsElements()) {
+        console.log('📭 Widget de alumnos no disponible - saltando carga');
+        return;
+    }
+    
     try {
         console.log(`🎓 Cargando alumnos - Página ${page}...`);
         console.log('🔍 Filtros actuales:', currentStudentFilters);
@@ -398,7 +428,12 @@ function renderStudentsTable() {
  */
 function renderStudentsPagination() {
     const paginationContainer = document.getElementById('studentsPagination');
-    const paginationNav = document.getElementById('studentsPaginationNav');
+    if (!paginationContainer) {
+        console.error('❌ Contenedor studentsPagination no encontrado');
+        return;
+    }
+
+    const paginationNav = document.getElementById('studentsPaginationContainer') || document.getElementById('studentsPaginationContainer')
     
     if (totalStudentsPages <= 1) {
         paginationNav.style.display = 'none';
@@ -453,10 +488,24 @@ function renderStudentsPagination() {
 function showStudentsLoadingState(show) {
     console.log(`📊 ${show ? 'Mostrar' : 'Ocultar'} loading de alumnos`);
     
-    document.getElementById('studentsLoadingState').style.display = show ? 'block' : 'none';
-    document.getElementById('studentsTableContainer').style.display = show ? 'none' : 'block';
-    document.getElementById('studentsEmptyState').style.display = 'none';
-    document.getElementById('studentsPaginationNav').style.display = show ? 'none' : 'block';
+    // CORRECCIÓN: Verificar que los elementos existan antes de usarlos
+    const loadingState = document.getElementById('studentsLoadingState');
+    const tableContainer = document.getElementById('studentsTableContainer');
+    const emptyState = document.getElementById('studentsEmptyState');
+    const paginationNav = document.getElementById('studentsPaginationContainer') || document.getElementById('studentsPaginationContainer');
+    
+    if (loadingState) {
+        loadingState.style.display = show ? 'block' : 'none';
+    }
+    if (tableContainer) {
+        tableContainer.style.display = show ? 'none' : 'block';
+    }
+    if (emptyState) {
+        emptyState.style.display = 'none';
+    }
+    if (paginationNav) {
+        paginationNav.style.display = show ? 'none' : 'block';
+    }
 }
 
 /**
@@ -465,19 +514,33 @@ function showStudentsLoadingState(show) {
 function showStudentsEmptyState(message = 'No se encontraron alumnos') {
     console.log('📭 Mostrando estado vacío:', message);
     
-    document.getElementById('studentsEmptyState').style.display = 'block';
-    document.getElementById('studentsTableContainer').style.display = 'none';
-    document.getElementById('studentsLoadingState').style.display = 'none';
-    document.getElementById('studentsPaginationNav').style.display = 'none';
+    // CORRECCIÓN: Verificar que los elementos existan antes de usarlos
+    const emptyState = document.getElementById('studentsEmptyState');
+    const tableContainer = document.getElementById('studentsTableContainer');
+    const loadingState = document.getElementById('studentsLoadingState');
+    const paginationNav = document.getElementById('studentsPaginationContainer') || document.getElementById('studentsPaginationContainer')
+    
+    if (emptyState) {
+        emptyState.style.display = 'block';
+    }
+    if (tableContainer) {
+        tableContainer.style.display = 'none';
+    }
+    if (loadingState) {
+        loadingState.style.display = 'none';
+    }
+    if (paginationNav) {
+        paginationNav.style.display = 'none';
+    }
 
     // CORRECCIÓN: Mostrar mensaje específico para filtro vencidos
-    const emptyMessage = document.querySelector('#studentsEmptyState p');
+    const emptyMessage = emptyState ? emptyState.querySelector('p') : null;
     if (emptyMessage && currentStudentFilters.paymentFilter === 'overdue') {
         emptyMessage.textContent = '✅ No hay alumnos con pagos vencidos (+5 días)';
-        emptyMessage.className = 'mt-2 mb-0 text-success'; // Verde = buena noticia
+        emptyMessage.className = 'mt-2 mb-0 text-success';
     } else if (emptyMessage) {
         emptyMessage.textContent = message;
-        emptyMessage.className = 'mt-2 mb-0 text-muted'; // Gris normal
+        emptyMessage.className = 'mt-2 mb-0 text-muted';
     }
 }
 
@@ -857,6 +920,120 @@ async function loadTeachersForSelects() {
 }
 
 // ============================================================
+// 🔗 FUNCIONES FALTANTES LLAMADAS DESDE HTML
+// ============================================================
+
+/**
+ * Actualizar lista de alumnos (botón Actualizar)
+ */
+function refreshStudentsList() {
+    console.log('🔄 Actualizando lista de alumnos...');
+    loadStudentsList(1);
+}
+
+/**
+ * Exportar lista de alumnos
+ */
+function exportStudentsList() {
+    console.log('📤 Exportando lista de alumnos...');
+    showAlert('info', 'Función de exportación en desarrollo');
+}
+
+/**
+ * Mostrar modal de agregar alumno
+ */
+function showAddStudentModal() {
+    console.log('➕ Mostrando modal de nuevo alumno...');
+    showAlert('info', 'Modal de nuevo alumno en desarrollo');
+}
+
+/**
+ * Filtrar estudiantes (llamada desde selects)
+ */
+function filterStudents() {
+    console.log('🔍 Aplicando filtros de alumnos...');
+    
+    // Obtener valores de filtros
+    const teacherFilter = document.getElementById('teacherFilter')?.value || '';
+    const statusFilter = document.getElementById('statusFilter')?.value || '';
+    const instrumentFilter = document.getElementById('instrumentFilter')?.value || '';
+    const paymentFilter = document.getElementById('paymentFilter')?.value || '';
+    
+    // Actualizar filtros globales
+    currentStudentFilters = {
+        teacherFilter,
+        statusFilter,
+        instrumentFilter,
+        paymentFilter
+    };
+    
+    // Recargar lista con filtros
+    loadStudentsList(1);
+}
+
+/**
+ * Filtrar alumnos por estatus (botones de contadores)
+ */
+function filterStudentsByStatus(status) {
+    console.log('📊 Filtrando por estatus:', status);
+    
+    // Limpiar filtros previos
+    currentStudentFilters = {
+        teacherFilter: '',
+        statusFilter: status === 'active' ? 'Activo' : status === 'inactive' ? 'Baja' : '',
+        instrumentFilter: '',
+        paymentFilter: ''
+    };
+    
+    // Actualizar selects en UI
+    const statusSelect = document.getElementById('statusFilter');
+    if (statusSelect) {
+        statusSelect.value = currentStudentFilters.statusFilter;
+    }
+    
+    // Recargar lista
+    loadStudentsList(1);
+}
+
+/**
+ * Renderizar tabla de alumnos (función faltante)
+ */
+function renderTransactionsTable(transactions) {
+    console.log('📊 Renderizando tabla de transacciones:', transactions.length);
+    
+    const tableBody = document.getElementById('transactionsBody');
+    if (!tableBody) {
+        console.error('❌ Elemento transactionsBody no encontrado');
+        return;
+    }
+    
+    if (!transactions || transactions.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No hay transacciones</td></tr>';
+        return;
+    }
+    
+    tableBody.innerHTML = transactions.map(transaction => `
+        <tr>
+            <td>${formatDate(transaction.fecha)}</td>
+            <td>${transaction.concepto}</td>
+            <td>${transaction.socio}</td>
+            <td>${transaction.nombre_empresa || 'N/A'}</td>
+            <td><span class="badge ${transaction.tipo === 'I' ? 'bg-success' : 'bg-danger'}">
+                ${transaction.tipo === 'I' ? 'Ingreso' : 'Gasto'}
+            </span></td>
+            <td class="${transaction.tipo === 'I' ? 'text-success' : 'text-danger'}">
+                ${formatCurrency(transaction.total)}
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransaction(${transaction.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
 
@@ -873,5 +1050,11 @@ window.exportStudentsList = exportStudentsList;
 window.toggleNewStudentDomiciliadoName = toggleNewStudentDomiciliadoName;
 window.toggleDomiciliadoName = toggleDomiciliadoName;
 window.initializeStudentsModule = initializeStudentsModule;
+window.refreshStudentsList = refreshStudentsList;
+window.exportStudentsList = exportStudentsList;
+window.showAddStudentModal = showAddStudentModal;
+window.filterStudents = filterStudents;
+window.filterStudentsByStatus = filterStudentsByStatus;
+window.renderTransactionsTable = renderTransactionsTable;
 
 console.log('✅ Dashboard Students Module cargado - Todas las funciones disponibles');

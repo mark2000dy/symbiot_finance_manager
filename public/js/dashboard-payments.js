@@ -161,24 +161,23 @@ function getNextPaymentDate(alumno) {
             return null;
         }
         
-        // Obtener día del mes de inscripción
+        // Obtener día del mes de inscripción (día de corte mensual)
         const enrollmentDay = enrollment.getDate();
         
-        // Calcular la fecha de pago para este mes
-        let currentMonthPayment = new Date(today.getFullYear(), today.getMonth(), enrollmentDay);
+        // Calcular próximo día de pago
+        let nextPayment = new Date(today.getFullYear(), today.getMonth(), enrollmentDay);
         
-        // Si la fecha de este mes ya pasó, calcular para el siguiente mes
-        if (currentMonthPayment <= today) {
-            currentMonthPayment = new Date(today.getFullYear(), today.getMonth() + 1, enrollmentDay);
+        // Si ya pasó este mes, calcular para el siguiente
+        if (nextPayment <= today) {
+            nextPayment = new Date(today.getFullYear(), today.getMonth() + 1, enrollmentDay);
         }
         
-        // Manejar casos donde el día no existe en el mes siguiente (ej. 31 de febrero)
-        if (currentMonthPayment.getDate() !== enrollmentDay) {
-            // Si el día no existe, usar el último día del mes
-            currentMonthPayment = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+        // Ajustar si el día no existe en el mes
+        if (nextPayment.getDate() !== enrollmentDay) {
+            nextPayment = new Date(today.getFullYear(), today.getMonth() + 2, 0);
         }
         
-        return currentMonthPayment;
+        return nextPayment;
         
     } catch (error) {
         console.error('❌ Error calculando próxima fecha de pago:', error);

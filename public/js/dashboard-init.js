@@ -50,7 +50,11 @@ async function initializeDashboard() {
         
         // FASE 6: Cargar transacciones recientes
         console.log('📋 FASE 6: Cargando transacciones recientes...');
-        await loadRecentTransactions(1);
+        if (typeof loadRecentTransactions === 'function') {
+            await loadRecentTransactions(1);
+        } else {
+            console.warn('⚠️ Función loadRecentTransactions no disponible');
+        }
         
         // FASE 7: Inicializar módulos específicos
         console.log('📋 FASE 7: Inicializando módulos específicos...');
