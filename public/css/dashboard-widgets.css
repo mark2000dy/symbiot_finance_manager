@@ -82,18 +82,6 @@ small.text-muted,
 /* ========================================= */
 /* WIDGET MAESTROS - ESPECIALIDADES MÁS VISIBLES */
 /* ========================================= */
-.teacher-info small,
-.maestro-especialidad {
-    color: #C8CCD0 !important;
-    font-weight: 500 !important;
-}
-
-.teachers-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: 15px !important;
-    padding: 5px !important;
-}
 
 .teacher-card {
     transition: all 0.3s ease;
@@ -148,6 +136,101 @@ small.text-muted,
 .alert small {
     color: #E5E7EB !important;
     font-weight: 500 !important;
+}
+
+/* ========================================= */
+/* WIDGET MAESTROS - ESTRUCTURA SEMÁNTICA ORIGINAL */
+/* ========================================= */
+
+.teacher-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.teacher-icon {
+    font-size: 1.5rem;
+    color: var(--bs-primary);
+    margin-right: 0.75rem;
+    width: 2rem;
+    text-align: center;
+}
+
+.teacher-info {
+    flex-grow: 1;
+}
+
+.teacher-name {
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.teacher-specialty {
+    color: #C8CCD0 !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem;
+}
+
+.teacher-stats {
+    display: flex;
+    justify-content: space-around;
+    margin: 1rem 0;
+}
+
+.stat-item {
+    text-align: center;
+    flex: 1;
+}
+
+.stat-item .stat-number {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-item.active .stat-number {
+    color: #4ac711 !important;
+}
+
+.stat-item.inactive .stat-number {
+    color: #dc1313 !important;
+}
+
+.stat-item .stat-label {
+    color: #C8CCD0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.teacher-income {
+    text-align: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.teacher-income small {
+    color: #9CA3AF;
+    font-size: 0.8rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .teacher-stats {
+        margin: 0.75rem 0;
+    }
+    
+    .stat-item .stat-number {
+        font-size: 1.1rem;
+    }
+    
+    .teacher-icon {
+        font-size: 1.25rem;
+        margin-right: 0.5rem;
+    }
 }
 
 /* ========================================= */

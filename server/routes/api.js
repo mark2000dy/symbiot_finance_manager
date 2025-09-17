@@ -813,15 +813,15 @@ router.get('/alertas-pagos', async (req, res) => {
             
             const diasDiferencia = Math.ceil((proximoPago - hoy) / (1000 * 60 * 60 * 24));
             
-            if (diasDiferencia < 0) {
-                // Pago vencido
+            if (diasDiferencia < -5) {
+                // Pago vencido (más de 5 días después de la fecha de corte)
                 alertas.vencidos.push({
                     ...alumno,
                     dias_vencido: Math.abs(diasDiferencia),
                     fecha_proximo_pago: proximoPago.toISOString().split('T')[0]
                 });
-            } else if (diasDiferencia <= 5) {
-                // Pago próximo a vencer (5 días o menos)
+            } else if (diasDiferencia <= 3 && diasDiferencia >= 0) {
+                // Pago próximo a vencer (3 días o menos antes de la fecha de corte)
                 alertas.proximos_vencer.push({
                     ...alumno,
                     dias_restantes: diasDiferencia,

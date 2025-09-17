@@ -220,6 +220,9 @@ async function loadRockstarSkullDataReal() {
             // Almacenar datos para filtros
             if (clases && clases.length > 0) {
                 setClassDistributionData(clases);
+                if (clases && clases.length > 0) {
+                    updateClassDistributionOriginal(clases);
+                }
                 updateClassDistribution(clases, 'all');
             }
 
@@ -467,6 +470,9 @@ function updateClassDistribution(clases, filter = 'all') {
 /**
  * Función original para maestros (homologada con original)
  */
+/**
+ * Función original para maestros (HOMOLOGADA CON ESTRUCTURA SEMÁNTICA ORIGINAL)
+ */
 function updateTeachersOverview(maestros = []) {
     console.log('👨‍🏫 Actualizando maestros con datos REALES:', maestros);
     
@@ -507,32 +513,30 @@ function updateTeachersOverview(maestros = []) {
         return;
     }
 
-    // USAR GRID LAYOUT COMO EL ORIGINAL
+    // ESTRUCTURA SEMÁNTICA ORIGINAL SIN ESTILOS INLINE
     const html = `
         <div class="teachers-grid">
             ${maestros.map(maestro => `
-                <div class="teacher-card" style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem;">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="${getClassIcon(maestro.especialidad)} fa-lg text-primary me-3"></i>
+                <div class="teacher-card">
+                    <div class="teacher-header">
+                        <i class="${getClassIcon(maestro.especialidad)} teacher-icon"></i>
                         <div class="teacher-info">
-                            <div class="text-white fw-bold">${maestro.maestro}</div>
-                            <small class="maestro-especialidad">${maestro.especialidad}</small>
+                            <div class="teacher-name">${maestro.maestro}</div>
+                            <small class="teacher-specialty">${maestro.especialidad}</small>
                         </div>
                     </div>
-                    <div class="row text-center mt-2">
-                        <div class="col-6">
-                            <div class="text-success fw-bold">${maestro.alumnos_activos || 0}</div>
-                            <small style="color: #4ac711 !important;font-weight: 600;">Activos</small>
+                    <div class="teacher-stats">
+                        <div class="stat-item active">
+                            <div class="stat-number">${maestro.alumnos_activos || 0}</div>
+                            <small class="stat-label">Activos</small>
                         </div>
-                        <div class="col-6">
-                            <div class="text-danger fw-bold">${maestro.alumnos_bajas || 0}</div>
-                            <small style="color: #dc1313 !important;font-weight: 600;">Bajas</small>
+                        <div class="stat-item inactive">
+                            <div class="stat-number">${maestro.alumnos_bajas || 0}</div>
+                            <small class="stat-label">Bajas</small>
                         </div>
                     </div>
-                    <div class="mt-2 text-center">
-                        <small class="text-muted">
-                            Ingresos: $${(maestro.ingresos_activos || 0).toLocaleString('es-MX')}
-                        </small>
+                    <div class="teacher-income">
+                        <small>Ingresos: ${formatCurrency(maestro.ingresos_activos || 0)}</small>
                     </div>
                 </div>
             `).join('')}
@@ -540,7 +544,7 @@ function updateTeachersOverview(maestros = []) {
     `;
     
     container.innerHTML = html;
-    console.log('✅ Maestros actualizados con diseño original');
+    console.log('✅ Maestros actualizados con estructura semántica original');
 }
 
 /**

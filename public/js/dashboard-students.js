@@ -703,7 +703,7 @@ function showAddStudentModal() {
     // Establecer valores por defecto
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('newStudentEnrollmentDate').value = today;
-    document.getElementById('newStudentMonthlyFee').value = '1200';
+    document.getElementById('newStudentMonthlyFee').value = '1350';
     document.getElementById('newStudentPaymentMethod').value = 'Efectivo';
     document.getElementById('newStudentDomiciled').value = 'No';
     document.getElementById('newStudentDomiciliedName').disabled = true;
@@ -1133,18 +1133,21 @@ function updateClassDistributionOriginal(classes) {
     }
     
     if (!classes || classes.length === 0) {
-        container.innerHTML = `
-            <div class="alert alert-warning mb-3 py-2" style="border: none; background: rgba(255, 193, 7, 0.1);">
-                <small style="color: #E4E6EA; font-weight: 500;">
-                    📊 No hay datos de distribución por clase disponibles
-                </small>
-            </div>
-            <div class="text-center text-muted py-3">
+        // MOSTRAR mensaje pero NO retornar, cargar datos por defecto
+        console.warn('⚠️ No hay datos, intentando cargar datos almacenados...');
+        
+        // Intentar usar datos almacenados
+        const storedData = window.classDistributionData || window.storedClassDistribution;
+        if (storedData && storedData.length > 0) {
+            classes = storedData;
+        } else {
+            // Si realmente no hay datos, mostrar mensaje vacío
+            container.innerHTML = `<div class="text-center text-muted py-3">
                 <i class="fas fa-music fa-2x mb-2"></i>
                 <p class="mb-0">No hay datos de distribución</p>
-            </div>
-        `;
-        return;
+            </div>`;
+            return;
+        }
     }
     
     const totalStudents = classes.reduce((sum, clase) => sum + (clase.total_alumnos || 0), 0);
