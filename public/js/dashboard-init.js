@@ -15,6 +15,20 @@ async function initializeDashboard() {
     try {
         console.log('🚀 Iniciando Sistema Dashboard - Symbiot Financial Manager');
         console.log('====================================================');
+
+        // CORRECCIÓN: Usar variable global del stats module
+let     currentCompanyFilter = window.currentCompanyFilter || '';
+
+        // CORRECCIÓN: Asegurar que el selector inicie en "Todas las empresas"
+        function initializeCompanySelector() {
+            const companySelect = document.getElementById('companyFilter');
+            if (companySelect) {
+                companySelect.value = ''; // Forzar "Todas las empresas"
+                window.currentCompanyFilter = '';
+                currentCompanyFilter = '';
+                console.log('✅ Selector inicializado: Todas las empresas');
+            }
+        }
         
         // Verificar que los módulos están cargados
         if (!verifyModulesLoaded()) {
@@ -34,21 +48,25 @@ async function initializeDashboard() {
         // FASE 2: Cargar información del usuario
         console.log('📋 FASE 2: Cargando información del usuario...');
         await loadAndDisplayUserInfo();
+
+        // FASE 3: Inicializar selector de empresa
+        console.log('📋 FASE 3: Inicializando selector de empresa...');
+        initializeCompanySelector();
         
-        // FASE 3: Configurar filtros desde URL
+        // FASE 4: Configurar filtros desde URL
         console.log('📋 FASE 3: Configurando filtros desde URL...');
         loadCompanyFilterFromURL();
         
-        // FASE 4: Inicializar modales y UI
+        // FASE 5: Inicializar modales y UI
         console.log('📋 FASE 4: Inicializando interfaz de usuario...');
         initializeModals();
         setupEventListeners();
         
-        // FASE 5: Cargar datos principales
+        // FASE 6: Cargar datos principales
         console.log('📋 FASE 5: Cargando datos del dashboard...');
         await loadDashboardData();
         
-        // FASE 6: Cargar transacciones recientes
+        // FASE 7: Cargar transacciones recientes
         console.log('📋 FASE 6: Cargando transacciones recientes...');
         if (typeof loadRecentTransactions === 'function') {
             await loadRecentTransactions(1);
@@ -56,19 +74,19 @@ async function initializeDashboard() {
             console.warn('⚠️ Función loadRecentTransactions no disponible');
         }
         
-        // FASE 7: Inicializar módulos específicos
+        // FASE 8: Inicializar módulos específicos
         console.log('📋 FASE 7: Inicializando módulos específicos...');
         await initializeSpecificModules();
         
-        // FASE 8: Configurar actualizaciones automáticas
+        // FASE 9: Configurar actualizaciones automáticas
         console.log('📋 FASE 8: Configurando actualizaciones automáticas...');
         setupAutoRefreshSystems();
         
-        // FASE 9: Configurar monitoreo de sesión
+        // FASE 10: Configurar monitoreo de sesión
         console.log('📋 FASE 9: Iniciando monitoreo de sesión...');
         startSessionMonitoring();
         
-        // FASE 10: Finalización
+        // FASE 11: Finalización
         console.log('📋 FASE 10: Finalizando inicialización...');
         await finalizeDashboardSetup();
         
@@ -97,11 +115,11 @@ function verifyModulesLoaded() {
         { name: 'Core', check: () => window.dashboardCoreLoaded },
         { name: 'API', check: () => typeof window.apiRequest === 'function' },
         { name: 'Auth', check: () => typeof window.checkAuthentication === 'function' },
-        { name: 'Stats', check: () => typeof window.loadDashboardData === 'function' },
+        { name: 'Stats', check: () => window.dashboardStatsLoaded === true },
         { name: 'Transactions', check: () => typeof window.loadRecentTransactions === 'function' },
         { name: 'Students', check: () => typeof window.loadStudentsList === 'function' },
         { name: 'Payments', check: () => typeof window.refreshPaymentAlerts === 'function' },
-        { name: 'Modals', check: () => typeof window.initializeModals === 'function' }
+        { name: 'Modals', check: () => true } // Se inicializa en este archivo
     ];
     
     const missingModules = [];
@@ -196,7 +214,7 @@ function updateInitProgress(phase, percentage) {
 
 /**
  * Configurar event listeners globales
- */
+ 
 function setupEventListeners() {
     console.log('🎧 Configurando event listeners...');
     
@@ -223,7 +241,7 @@ function setupEventListeners() {
     } catch (error) {
         console.error('❌ Error configurando event listeners:', error);
     }
-}
+}*/
 
 /**
  * Inicializar módulos específicos según la empresa
@@ -238,14 +256,16 @@ async function initializeSpecificModules() {
         // Configurar listeners de cálculo
         setupCalculationListeners();
         
-        // Inicializar widget de alumnos si corresponde
-        if (currentCompanyFilter === '1' || !currentCompanyFilter) {
+        // Inicializar widget de alumnos si corresponde Y existe el contenedor
+        if ((currentCompanyFilter === '1' || !currentCompanyFilter) && document.getElementById('studentsContainer')) {
             console.log('🎓 Inicializando módulo de alumnos...');
             await initializeStudentsModule();
             
-            // Inicializar alertas de pagos
-            console.log('💰 Inicializando módulo de alertas de pagos...');
-            await initializePaymentAlerts();
+            // Inicializar alertas de pagos solo si existe el contenedor
+            if (document.getElementById('paymentAlertsContainer')) {
+                console.log('💰 Inicializando módulo de alertas de pagos...');
+                await initializePaymentAlerts();
+            }
         }
         
         console.log('✅ Módulos específicos inicializados');
@@ -277,6 +297,25 @@ function setupAutoRefreshSystems() {
  */
 async function finalizeDashboardSetup() {
     try {
+        // Actualizar fecha actual si no se hizo antes
+        const currentDateElement = document.getElementById('currentDate');
+        if (currentDateElement && !currentDateElement.textContent.includes('2025')) {
+            const now = new Date();
+            const dateOptions = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            currentDateElement.textContent = now.toLocaleDateString('es-ES', dateOptions);
+        }
+
+        // CORRECCIÓN: Ocultar campo "Alumnos Activos" por defecto
+        const companyStudentsContainer = document.querySelector('#companyStudents').closest('.col-md-3');
+        if (companyStudentsContainer) {
+            companyStudentsContainer.style.display = 'none';
+        }
+
         updateInitProgress('Finalizando configuración...', 90);
         
         // Establecer fecha actual
@@ -308,10 +347,12 @@ function handleCompanySpecificSetup() {
         if (rockstarWidgets) {
             rockstarWidgets.style.display = 'block';
         }
-        showRockstarSkullIndicators();
+        if (typeof showRockstarSkullIndicators === 'function') {
+            showRockstarSkullIndicators();
+        }
         
-        // Cargar lista de alumnos
-        if (typeof loadStudentsList === 'function') {
+        // Cargar lista de alumnos solo si existe el contenedor
+        if (typeof loadStudentsList === 'function' && document.getElementById('studentsTableContainer')) {
             loadStudentsList(1);
         }
     } else {
@@ -319,7 +360,9 @@ function handleCompanySpecificSetup() {
         if (rockstarWidgets) {
             rockstarWidgets.style.display = 'none';
         }
-        hideRockstarSkullIndicators();
+        if (typeof hideRockstarSkullIndicators === 'function') {
+            hideRockstarSkullIndicators();
+        }
     }
 }
 
@@ -537,6 +580,143 @@ function handleInitializationError(error) {
     document.body.appendChild(errorContainer);
 }
 
+/**
+ * Inicializar modales del sistema
+ */
+function initializeModals() {
+    console.log('🎭 Inicializando modales...');
+    
+    // Verificar que Bootstrap esté disponible
+    if (typeof bootstrap === 'undefined') {
+        console.error('❌ Bootstrap no está disponible');
+        return;
+    }
+    
+    // Inicializar modal de transacciones si existe
+    const addTransactionModal = document.getElementById('addTransactionModal');
+    if (addTransactionModal) {
+        addTransactionModalInstance = new bootstrap.Modal(addTransactionModal);
+        console.log('✅ Modal de transacciones inicializado');
+    }
+    
+    console.log('✅ Modales inicializados');
+}
+
+/**
+ * Configurar event listeners globales
+ */
+function setupEventListeners() {
+    console.log('🎧 Configurando event listeners...');
+    
+    try {
+        // Listener para actualizar fecha actual cada minuto
+        setInterval(updateCurrentDate, 60000);
+        
+        // Listener para detectar cambios de visibilidad de la página
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Listener para detectar cambios de conexión
+        window.addEventListener('online', handleConnectionChange);
+        window.addEventListener('offline', handleConnectionChange);
+        
+        // Listener para manejar errores no capturados
+        window.addEventListener('error', handleGlobalError);
+        window.addEventListener('unhandledrejection', handleUnhandledRejection);
+        
+        // Listener para shortcuts de teclado
+        document.addEventListener('keydown', handleKeyboardShortcuts);
+        
+        console.log('✅ Event listeners configurados');
+        
+    } catch (error) {
+        console.error('❌ Error configurando event listeners:', error);
+    }
+}
+
+/**
+ * Cargar empresas para modales
+ */
+async function loadCompaniesForModal() {
+    try {
+        console.log('🏢 Cargando empresas para modales...');
+        
+        // Por ahora usar empresas predefinidas
+        const companies = [
+            { id: 1, name: 'Rockstar Skull' },
+            { id: 2, name: 'Symbiot Technologies' }
+        ];
+        
+        // Actualizar selects de empresa en modales si existen
+        const companySelects = document.querySelectorAll('#transactionCompany, #editTransactionCompany');
+        companySelects.forEach(select => {
+            if (select) {
+                const optionsHTML = companies.map(company => 
+                    `<option value="${company.id}">${company.name}</option>`
+                ).join('');
+                select.innerHTML = '<option value="">Seleccionar empresa...</option>' + optionsHTML;
+            }
+        });
+        
+        console.log('✅ Empresas cargadas en modales');
+        
+    } catch (error) {
+        console.error('❌ Error cargando empresas:', error);
+    }
+}
+
+/**
+ * Configurar listeners de cálculo
+ */
+function setupCalculationListeners() {
+    console.log('🧮 Configurando listeners de cálculo...');
+    
+    // Configurar cálculo automático en modal de transacciones
+    const quantityInput = document.getElementById('transactionQuantity');
+    const unitPriceInput = document.getElementById('transactionUnitPrice');
+    
+    if (quantityInput && unitPriceInput) {
+        [quantityInput, unitPriceInput].forEach(input => {
+            input.addEventListener('input', calculateTotal);
+            input.addEventListener('change', calculateTotal);
+        });
+        console.log('✅ Listeners de cálculo configurados');
+    }
+}
+
+/**
+ * Calcular total de transacción
+ */
+function calculateTotal() {
+    const quantity = parseFloat(document.getElementById('transactionQuantity')?.value) || 0;
+    const unitPrice = parseFloat(document.getElementById('transactionUnitPrice')?.value) || 0;
+    const total = quantity * unitPrice;
+    
+    const totalElement = document.getElementById('transactionTotal');
+    if (totalElement) {
+        totalElement.value = formatCurrency(total);
+    }
+}
+
+/**
+ * Inicializar alertas de pagos
+ */
+async function initializePaymentAlerts() {
+    try {
+        console.log('💰 Inicializando módulo de alertas de pagos...');
+        
+        // Verificar si la función de refreshPaymentAlerts existe
+        if (typeof refreshPaymentAlerts === 'function') {
+            await refreshPaymentAlerts();
+            console.log('✅ Alertas de pagos inicializadas');
+        } else {
+            console.warn('⚠️ Función refreshPaymentAlerts no disponible');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error inicializando alertas de pagos:', error);
+    }
+}
+
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES Y INICIALIZACIÓN
 // ============================================================
@@ -545,6 +725,14 @@ function handleInitializationError(error) {
 window.initializeDashboard = initializeDashboard;
 window.saveUserPreferences = saveUserPreferences;
 window.loadUserPreferences = loadUserPreferences;
+
+// Funciones faltantes críticas
+window.initializeModals = initializeModals;
+window.setupEventListeners = setupEventListeners;
+window.loadCompaniesForModal = loadCompaniesForModal;
+window.setupCalculationListeners = setupCalculationListeners;
+window.calculateTotal = calculateTotal;
+window.initializePaymentAlerts = initializePaymentAlerts;
 
 // Event listeners para cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {

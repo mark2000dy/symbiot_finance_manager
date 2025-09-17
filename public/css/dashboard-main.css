@@ -16,57 +16,24 @@ body {
 /* ========================================= */
 .navbar {
     z-index: 1030 !important;
-}
-
-.dropdown-menu {
-    z-index: 9999 !important;
-    position: absolute !important;
-}
-
-.dropdown-menu.show {
-    z-index: 9999 !important;
-}
-
-.welcome-banner {
-    z-index: 1000 !important;
-}
-
-/* ========================================= */
-/* FIX PARA DROPDOWN MENU Z-INDEX */
-/* ========================================= */
-.navbar .dropdown-menu {
-    z-index: 9999 !important;
-    position: absolute !important;
-}
-
-.dropdown-menu.show {
-    z-index: 9999 !important;
-}
-
-.welcome-banner {
-    z-index: 1 !important;
-}
-
-/* Fix para dropdown menu z-index */
-.navbar {
-    z-index: 1030;
-}
-
-.dropdown-menu {
-    z-index: 1040 !important;
-}
-
-.welcome-banner {
-    z-index: 1000;
-}
-
-/* ========================================= */
-/* NAVBAR STYLES */
-/* ========================================= */
-.navbar {
+    position: relative !important;  /* Asegurar posición correcta */
     background: rgba(25, 28, 36, 0.95) !important;
     backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar .dropdown-menu,
+.dropdown-menu {
+    z-index: 9999 !important;
+    position: absolute !important;
+    background: rgba(25, 28, 36, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.dropdown-menu.show {
+    z-index: 9999 !important;
+    display: block !important;
 }
 
 .navbar-brand {
@@ -89,15 +56,6 @@ body {
     font-weight: bold;
 }
 
-/* ========================================= */
-/* DROPDOWN MENU STYLES */
-/* ========================================= */
-.dropdown-menu {
-    background: rgba(25, 28, 36, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-}
-
 .dropdown-item {
     color: rgba(255, 255, 255, 0.8);
 }
@@ -118,6 +76,8 @@ body {
 /* WELCOME BANNER */
 /* ========================================= */
 .welcome-banner {
+    z-index: 1 !important;
+    position: relative !important;  /* Asegurar posición baja */
     background: linear-gradient(135deg, rgba(13, 202, 240, 0.15), rgba(13, 202, 240, 0.1));
     border: 1px solid rgba(13, 202, 240, 0.3);
     border-radius: 15px;

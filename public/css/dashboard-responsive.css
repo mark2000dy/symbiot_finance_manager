@@ -25,7 +25,7 @@ body {
 
 /* Navbar sin fixed-top para layout normal */
 .navbar {
-    position: static !important;
+    position: relative !important; 
     margin-bottom: 0;
 }
 

@@ -16,7 +16,7 @@ let currentUser = null;
 let currentPage = 1;
 
 // Filtro de empresa actual
-let currentCompanyFilter = null;
+// let currentCompanyFilter = null; // Declarada en stats module
 
 // ============================================================
 // 🎓 VARIABLES PARA GESTIÓN DE ALUMNOS

@@ -101,9 +101,16 @@ async function loadStudentsList(page = 1) {
                 renderStudentsTable();
                 renderStudentsPagination();
                 
-                // Actualizar contadores
-                document.getElementById('filteredCount').textContent = totalStudentsRecords;
-                document.getElementById('totalCount').textContent = totalStudentsRecords;
+                // Actualizar contadores si existen
+                const filteredCountElement = document.getElementById('filteredCount');
+                if (filteredCountElement) {
+                    filteredCountElement.textContent = totalStudentsRecords;
+                }
+                
+                const totalCountElement = document.getElementById('totalCount');
+                if (totalCountElement) {
+                    totalCountElement.textContent = totalStudentsRecords;
+                }
             }
             
             // Actualizar resumen de filtros
@@ -361,6 +368,11 @@ function filterStudents() {
  */
 function renderStudentsTable() {
     const tableBody = document.getElementById('studentsTableBody');
+
+    if (!tableBody) {
+        console.warn('⚠️ Tabla de alumnos no disponible');
+        return;
+    }
     
     if (!studentsData || studentsData.length === 0) {
         tableBody.innerHTML = '';
@@ -429,7 +441,7 @@ function renderStudentsTable() {
 function renderStudentsPagination() {
     const paginationContainer = document.getElementById('studentsPagination');
     if (!paginationContainer) {
-        console.error('❌ Contenedor studentsPagination no encontrado');
+        console.warn('⚠️ Contenedor studentsPagination no encontrado - widget no disponible');
         return;
     }
 
@@ -488,11 +500,17 @@ function renderStudentsPagination() {
 function showStudentsLoadingState(show) {
     console.log(`📊 ${show ? 'Mostrar' : 'Ocultar'} loading de alumnos`);
     
-    // CORRECCIÓN: Verificar que los elementos existan antes de usarlos
+    // Verificar que al menos un elemento clave exista
     const loadingState = document.getElementById('studentsLoadingState');
     const tableContainer = document.getElementById('studentsTableContainer');
     const emptyState = document.getElementById('studentsEmptyState');
-    const paginationNav = document.getElementById('studentsPaginationContainer') || document.getElementById('studentsPaginationContainer');
+    const paginationNav = document.getElementById('studentsPaginationContainer');
+    
+    // Si no existe ningún elemento del widget, salir silenciosamente
+    if (!loadingState && !tableContainer && !emptyState) {
+        console.warn('⚠️ Widget de alumnos no disponible en esta página');
+        return;
+    }
     
     if (loadingState) {
         loadingState.style.display = show ? 'block' : 'none';
@@ -576,7 +594,10 @@ function updateStudentsFilterSummary() {
             .join(' | ');
         summary = `Filtros: ${filterDescriptions}`;
     }
-    document.getElementById('filterSummary').textContent = summary;
+    const filterSummaryElement = document.getElementById('filterSummary');
+    if (filterSummaryElement) {
+        filterSummaryElement.textContent = summary;
+    }
 }
 
 // ============================================================
@@ -976,6 +997,22 @@ function filterStudents() {
  */
 function filterStudentsByStatus(status) {
     console.log('📊 Filtrando por estatus:', status);
+
+    // Verificar si el widget está disponible
+    if (!verifyStudentsElements()) {
+        console.warn('⚠️ Widget de alumnos no disponible - saltando filtro');
+        return;
+    }
+
+    // Actualizar distribución de clases según filtro
+    if (typeof updateClassDistribution === 'function' && window.storedClassDistribution.length > 0) {
+        const filterMap = {
+            'active': 'active',
+            'inactive': 'inactive', 
+            'all': 'all'
+        };
+        updateClassDistribution(window.storedClassDistribution, filterMap[status] || 'all');
+    }
     
     // Limpiar filtros previos
     currentStudentFilters = {

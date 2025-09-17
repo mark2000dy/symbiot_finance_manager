@@ -475,3 +475,36 @@ small.text-muted,
 .badge.bg-danger {
     color: #FFF !important;
 }
+
+/* ========================================= */
+/* WIDGET MAESTROS - GRID LAYOUT ORIGINAL */
+/* ========================================= */
+.teachers-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 15px !important;
+    padding: 5px !important;
+}
+
+.teacher-card {
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 140px;
+    margin-bottom: 0 !important;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.teacher-card:hover {
+    background: rgba(255,255,255,0.15) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.teacher-info small,
+.maestro-especialidad {
+    color: #C8CCD0 !important;
+    font-weight: 500 !important;
+}

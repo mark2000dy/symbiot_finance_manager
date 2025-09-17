@@ -113,6 +113,27 @@ function updateUserInterface() {
     const userNameDisplay = document.getElementById('userNameDisplay');
     if (userNameDisplay && currentUser) {
         userNameDisplay.textContent = currentUser.nombre;
+
+    // CORRECCIÓN: Actualizar empresa del usuario
+    const userCompanyElement = document.getElementById('userCompany');
+    if (userCompanyElement && currentUser) {
+        // Usar empresa del usuario o nombre de la empresa por defecto
+        const empresaName = currentUser.empresa_nombre || currentUser.empresa || 'Symbiot Financial Manager';
+        userCompanyElement.textContent = empresaName;
+    }
+    }
+
+    // Actualizar fecha actual
+    const currentDateElement = document.getElementById('currentDate');
+    if (currentDateElement) {
+        const now = new Date();
+        const dateOptions = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        currentDateElement.textContent = now.toLocaleDateString('es-ES', dateOptions);
     }
     
     // Actualizar información adicional si existe

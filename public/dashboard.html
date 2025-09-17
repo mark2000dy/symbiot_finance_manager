@@ -54,7 +54,7 @@
                             <i class="fas fa-user-circle me-1"></i>
                             <span id="userName">Usuario</span>
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#" onclick="showUserProfile()">
                                 <i class="fas fa-user me-2"></i>Mi Perfil
                             </a></li>
@@ -76,19 +76,14 @@
     <div class="container-fluid">
         <div class="main-content">
             <!-- Welcome Banner -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="welcome-banner" id="welcomeBanner">
-                        <h4 class="mb-1"><i class="fas fa-chart-pie me-2"></i>Dashboard Financiero</h4>
-                        <h4 class="mb-1">¡Bienvenido, <span id="userNameDisplay">Usuario</span>!</h4>
-                        <p class="mb-0 text-muted">
-                            <i class="fas fa-building me-1"></i>
-                            <span id="userCompany">Cargando...</span> • 
-                            <span id="currentDate"></span>
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <div class="welcome-banner" id="welcomeBanner">
+             <h4 class="mb-1"><i class="fas fa-chart-pie me-2"></i>Dashboard Financiero</h4>
+                <p class="mb-0">¡Bienvenido, <span id="userNameDisplay">Usuario</span>! •
+                    <i class="fas fa-building me-1"></i>
+                    <span id="userCompany">Cargando...</span> • 
+                    <span id="currentDate"></span>
+                </p>
+        </div>
 
             <!-- Statistics Cards -->
             <div class="row mb-4">
@@ -286,7 +281,7 @@
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <div id="teachersStatsContainer">
+                                <div id="teachersOverview">
                                     <!-- Se llena dinámicamente -->
                                 </div>
                             </div>
