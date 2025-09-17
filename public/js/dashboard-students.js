@@ -8,8 +8,6 @@
 // 🎓 FUNCIONES PRINCIPALES DE GESTIÓN DE ALUMNOS
 // ============================================================
 
-
-
 /**
  * Verificar si los elementos del DOM existen para el widget de alumnos
  */
@@ -993,28 +991,65 @@ function filterStudents() {
 }
 
 /**
- * Filtrar alumnos por estatus (botones de contadores)
+ * Filtrar alumnos por estatus (HOMOLOGADA CON ORIGINAL)
  */
 function filterStudentsByStatus(status) {
-    console.log('📊 Filtrando por estatus:', status);
-
+    console.log(`📊 Filtro de estudiantes: ${status}`);
+    
     // Verificar si el widget está disponible
     if (!verifyStudentsElements()) {
         console.warn('⚠️ Widget de alumnos no disponible - saltando filtro');
         return;
     }
-
-    // Actualizar distribución de clases según filtro
-    if (typeof updateClassDistribution === 'function' && window.storedClassDistribution.length > 0) {
-        const filterMap = {
-            'active': 'active',
-            'inactive': 'inactive', 
-            'all': 'all'
-        };
-        updateClassDistribution(window.storedClassDistribution, filterMap[status] || 'all');
+    
+    // Usar datos de distribución almacenados (priorizar classDistributionData)
+    const distributionData = window.classDistributionData?.length > 0 ? window.classDistributionData : window.storedClassDistribution;
+    
+    if (!distributionData || distributionData.length === 0) {
+        console.warn('⚠️ No hay datos de distribución disponibles');
+        showAlert('warning', 'No hay datos de clases para mostrar');
+        return;
     }
     
-    // Limpiar filtros previos
+    let filteredClasses = [];
+    let totalStudents = 0;
+    
+    switch(status) {
+        case 'active':
+            filteredClasses = distributionData.map(clase => ({
+                ...clase,
+                total_alumnos: clase.activos,
+                percentage: clase.total_alumnos > 0 ? 
+                    Math.round((clase.activos / clase.total_alumnos) * 100) : 0
+            }));
+            totalStudents = distributionData.reduce((sum, clase) => sum + (clase.activos || 0), 0);
+            break;
+        case 'inactive':
+            filteredClasses = distributionData.map(clase => ({
+                ...clase,
+                total_alumnos: clase.inactivos || clase.bajas || 0,
+                percentage: clase.total_alumnos > 0 ? 
+                    Math.round(((clase.inactivos || clase.bajas || 0) / clase.total_alumnos) * 100) : 0
+            }));
+            totalStudents = distributionData.reduce((sum, clase) => sum + (clase.inactivos || clase.bajas || 0), 0);
+            break;
+        default: // 'all'
+            filteredClasses = distributionData.map(clase => ({
+                ...clase,
+                percentage: clase.total_alumnos > 0 ? 
+                    Math.round((clase.activos / clase.total_alumnos) * 100) : 0
+            }));
+            totalStudents = distributionData.reduce((sum, clase) => sum + (clase.total_alumnos || 0), 0);
+            break;
+    }
+    
+    // Actualizar indicadores visuales
+    updateStatusIndicators(status);
+    
+    // Actualizar distribución de clases con datos filtrados
+    updateClassDistributionOriginal(filteredClasses);
+    
+    // Limpiar filtros previos y aplicar filtro de estatus
     currentStudentFilters = {
         teacherFilter: '',
         statusFilter: status === 'active' ? 'Activo' : status === 'inactive' ? 'Baja' : '',
@@ -1028,8 +1063,116 @@ function filterStudentsByStatus(status) {
         statusSelect.value = currentStudentFilters.statusFilter;
     }
     
-    // Recargar lista
+    // Cargar lista de alumnos filtrada
     loadStudentsList(1);
+    
+    // Mostrar mensaje informativo mejorado
+    const statusLabels = {
+        'active': 'Alumnos Activos',
+        'inactive': 'Alumnos con Baja', 
+        'all': 'Todos los Alumnos'
+    };
+
+    const statusLabel = statusLabels[status] || 'Alumnos';
+    showAlert('success', `📊 Mostrando: ${statusLabel} (${totalStudents} estudiantes en ${filteredClasses.length} clases)`);
+    
+    console.log(`✅ Filtro aplicado: ${status} - ${totalStudents} estudiantes en ${filteredClasses.length} clases`);
+}
+
+/**
+ * Actualizar indicadores visuales del widget (FUNCIÓN FALTANTE DEL ORIGINAL)
+ */
+function updateStatusIndicators(selectedStatus) {
+    // Remover clases activas previas
+    document.querySelectorAll('.student-stat').forEach(stat => {
+        stat.classList.remove('active-filter');
+        stat.style.background = '';
+        stat.style.borderRadius = '';
+        stat.style.transform = '';
+    });
+    
+    // Remover estilo del badge también
+    const totalBadge = document.getElementById('totalStudents');
+    if (totalBadge) {
+        totalBadge.style.background = '';
+        totalBadge.style.transform = '';
+    }
+    
+    // Aplicar estilo al indicador seleccionado
+    const statusMap = {
+        'active': 'activeStudents',
+        'inactive': 'inactiveStudents',
+        'all': 'totalStudents'
+    };
+    
+    if (statusMap[selectedStatus]) {
+        const targetElement = document.getElementById(statusMap[selectedStatus]);
+        if (targetElement) {
+            const parentStat = targetElement.closest('.student-stat') || targetElement.closest('.badge');
+            if (parentStat) {
+                parentStat.style.background = 'rgba(13, 110, 253, 0.2)';
+                parentStat.style.borderRadius = '8px';
+                parentStat.style.transform = 'scale(1.05)';
+                parentStat.classList.add('active-filter');
+            }
+        }
+    }
+    
+    console.log(`✅ Indicadores actualizados para: ${selectedStatus}`);
+}
+
+/**
+ * Actualizar distribución de clases (HOMOLOGADA CON ORIGINAL)
+ */
+function updateClassDistributionOriginal(classes) {
+    const container = document.getElementById('classDistribution'); // ID CORRECTO del original
+    
+    if (!container) {
+        console.warn('⚠️ Contenedor classDistribution no encontrado');
+        return;
+    }
+    
+    if (!classes || classes.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-warning mb-3 py-2" style="border: none; background: rgba(255, 193, 7, 0.1);">
+                <small style="color: #E4E6EA; font-weight: 500;">
+                    📊 No hay datos de distribución por clase disponibles
+                </small>
+            </div>
+            <div class="text-center text-muted py-3">
+                <i class="fas fa-music fa-2x mb-2"></i>
+                <p class="mb-0">No hay datos de distribución</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const totalStudents = classes.reduce((sum, clase) => sum + (clase.total_alumnos || 0), 0);
+    
+    const clasesHTML = classes.map(clase => {
+        const count = clase.total_alumnos || 0;
+        const percentage = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0;
+        
+        if (count === 0) return ''; // No mostrar clases sin alumnos
+        
+        return `
+            <div class="class-item d-flex justify-content-between align-items-center p-2 mb-2" 
+                 style="background: rgba(255,255,255,0.05); border-radius: 6px;">
+                <div>
+                    <i class="${getClassIcon(clase.clase)} me-2 text-primary"></i>
+                    <strong class="text-white">${clase.clase}</strong>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary">${count}</span>
+                    <br><small class="text-muted">${percentage}%</small>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = clasesHTML || '<div class="text-center text-muted">Sin datos para mostrar</div>';
+    
+    console.log('✅ Distribución de clases actualizada (homologada)');
 }
 
 /**
@@ -1093,5 +1236,14 @@ window.showAddStudentModal = showAddStudentModal;
 window.filterStudents = filterStudents;
 window.filterStudentsByStatus = filterStudentsByStatus;
 window.renderTransactionsTable = renderTransactionsTable;
+
+// Funciones específicas del widget de alumnos (HOMOLOGADAS CON ORIGINAL)
+window.updateStatusIndicators = updateStatusIndicators;
+window.updateClassDistributionOriginal = updateClassDistributionOriginal;
+window.setClassDistributionDataOriginal = function(data) {
+    window.classDistributionData = data || [];
+    classDistributionData = window.classDistributionData;
+    console.log('💾 classDistributionData sincronizada:', classDistributionData.length, 'clases');
+};
 
 console.log('✅ Dashboard Students Module cargado - Todas las funciones disponibles');

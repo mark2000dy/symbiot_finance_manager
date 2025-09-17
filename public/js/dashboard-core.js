@@ -278,22 +278,6 @@ function debugLog(message, data = null) {
     }
 }
 
-/**
- * CORRECCIÓN CRÍTICA: Función para formatear moneda
- */
-function formatCurrency(amount) {
-    try {
-        const number = parseFloat(amount) || 0;
-        return new Intl.NumberFormat('es-MX', {
-            style: 'currency',
-            currency: 'MXN',
-            minimumFractionDigits: 2
-        }).format(number);
-    } catch (error) {
-        return '$0.00';
-    }
-}
-
 // Exponer función globalmente
 window.formatCurrency = formatCurrency;
 

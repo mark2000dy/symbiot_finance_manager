@@ -227,6 +227,18 @@ async function loadRockstarSkullDataReal() {
             if (maestros && maestros.length > 0) {
                 updateTeachersOverview(maestros);
             }
+
+            // Almacenar datos para filtros (SINCRONIZACIÓN CON ORIGINAL)
+            if (clases && clases.length > 0) {
+                setClassDistributionData(clases);
+                
+                // CRÍTICO: Sincronizar con variable global classDistributionData del módulo students
+                if (typeof window.setClassDistributionDataOriginal === 'function') {
+                    window.setClassDistributionDataOriginal(clases);
+                }
+                
+                updateClassDistribution(clases, 'all');
+            }
             
             console.log('✅ Datos REALES de RockstarSkull actualizados');
             
@@ -378,7 +390,14 @@ async function handleCompanyChange() {
  */
 function setClassDistributionData(clases) {
     storedClassDistribution = clases || [];
-    console.log('💾 Datos de distribución almacenados:', storedClassDistribution);
+    window.storedClassDistribution = storedClassDistribution;
+    
+    // CRÍTICO: Sincronizar con classDistributionData del módulo students
+    if (typeof window.setClassDistributionDataOriginal === 'function') {
+        window.setClassDistributionDataOriginal(clases);
+    }
+    
+    console.log('💾 Datos de distribución almacenados y sincronizados:', storedClassDistribution);
 }
 
 /**
