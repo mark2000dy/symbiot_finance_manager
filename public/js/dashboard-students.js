@@ -63,6 +63,9 @@ async function loadStudentsList(page = 1) {
             url += `&maestro_id=${currentStudentFilters.teacherFilter}`;
         }
         if (currentStudentFilters.paymentFilter) {
+            url += `&payment_status=${currentStudentFilters.paymentFilter}`;
+        };
+        if (currentStudentFilters.paymentFilter) {
             url += `&pago=${currentStudentFilters.paymentFilter}`;
             console.log(`🔍 Aplicando filtro de pago: ${currentStudentFilters.paymentFilter}`);
         }
@@ -424,13 +427,79 @@ function renderStudentsTable() {
                     ${statusBadge}
                 </td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="editStudent(${student.id})" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary" 
+                                onclick="showStudentDetail(${student.id})" 
+                                title="Ver detalle del alumno">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" 
+                                onclick="editStudent(${student.id})" 
+                                title="Editar información">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" 
+                                onclick="confirmDeleteStudent(${student.id})" 
+                                title="Eliminar alumno">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
+}
+
+// Poblar filtros después de cargar datos
+populateFiltersFromData(data.data);
+
+// AGREGAR DESPUÉS DE renderizar tabla (línea ~680)
+// Poblar filtros después de cargar datos
+populateFiltersFromData(data.data);
+
+// AGREGAR ESTA NUEVA FUNCIÓN antes de loadStudentsList:
+function populateFiltersFromData(studentsData) {
+    try {
+        // Poblar filtro de maestros
+        const maestrosUnicos = [...new Set(studentsData
+            .map(s => s.maestro)
+            .filter(m => m && m.trim() !== '' && m !== 'undefined'))];
+        
+        const teacherSelect = document.getElementById('teacherFilter');
+        if (teacherSelect && maestrosUnicos.length > 0) {
+            const currentValue = teacherSelect.value;
+            const teacherOptions = maestrosUnicos
+                .sort()
+                .map(maestro => `<option value="${maestro}">${maestro}</option>`)
+                .join('');
+            teacherSelect.innerHTML = '<option value="">Todos los maestros</option>' + teacherOptions;
+            teacherSelect.value = currentValue; // Mantener selección
+        }
+        
+        // Poblar filtro de instrumentos
+        const instrumentosUnicos = [...new Set(studentsData
+            .map(s => s.clase || s.instrumento)
+            .filter(i => i && i.trim() !== '' && i !== 'undefined'))];
+        
+        const instrumentSelect = document.getElementById('instrumentFilter');
+        if (instrumentSelect && instrumentosUnicos.length > 0) {
+            const currentValue = instrumentSelect.value;
+            const instrumentOptions = instrumentosUnicos
+                .sort()
+                .map(instrumento => `<option value="${instrumento}">${instrumento}</option>`)
+                .join('');
+            instrumentSelect.innerHTML = '<option value="">Todos los instrumentos</option>' + instrumentOptions;
+            instrumentSelect.value = currentValue; // Mantener selección
+        }
+        
+        console.log('✅ Filtros poblados:', {
+            maestros: maestrosUnicos.length,
+            instrumentos: instrumentosUnicos.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Error poblando filtros:', error);
+    }
 }
 
 /**
@@ -619,6 +688,70 @@ function getTeacherName(teacherId) {
     return teachers[teacherId] || 'Sin asignar';
 }
 
+function updateStudentsPagination() {
+    const container = document.getElementById('studentsPagination');
+    if (!container) return;
+    
+    // Calcular valores correctos
+    const totalPages = Math.max(1, Math.ceil(totalStudentsRecords / studentsPerPage));
+    const currentPageNum = currentStudentsPage;
+    
+    // Calcular registros mostrados
+    const startRecord = totalStudentsRecords > 0 ? ((currentPageNum - 1) * studentsPerPage) + 1 : 0;
+    const endRecord = Math.min(currentPageNum * studentsPerPage, totalStudentsRecords);
+    
+    // Actualizar contadores en la interfaz
+    const filteredCountElement = document.getElementById('filteredCount');
+    const totalCountElement = document.getElementById('totalCount');
+    const filterSummaryElement = document.getElementById('filterSummary');
+    
+    if (filteredCountElement) {
+        filteredCountElement.textContent = totalStudentsRecords;
+    }
+    if (totalCountElement) {
+        totalCountElement.textContent = totalStudentsRecords;
+    }
+    if (filterSummaryElement) {
+        const activeFilters = Object.values(currentStudentFilters).filter(f => f !== '').length;
+        if (activeFilters > 0) {
+            filterSummaryElement.textContent = `Filtros aplicados (${activeFilters} activos)`;
+        } else {
+            filterSummaryElement.textContent = 'Mostrando todos los alumnos';
+        }
+    }
+    
+    // Actualizar información de paginación
+    const paginationInfo = container.querySelector('.pagination-info') || container;
+    if (paginationInfo) {
+        paginationInfo.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">
+                    Mostrando ${startRecord}-${endRecord} de ${totalStudentsRecords} alumnos
+                </span>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item ${currentPageNum === 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="#" onclick="loadStudentsList(${currentPageNum - 1}); return false;">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active">
+                            <span class="page-link">${currentPageNum}</span>
+                        </li>
+                        <li class="page-item ${currentPageNum === totalPages ? 'disabled' : ''}">
+                            <a class="page-link" href="#" onclick="loadStudentsList(${currentPageNum + 1}); return false;">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        `;
+    }
+    
+    console.log(`✅ Paginación actualizada: Página ${currentPageNum} de ${totalPages} (${totalStudentsRecords} total)`);
+}
+
 /**
  * Calcular información de pagos del alumno
  */
@@ -697,20 +830,42 @@ function getNextPaymentDate(student) {
  * Mostrar modal de nuevo alumno
  */
 function showAddStudentModal() {
-    // Limpiar formulario
-    document.getElementById('addStudentForm').reset();
+    console.log('➕ Mostrando modal de nuevo alumno...');
     
-    // Establecer valores por defecto
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('newStudentEnrollmentDate').value = today;
-    document.getElementById('newStudentMonthlyFee').value = '1350';
-    document.getElementById('newStudentPaymentMethod').value = 'Efectivo';
-    document.getElementById('newStudentDomiciled').value = 'No';
-    document.getElementById('newStudentDomiciliedName').disabled = true;
-    
-    // Mostrar modal
-    const modal = new bootstrap.Modal(document.getElementById('addStudentModal'));
-    modal.show();
+    try {
+        // Verificar que el modal existe
+        let modalElement = document.getElementById('addStudentModal');
+        if (!modalElement) {
+            console.error('❌ Modal addStudentModal no encontrado en DOM');
+            showAlert('error', 'Modal no disponible');
+            return;
+        }
+        
+        // Si el modal está vacío, crear contenido dinámicamente
+        if (!modalElement.querySelector('.modal-dialog')) {
+            modalElement.innerHTML = createAddStudentModalHTML();
+        }
+        
+        // Limpiar formulario
+        const form = modalElement.querySelector('#addStudentForm');
+        if (form) form.reset();
+        
+        // Establecer valores por defecto
+        const today = new Date().toISOString().split('T')[0];
+        const enrollmentField = modalElement.querySelector('#newStudentEnrollmentDate');
+        if (enrollmentField) enrollmentField.value = today;
+        
+        const feeField = modalElement.querySelector('#newStudentMonthlyFee');
+        if (feeField) feeField.value = '1200';
+        
+        // Mostrar modal usando Bootstrap
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        
+    } catch (error) {
+        console.error('❌ Error mostrando modal de nuevo alumno:', error);
+        showAlert('error', 'Error al abrir modal');
+    }
 }
 
 /**
@@ -736,44 +891,93 @@ function toggleNewStudentDomiciliadoName() {
  * Editar alumno - cargar datos en modal
  */
 async function editStudent(studentId) {
+    console.log('✏️ Editando alumno ID:', studentId);
+    
     try {
-        console.log(`📝 Editando alumno ID: ${studentId}`);
-        
-        // Buscar alumno en datos actuales
+        // Buscar datos del estudiante
         const student = studentsData.find(s => s.id == studentId);
-        
         if (!student) {
-            showAlert('warning', 'Alumno no encontrado');
+            showAlert('error', 'Alumno no encontrado');
             return;
         }
         
-        // Llenar formulario de edición
-        document.getElementById('editStudentId').value = student.id;
-        document.getElementById('editStudentName').value = student.nombre || '';
-        document.getElementById('editStudentAge').value = student.edad || '';
-        document.getElementById('editStudentPhone').value = student.telefono || '';
-        document.getElementById('editStudentEmail').value = student.email || '';
-        document.getElementById('editStudentEnrollmentDate').value = student.fecha_inscripcion || '';
-        document.getElementById('editStudentInstrument').value = student.clase || '';
-        document.getElementById('editStudentTeacher').value = student.maestro_id || '';
-        document.getElementById('editStudentSchedule').value = student.horario || '';
-        document.getElementById('editStudentStatus').value = student.estatus || 'Activo';
-        document.getElementById('editStudentPromotion').value = student.promocion || '';
-        document.getElementById('editStudentMonthlyFee').value = student.precio_mensual || '';
-        document.getElementById('editStudentPaymentMethod').value = student.forma_pago || '';
-        document.getElementById('editStudentDomiciled').value = student.domiciliado ? 'Si' : 'No';
-        document.getElementById('editStudentDomiciliedName').value = student.nombre_domiciliado || '';
+        // Verificar modal
+        let modalElement = document.getElementById('editStudentModal');
+        if (!modalElement) {
+            console.error('❌ Modal editStudentModal no encontrado');
+            showAlert('error', 'Modal de edición no disponible');
+            return;
+        }
         
-        // Configurar campo domiciliado
-        toggleDomiciliadoName();
+        // Crear contenido si está vacío
+        if (!modalElement.querySelector('.modal-dialog')) {
+            modalElement.innerHTML = createEditStudentModalHTML();
+        }
+        
+        // Llenar formulario con datos del alumno
+        const form = modalElement.querySelector('#editStudentForm');
+        if (form) {
+            const fields = {
+                'editStudentName': student.nombre,
+                'editStudentAge': student.edad,
+                'editStudentInstrument': student.clase,
+                'editStudentTeacher': student.maestro,
+                'editStudentSchedule': student.horario,
+                'editStudentStatus': student.estatus
+            };
+            
+            Object.entries(fields).forEach(([fieldId, value]) => {
+                const field = form.querySelector(`#${fieldId}`);
+                if (field) field.value = value || '';
+            });
+        }
+        
+        // Guardar ID para edición
+        modalElement.dataset.studentId = studentId;
         
         // Mostrar modal
-        const modal = new bootstrap.Modal(document.getElementById('editStudentModal'));
+        const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
     } catch (error) {
-        console.error('❌ Error cargando datos del alumno:', error);
-        showAlert('danger', 'Error cargando datos del alumno');
+        console.error('❌ Error editando alumno:', error);
+        showAlert('error', 'Error al abrir modal de edición');
+    }
+}
+
+// AGREGAR DESPUÉS DE editStudent:
+function showStudentDetail(studentId) {
+    console.log('👁️ Mostrando detalle del alumno:', studentId);
+    
+    try {
+        const student = studentsData.find(s => s.id == studentId);
+        if (!student) {
+            showAlert('error', 'Alumno no encontrado');
+            return;
+        }
+        
+        let modalElement = document.getElementById('studentDetailModal');
+        if (!modalElement) {
+            console.error('❌ Modal studentDetailModal no encontrado');
+            showAlert('error', 'Modal de detalle no disponible');
+            return;
+        }
+        
+        // Crear contenido dinámico del modal
+        if (!modalElement.querySelector('.modal-dialog')) {
+            modalElement.innerHTML = createStudentDetailModalHTML();
+        }
+        
+        // Llenar datos del alumno
+        fillStudentDetailModal(modalElement, student);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        
+    } catch (error) {
+        console.error('❌ Error mostrando detalle:', error);
+        showAlert('error', 'Error al mostrar detalle del alumno');
     }
 }
 
@@ -959,14 +1163,6 @@ function exportStudentsList() {
 }
 
 /**
- * Mostrar modal de agregar alumno
- */
-function showAddStudentModal() {
-    console.log('➕ Mostrando modal de nuevo alumno...');
-    showAlert('info', 'Modal de nuevo alumno en desarrollo');
-}
-
-/**
  * Filtrar estudiantes (llamada desde selects)
  */
 function filterStudents() {
@@ -1133,19 +1329,20 @@ function updateClassDistributionOriginal(classes) {
     }
     
     if (!classes || classes.length === 0) {
-        // MOSTRAR mensaje pero NO retornar, cargar datos por defecto
-        console.warn('⚠️ No hay datos, intentando cargar datos almacenados...');
+        // INTENTAR usar datos almacenados antes de mostrar mensaje vacío
+        const fallbackData = window.classDistributionData || window.storedClassDistribution || classDistributionData;
         
-        // Intentar usar datos almacenados
-        const storedData = window.classDistributionData || window.storedClassDistribution;
-        if (storedData && storedData.length > 0) {
-            classes = storedData;
+        if (fallbackData && fallbackData.length > 0) {
+            classes = fallbackData;
+            console.log('✅ Usando datos almacenados para distribución inicial');
         } else {
-            // Si realmente no hay datos, mostrar mensaje vacío
-            container.innerHTML = `<div class="text-center text-muted py-3">
-                <i class="fas fa-music fa-2x mb-2"></i>
-                <p class="mb-0">No hay datos de distribución</p>
-            </div>`;
+            // Solo mostrar mensaje vacío si realmente no hay datos
+            container.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-music fa-2x mb-2"></i>
+                    <p class="mb-0">Cargando distribución de clases...</p>
+                </div>
+            `;
             return;
         }
     }

@@ -219,11 +219,12 @@ async function loadRockstarSkullDataReal() {
             
             // Almacenar datos para filtros
             if (clases && clases.length > 0) {
-                setClassDistributionData(clases);
-                if (clases && clases.length > 0) {
+                // Llamada inmediata para mostrar datos al cargar
+                if (typeof updateClassDistributionOriginal === 'function') {
                     updateClassDistributionOriginal(clases);
+                } else if (typeof window.updateClassDistributionOriginal === 'function') {
+                    window.updateClassDistributionOriginal(clases);
                 }
-                updateClassDistribution(clases, 'all');
             }
 
             // Actualizar maestros

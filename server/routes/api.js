@@ -796,36 +796,37 @@ router.get('/alertas-pagos', async (req, res) => {
 
         alumnos.forEach(alumno => {
             const fechaInscripcion = new Date(alumno.fecha_inscripcion);
+            const diaCorte = fechaInscripcion.getDate(); // Día del mes de inscripción = día de corte
             
-            // Usar fecha_ultimo_pago si existe, sino calcular basado en inscripción
-            let fechaUltimoPago;
-            if (alumno.fecha_ultimo_pago) {
-                fechaUltimoPago = new Date(alumno.fecha_ultimo_pago);
-            } else {
-                // Simular que el último pago fue hace un mes aproximadamente
-                fechaUltimoPago = new Date();
-                fechaUltimoPago.setMonth(fechaUltimoPago.getMonth() - 1);
+            // Calcular próxima fecha de corte basada en el día de inscripción
+            const hoy = new Date();
+            const mesActual = hoy.getMonth();
+            const anoActual = hoy.getFullYear();
+            
+            // Próxima fecha de corte en el mes actual
+            let proximaFechaCorte = new Date(anoActual, mesActual, diaCorte);
+            
+            // Si la fecha de corte del mes actual ya pasó, usar la del próximo mes
+            if (proximaFechaCorte < hoy) {
+                proximaFechaCorte.setMonth(proximaFechaCorte.getMonth() + 1);
             }
             
-            // Calcular fecha del próximo pago (un mes después del último)
-            const proximoPago = new Date(fechaUltimoPago);
-            proximoPago.setMonth(proximoPago.getMonth() + 1);
+            const diasHastaCorte = Math.ceil((proximaFechaCorte - hoy) / (1000 * 60 * 60 * 24));
             
-            const diasDiferencia = Math.ceil((proximoPago - hoy) / (1000 * 60 * 60 * 24));
-            
-            if (diasDiferencia < -5) {
-                // Pago vencido (más de 5 días después de la fecha de corte)
-                alertas.vencidos.push({
-                    ...alumno,
-                    dias_vencido: Math.abs(diasDiferencia),
-                    fecha_proximo_pago: proximoPago.toISOString().split('T')[0]
-                });
-            } else if (diasDiferencia <= 3 && diasDiferencia >= 0) {
-                // Pago próximo a vencer (3 días o menos antes de la fecha de corte)
+            // PRÓXIMOS A VENCER: 3 días o menos antes de fecha de corte
+            if (diasHastaCorte >= 0 && diasHastaCorte <= 3) {
                 alertas.proximos_vencer.push({
                     ...alumno,
-                    dias_restantes: diasDiferencia,
-                    fecha_proximo_pago: proximoPago.toISOString().split('T')[0]
+                    dias_restantes: diasHastaCorte,
+                    fecha_proximo_pago: proximaFechaCorte.toISOString().split('T')[0]
+                });
+            }
+            // VENCIDOS: Más de 5 días después de la fecha de corte
+            else if (diasHastaCorte < -5) {
+                alertas.vencidos.push({
+                    ...alumno,
+                    dias_vencido: Math.abs(diasHastaCorte),
+                    fecha_proximo_pago: proximaFechaCorte.toISOString().split('T')[0]
                 });
             }
         });

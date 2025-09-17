@@ -303,6 +303,46 @@ function createAddStudentModalHTML() {
     `;
 }
 
+/**
+ * Crear HTML del modal de detalle de alumno
+ */
+function createStudentDetailModalHTML() {
+    return `
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-user-circle me-2"></i>Detalle del Alumno
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-white">Información Personal</h6>
+                        <p><strong>Nombre:</strong> <span id="modalStudentName">-</span></p>
+                        <p><strong>Edad:</strong> <span id="modalStudentAge">-</span></p>
+                        <p><strong>Instrumento:</strong> <span id="modalStudentInstrument">-</span></p>
+                        <p><strong>Maestro:</strong> <span id="modalStudentTeacher">-</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-white">Información de Pagos</h6>
+                        <p><strong>Inscripción:</strong> <span id="modalStudentEnrollment">-</span></p>
+                        <p><strong>Mensualidad:</strong> <span id="modalStudentFee">-</span></p>
+                        <p><strong>Último Pago:</strong> <span id="modalStudentLastPayment">-</span></p>
+                        <p><strong>Estado:</strong> <span id="modalStudentStatus">-</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
 // ============================================================
 // 💰 MANEJO DEL MODAL DE TRANSACCIONES
 // ============================================================
@@ -785,6 +825,11 @@ window.editTransactionFromDashboard = editTransactionFromDashboard;
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
+
+// Exponer funciones globalmente
+window.createAddStudentModalHTML = createAddStudentModalHTML;
+window.createEditStudentModalHTML = createEditStudentModalHTML;
+window.createStudentDetailModalHTML = createStudentDetailModalHTML;
 
 // Funciones de modales
 window.initializeModals = initializeModals;
