@@ -106,7 +106,7 @@ function renderTransactions(transactions) {
                 ${transaction.tipo === 'I' ? 'Ingreso' : 'Gasto'}
             </span></td>
             <td class="${transaction.tipo === 'I' ? 'text-success' : 'text-danger'}">
-                ${formatCurrency(transaction.total)}
+                ${formatCurrency(transaction.total || (transaction.cantidad * transaction.precio_unitario) || 0)}
             </td>
             <td>
                 <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransactionFromDashboard(${transaction.id})" title="Editar">

@@ -959,4 +959,33 @@ router.put('/alumnos/:id', transaccionesController.updateAlumno);
 // 🗑️ NUEVO: Eliminar alumno (solo administradores)
 router.delete('/alumnos/:id', transaccionesController.deleteAlumno);
 
+// AGREGAR estos endpoints:
+router.get('/maestros', async (req, res) => {
+    try {
+        const maestros = await executeQuery(`
+            SELECT DISTINCT id, nombre 
+            FROM maestros 
+            WHERE activo = 1 
+            ORDER BY nombre
+        `);
+        res.json({ success: true, data: maestros });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.get('/instrumentos', async (req, res) => {
+    try {
+        const instrumentos = await executeQuery(`
+            SELECT DISTINCT clase as nombre 
+            FROM alumnos 
+            WHERE clase IS NOT NULL 
+            ORDER BY clase
+        `);
+        res.json({ success: true, data: instrumentos });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 export default router;

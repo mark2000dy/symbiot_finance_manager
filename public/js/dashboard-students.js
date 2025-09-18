@@ -31,6 +31,50 @@ function verifyStudentsElements() {
 }
 
 /**
+ * Poblar filtros de maestros e instrumentos al inicializar el widget
+ */
+async function initializeStudentFilters() {
+    try {
+        console.log('🔧 Inicializando filtros de alumnos...');
+        
+        // Poblar filtro de maestros
+        const maestrosResponse = await fetch('/gastos/api/maestros');
+        if (maestrosResponse.ok) {
+            const maestrosData = await maestrosResponse.json();
+            if (maestrosData.success) {
+                const teacherSelect = document.getElementById('teacherFilter');
+                if (teacherSelect) {
+                    const teacherOptions = maestrosData.data
+                        .map(maestro => `<option value="${maestro.id}">${maestro.nombre}</option>`)
+                        .join('');
+                    teacherSelect.innerHTML = '<option value="">👨‍🏫 Todos los Maestros</option>' + teacherOptions;
+                }
+            }
+        }
+        
+        // Poblar filtro de instrumentos
+        const instrumentosResponse = await fetch('/gastos/api/instrumentos');
+        if (instrumentosResponse.ok) {
+            const instrumentosData = await instrumentosResponse.json();
+            if (instrumentosData.success) {
+                const instrumentSelect = document.getElementById('instrumentFilter');
+                if (instrumentSelect) {
+                    const instrumentOptions = instrumentosData.data
+                        .map(instrumento => `<option value="${instrumento.nombre}">${instrumento.nombre}</option>`)
+                        .join('');
+                    instrumentSelect.innerHTML = '<option value="">🎵 Todos</option>' + instrumentOptions;
+                }
+            }
+        }
+        
+        console.log('✅ Filtros de alumnos inicializados');
+        
+    } catch (error) {
+        console.error('❌ Error inicializando filtros:', error);
+    }
+}
+
+/**
  * Función principal para cargar lista de alumnos con paginación
  * CORRECCIÓN: Manejo mejorado de estado vacío y filtros
  */
@@ -63,11 +107,7 @@ async function loadStudentsList(page = 1) {
             url += `&maestro_id=${currentStudentFilters.teacherFilter}`;
         }
         if (currentStudentFilters.paymentFilter) {
-            url += `&payment_status=${currentStudentFilters.paymentFilter}`;
-        };
-        if (currentStudentFilters.paymentFilter) {
             url += `&pago=${currentStudentFilters.paymentFilter}`;
-            console.log(`🔍 Aplicando filtro de pago: ${currentStudentFilters.paymentFilter}`);
         }
         
         console.log('📡 URL de solicitud:', url);
@@ -104,8 +144,7 @@ async function loadStudentsList(page = 1) {
                 // Renderizar tabla y paginación
                 renderStudentsTable();
                 renderStudentsPagination();
-                // Poblar filtros después de cargar datos
-                populateFiltersFromData(result.data);
+                
                 
                 // Actualizar contadores si existen
                 const filteredCountElement = document.getElementById('filteredCount');
@@ -374,67 +413,37 @@ function filterStudents() {
  */
 function renderStudentsTable() {
     const tableBody = document.getElementById('studentsTableBody');
-
-    if (!tableBody) {
-        console.warn('⚠️ Tabla de alumnos no disponible');
-        return;
-    }
+    if (!tableBody) return;
     
     if (!studentsData || studentsData.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3">No hay alumnos</td></tr>';
         return;
     }
     
-    tableBody.innerHTML = studentsData.map(student => {
-        const teacherName = getTeacherName(student.maestro_id) || 'Sin asignar';
-        const paymentInfo = calculateStudentPaymentInfo(student);
-        const statusBadge = student.estatus === 'Activo' 
-            ? '<span class="badge bg-success">✅ Activo</span>'
-            : '<span class="badge bg-danger">❌ Baja</span>';
-            
-        return `
-            <tr>
-                <td>
-                    <strong>${student.nombre}</strong>
-                    ${student.telefono ? `<br><small class="text-muted">${student.telefono}</small>` : ''}
-                </td>
-                <td>
-                    <span class="badge bg-primary">
-                        <i class="fas fa-music me-1"></i>${student.clase || 'Sin clase'}
-                    </span>
-                </td>
-                <td>
-                    <small>${teacherName}</small>
-                </td>
-                <td>
-                    ${statusBadge}
-                </td>
-                <td>
-                    <small>${paymentInfo.nextPaymentDate}</small><br>
-                    ${paymentInfo.alertBadge}
-                </td>
-                <td>
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-outline-primary" 
-                                onclick="viewStudentDetail(${student.id})" 
-                                title="Ver detalle del alumno">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning" 
-                                onclick="editStudent(${student.id})" 
-                                title="Editar información">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" 
-                                onclick="confirmDeleteStudent(${student.id})" 
-                                title="Eliminar alumno">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
+    tableBody.innerHTML = studentsData.map(student => `
+        <tr>
+            <td>
+                <strong>${student.nombre}</strong>
+                ${student.telefono ? `<br><small class="text-muted">${student.telefono}</small>` : ''}
+            </td>
+            <td>${student.clase || 'Sin clase'}</td>
+            <td>${student.maestro || 'Sin asignar'}</td>
+            <td>
+                <span class="badge ${student.estatus === 'Activo' ? 'bg-success' : 'bg-danger'}">
+                    ${student.estatus === 'Activo' ? '✅ Activo' : '❌ Baja'}
+                </span>
+            </td>
+            <td>${getNextPaymentDate(student)}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-info me-1" onclick="viewStudentDetail(${student.id})" title="Ver detalle">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editStudent(${student.id})" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 const data = result.data || [];
@@ -444,50 +453,7 @@ updateStudentsPagination();
 // Poblar filtros después de cargar datos
 populateFiltersFromData(result.data);
 
-// AGREGAR ESTA NUEVA FUNCIÓN antes de loadStudentsList:
-function populateFiltersFromData(studentsData) {
-    try {
-        // Poblar filtro de maestros
-        const maestrosUnicos = [...new Set(studentsData
-            .map(s => s.maestro)
-            .filter(m => m && m.trim() !== '' && m !== 'undefined'))];
-        
-        const teacherSelect = document.getElementById('teacherFilter');
-        if (teacherSelect && maestrosUnicos.length > 0) {
-            const currentValue = teacherSelect.value;
-            const teacherOptions = maestrosUnicos
-                .sort()
-                .map(maestro => `<option value="${maestro}">${maestro}</option>`)
-                .join('');
-            teacherSelect.innerHTML = '<option value="">Todos los maestros</option>' + teacherOptions;
-            teacherSelect.value = currentValue; // Mantener selección
-        }
-        
-        // Poblar filtro de instrumentos
-        const instrumentosUnicos = [...new Set(studentsData
-            .map(s => s.clase || s.instrumento)
-            .filter(i => i && i.trim() !== '' && i !== 'undefined'))];
-        
-        const instrumentSelect = document.getElementById('instrumentFilter');
-        if (instrumentSelect && instrumentosUnicos.length > 0) {
-            const currentValue = instrumentSelect.value;
-            const instrumentOptions = instrumentosUnicos
-                .sort()
-                .map(instrumento => `<option value="${instrumento}">${instrumento}</option>`)
-                .join('');
-            instrumentSelect.innerHTML = '<option value="">Todos los instrumentos</option>' + instrumentOptions;
-            instrumentSelect.value = currentValue; // Mantener selección
-        }
-        
-        console.log('✅ Filtros poblados:', {
-            maestros: maestrosUnicos.length,
-            instrumentos: instrumentosUnicos.length
-        });
-        
-    } catch (error) {
-        console.error('❌ Error poblando filtros:', error);
-    }
-}
+
 
 /**
  * Renderizar paginación de alumnos
@@ -893,7 +859,12 @@ function toggleNewStudentDomiciliadoName() {
  */
 async function editStudent(id) {
     console.log('✏️ Editando alumno:', id);
-    
+    // VERIFICAR que el modal exista
+    const modalElement = document.getElementById('editStudentModal');
+    if (!modalElement) {
+        console.error('❌ Modal editStudentModal no encontrado');
+        return;
+    }
     try {
         // Obtener datos del alumno desde la tabla actual
         const student = studentsData.find(s => s.id === id);
@@ -1139,53 +1110,12 @@ async function initializeStudentsModule() {
         console.log('🎓 Inicializando módulo de gestión de alumnos...');
         
         // Cargar maestros para los selects
-        await loadTeachersForSelects();
+        await initializeStudentFilters();
         
         console.log('✅ Módulo de alumnos inicializado');
         
     } catch (error) {
         console.error('❌ Error inicializando módulo de alumnos:', error);
-    }
-}
-
-/**
- * Cargar maestros para los select de formularios
- */
-async function loadTeachersForSelects() {
-    try {
-        // Solo cargar si hay selects de maestros en el DOM
-        const newTeacherSelect = document.getElementById('newStudentTeacher');
-        const editTeacherSelect = document.getElementById('editStudentTeacher');
-        
-        if (newTeacherSelect || editTeacherSelect) {
-            // Por ahora usar maestros predefinidos
-            // En el futuro se puede cargar desde API
-            const teachers = [
-                { id: 1, name: 'Hugo Vazquez', specialty: 'Guitarra' },
-                { id: 2, name: 'Julio Olvera', specialty: 'Batería' },
-                { id: 3, name: 'Demian Andrade', specialty: 'Batería' },
-                { id: 4, name: 'Irwin Hernandez', specialty: 'Guitarra' },
-                { id: 5, name: 'Nahomy Perez', specialty: 'Canto' },
-                { id: 6, name: 'Luis Blanquet', specialty: 'Bajo' },
-                { id: 7, name: 'Manuel Reyes', specialty: 'Teclado' },
-                { id: 8, name: 'Harim Lopez', specialty: 'Teclado' }
-            ];
-            
-            const optionsHTML = teachers.map(teacher => 
-                `<option value="${teacher.id}">${teacher.name} - ${teacher.specialty}</option>`
-            ).join('');
-            
-            if (newTeacherSelect) {
-                newTeacherSelect.innerHTML = '<option value="">Selecciona maestro</option>' + optionsHTML;
-            }
-            if (editTeacherSelect) {
-                editTeacherSelect.innerHTML = '<option value="">Selecciona maestro</option>' + optionsHTML;
-            }
-            
-            console.log('✅ Maestros cargados en selects');
-        }
-    } catch (error) {
-        console.error('❌ Error cargando maestros:', error);
     }
 }
 
