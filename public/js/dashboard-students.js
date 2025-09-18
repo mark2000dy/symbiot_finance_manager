@@ -30,6 +30,58 @@ function verifyStudentsElements() {
     return true;
 }
 
+// Funciones del dashboard original que faltan en el modular
+function getFormattedNextPaymentDate(student) {
+    try {
+        if (student.estatus === 'Baja') {
+            return '<span class="text-muted">No aplica</span>';
+        }
+        
+        const nextPaymentDate = new Date(student.proximo_pago || student.fecha_ultimo_pago);
+        if (isNaN(nextPaymentDate)) {
+            return '<span class="text-muted">Sin fecha</span>';
+        }
+        
+        const formattedDate = nextPaymentDate.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: 'short',
+            year: '2-digit'
+        });
+        
+        return formattedDate;
+    } catch (error) {
+        return '<span class="text-muted">Error</span>';
+    }
+}
+
+function getPaymentStatusBadge(student) {
+    if (student.estatus === 'Baja') {
+        return '<span class="badge bg-secondary">No aplica</span>';
+    }
+    
+    try {
+        const today = new Date();
+        const nextPayment = new Date(student.proximo_pago || student.fecha_ultimo_pago);
+        
+        if (isNaN(nextPayment)) {
+            return '<span class="badge bg-warning">Sin fecha</span>';
+        }
+        
+        const diffTime = nextPayment - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < -5) {
+            return '<span class="badge bg-danger">Vencido</span>';
+        } else if (diffDays >= -5 && diffDays <= 3) {
+            return '<span class="badge bg-warning">Próximo</span>';
+        } else {
+            return '<span class="badge bg-success">Al corriente</span>';
+        }
+    } catch (error) {
+        return '<span class="badge bg-secondary">Error</span>';
+    }
+}
+
 // Función del dashboard original para formatear fechas correctamente
 function getFormattedNextPaymentDate(student) {
     try {
@@ -57,6 +109,25 @@ function getFormattedNextPaymentDate(student) {
         }
     } catch (error) {
         return 'Fecha no válida';
+    }
+}
+
+function getPaymentStatusBadge(student) {
+    if (student.estatus === 'Baja') {
+        return '<span class="badge bg-secondary">No aplica</span>';
+    }
+    
+    const today = new Date();
+    const nextPayment = new Date(student.proximo_pago || student.fecha_ultimo_pago);
+    const diffTime = nextPayment - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < -5) {
+        return '<span class="badge bg-danger">Vencido</span>';
+    } else if (diffDays >= -5 && diffDays <= 3) {
+        return '<span class="badge bg-warning">Próximo</span>';
+    } else {
+        return '<span class="badge bg-success">Al corriente</span>';
     }
 }
 
@@ -197,13 +268,7 @@ async function loadStudentsList(page = 1) {
         
     } catch (error) {
         console.error('❌ Error cargando alumnos:', error);
-        // CORRECCIÓN: Verificar que el elemento existe antes de usarlo
-        const loadingElement = document.getElementById('studentsLoading');
-        if (loadingElement) {
-            loadingElement.style.display = 'block';
-        } else {
-            console.warn('⚠️ Elemento studentsLoading no encontrado');
-        }
+        showStudentsLoadingState(false);
         showStudentsEmptyState('Error cargando la lista de alumnos');
         showAlert('danger', 'Error cargando alumnos: ' + error.message);
     }
@@ -481,10 +546,6 @@ const data = result.data || [];
 
 // AGREGAR DESPUÉS DE renderizar tabla
 updateStudentsPagination();
-// Poblar filtros después de cargar datos
-populateFiltersFromData(result.data);
-
-
 
 /**
  * Renderizar paginación de alumnos
@@ -1140,7 +1201,7 @@ async function initializeStudentsModule() {
     try {
         console.log('🎓 Inicializando módulo de gestión de alumnos...');
         
-        // Poblar filtros con datos hardcodeados del original
+        // Poblar filtros con datos hardcodeados como en el original
         const teacherSelect = document.getElementById('teacherFilter');
         if (teacherSelect) {
             teacherSelect.innerHTML = `
@@ -1434,7 +1495,7 @@ function renderTransactionsTable(transactions) {
                 ${transaction.tipo === 'I' ? 'Ingreso' : 'Gasto'}
             </span></td>
             <td class="${transaction.tipo === 'I' ? 'text-success' : 'text-danger'}">
-                ${formatCurrency(transaction.total)}
+                ${formatCurrency(transaction.total || (transaction.cantidad * transaction.precio_unitario) || 0)}
             </td>
             <td>
                 <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransaction(${transaction.id})">
