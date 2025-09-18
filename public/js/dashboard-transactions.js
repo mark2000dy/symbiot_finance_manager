@@ -522,7 +522,7 @@ async function deleteTransactionFromList(transactionId) {
         
         // Confirmación
         const confirmMessage = `¿Eliminar la transacción "${transaction.concepto}"?\n\n` +
-                              `Total: ${formatCurrency(transaction.total)}\n` +
+                              `Total: ${formatCurrency(transaction.total || (transaction.cantidad * transaction.precio_unitario) || 0)}\n` +
                               `Fecha: ${formatDate(transaction.fecha)}\n\n` +
                               `Esta acción no se puede deshacer.`;
         

@@ -30,6 +30,36 @@ function verifyStudentsElements() {
     return true;
 }
 
+// Función del dashboard original para formatear fechas correctamente
+function getFormattedNextPaymentDate(student) {
+    try {
+        if (student.estatus === 'Baja') {
+            return '<span class="text-muted">No aplica</span>';
+        }
+        
+        const nextPaymentDate = new Date(student.proximo_pago || student.fecha_ultimo_pago);
+        const today = new Date();
+        const daysDiff = Math.ceil((nextPaymentDate - today) / (1000 * 60 * 60 * 24));
+        
+        // Formato dd mmm aa del original
+        const formattedDate = nextPaymentDate.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: 'short',
+            year: '2-digit'
+        });
+        
+        if (daysDiff === 0) {
+            return `${formattedDate} <small class="text-warning">(HOY)</small>`;
+        } else if (daysDiff > 0) {
+            return `${formattedDate} <small class="text-info">(en ${daysDiff} días)</small>`;
+        } else {
+            return `${formattedDate} <small class="text-danger">(hace ${Math.abs(daysDiff)} días)</small>`;
+        }
+    } catch (error) {
+        return 'Fecha no válida';
+    }
+}
+
 /**
  * Poblar filtros de maestros e instrumentos al inicializar el widget
  */
@@ -416,7 +446,7 @@ function renderStudentsTable() {
     if (!tableBody) return;
     
     if (!studentsData || studentsData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3">No hay alumnos</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" class="text-center py-3">No hay alumnos</td></tr>';
         return;
     }
     
@@ -433,7 +463,8 @@ function renderStudentsTable() {
                     ${student.estatus === 'Activo' ? '✅ Activo' : '❌ Baja'}
                 </span>
             </td>
-            <td>${getNextPaymentDate(student)}</td>
+            <td>${getFormattedNextPaymentDate(student)}</td>
+            <td>${getPaymentStatusBadge(student)}</td>
             <td>
                 <button class="btn btn-sm btn-outline-info me-1" onclick="viewStudentDetail(${student.id})" title="Ver detalle">
                     <i class="fas fa-eye"></i>
@@ -1109,11 +1140,35 @@ async function initializeStudentsModule() {
     try {
         console.log('🎓 Inicializando módulo de gestión de alumnos...');
         
-        // Cargar maestros para los selects
-        await initializeStudentFilters();
+        // Poblar filtros con datos hardcodeados del original
+        const teacherSelect = document.getElementById('teacherFilter');
+        if (teacherSelect) {
+            teacherSelect.innerHTML = `
+                <option value="">👨‍🏫 Todos los Maestros</option>
+                <option value="Hugo Vazquez">🎸 Hugo Vazquez</option>
+                <option value="Julio Olvera">🥁 Julio Olvera</option>
+                <option value="Demian Andrade">🥁 Demian Andrade</option>
+                <option value="Irwin Hernandez">🎸 Irwin Hernandez</option>
+                <option value="Nahomy Perez">🎤 Nahomy Perez</option>
+                <option value="Luis Blanquet">🎸 Luis Blanquet</option>
+                <option value="Manuel Reyes">🎹 Manuel Reyes</option>
+                <option value="Harim Lopez">🎹 Harim Lopez</option>
+            `;
+        }
+        
+        const instrumentSelect = document.getElementById('instrumentFilter');
+        if (instrumentSelect) {
+            instrumentSelect.innerHTML = `
+                <option value="">🎵 Todos</option>
+                <option value="Guitarra">🎸 Guitarra</option>
+                <option value="Teclado">🎹 Teclado</option>
+                <option value="Batería">🥁 Batería</option>
+                <option value="Bajo">🎸 Bajo</option>
+                <option value="Canto">🎤 Canto</option>
+            `;
+        }
         
         console.log('✅ Módulo de alumnos inicializado');
-        
     } catch (error) {
         console.error('❌ Error inicializando módulo de alumnos:', error);
     }
