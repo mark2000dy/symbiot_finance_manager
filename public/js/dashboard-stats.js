@@ -738,6 +738,12 @@ window.formatCurrency = formatCurrency;
 
 // Funciones faltantes críticas
 window.loadCompanyFilterFromURL = loadCompanyFilterFromURL;
+// CORRECCIÓN: Verificar que la función se exportó correctamente
+if (typeof window.loadCompanyFilterFromURL !== 'function') {
+    console.error('❌ loadCompanyFilterFromURL no se exportó correctamente');
+} else {
+    console.log('✅ loadCompanyFilterFromURL disponible globalmente');
+}
 window.startStatsAutoRefresh = startStatsAutoRefresh;
 window.showRockstarSkullIndicators = showRockstarSkullIndicators;
 window.hideRockstarSkullIndicators = hideRockstarSkullIndicators;

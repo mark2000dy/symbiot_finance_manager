@@ -49,13 +49,29 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
         console.log('📋 FASE 2: Cargando información del usuario...');
         await loadAndDisplayUserInfo();
 
+        // FASE 2.5: Asegurar que stats module esté completamente cargado
+        console.log('📋 FASE 2.5: Verificando módulo Stats...');
+        let statsRetries = 0;
+        while (typeof window.loadCompanyFilterFromURL !== 'function' && statsRetries < 10) {
+            console.log(`⏳ Esperando módulo Stats... (intento ${statsRetries + 1})`);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            statsRetries++;
+        }
+
+        if (typeof window.loadCompanyFilterFromURL !== 'function') {
+            console.warn('⚠️ loadCompanyFilterFromURL no disponible después de esperar');
+        }
+
         // FASE 3: Inicializar selector de empresa
         console.log('📋 FASE 3: Inicializando selector de empresa...');
         initializeCompanySelector();
         
-        // FASE 4: Configurar filtros desde URL
-        console.log('📋 FASE 3: Configurando filtros desde URL...');
-        loadCompanyFilterFromURL();
+        // FASE 4: Configurar filtros desde URL (con verificación)
+        if (typeof window.loadCompanyFilterFromURL === 'function') {
+            window.loadCompanyFilterFromURL();
+        } else {
+            console.warn('⚠️ loadCompanyFilterFromURL no disponible, omitiendo configuración de URL');
+        }
         
         // FASE 5: Inicializar modales y UI
         console.log('📋 FASE 4: Inicializando interfaz de usuario...');
@@ -115,7 +131,7 @@ function verifyModulesLoaded() {
         { name: 'Core', check: () => window.dashboardCoreLoaded },
         { name: 'API', check: () => typeof window.apiRequest === 'function' },
         { name: 'Auth', check: () => typeof window.checkAuthentication === 'function' },
-        { name: 'Stats', check: () => window.dashboardStatsLoaded === true },
+        { name: 'Stats', check: () => typeof window.loadDashboardData === 'function' && typeof window.loadCompanyFilterFromURL === 'function' },
         { name: 'Transactions', check: () => typeof window.loadRecentTransactions === 'function' },
         { name: 'Students', check: () => typeof window.loadStudentsList === 'function' },
         { name: 'Payments', check: () => typeof window.refreshPaymentAlerts === 'function' },

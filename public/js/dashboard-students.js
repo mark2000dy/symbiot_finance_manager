@@ -84,6 +84,9 @@ async function loadStudentsList(page = 1) {
             currentStudentsPage = page;
             totalStudentsPages = result.pagination?.total_pages || 1;
             totalStudentsRecords = result.pagination?.total_records || 0;
+
+            // CORRECCIÓN: Definir response para evitar error línea 453
+            const response = result;
             
             console.log(`✅ Página ${page} de ${totalStudentsPages} cargada`);
             
@@ -449,6 +452,8 @@ function renderStudentsTable() {
         `;
     }).join('');
 }
+
+const data = result.data || [];
 
 // Poblar filtros después de cargar datos
 populateFiltersFromData(data.data);
