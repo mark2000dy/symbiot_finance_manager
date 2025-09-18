@@ -514,7 +514,7 @@ export const transaccionesController = {
             precio_mensual: precio_mensual ? parseFloat(precio_mensual) : null,
             forma_pago: forma_pago || null,
             domiciliado: domiciliado === true || domiciliado === 'true',
-            titular_domicilado: titular_domicilado || null,
+            titular_domicilado: nombre_domiciliado || null,
             empresa_id: parseInt(empresa_id)
         };
 

@@ -104,6 +104,8 @@ async function loadStudentsList(page = 1) {
                 // Renderizar tabla y paginación
                 renderStudentsTable();
                 renderStudentsPagination();
+                // Poblar filtros después de cargar datos
+                populateFiltersFromData(result.data);
                 
                 // Actualizar contadores si existen
                 const filteredCountElement = document.getElementById('filteredCount');
@@ -379,22 +381,13 @@ function renderStudentsTable() {
     }
     
     if (!studentsData || studentsData.length === 0) {
-        tableBody.innerHTML = '';
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-3">No hay alumnos</td></tr>';
         return;
     }
     
     tableBody.innerHTML = studentsData.map(student => {
-        const age = student.edad || 'N/A';
         const teacherName = getTeacherName(student.maestro_id) || 'Sin asignar';
-        const classIcon = getClassIcon(student.clase);
-        const classColor = getClassColor(student.clase);
-        const enrollmentDate = student.fecha_inscripcion ? formatDate(student.fecha_inscripcion) : 'Sin fecha';
-        const monthlyFee = student.precio_mensual ? formatCurrency(student.precio_mensual) : 'Sin definir';
-        
-        // Calcular próximo pago y estado
         const paymentInfo = calculateStudentPaymentInfo(student);
-        
-        // Estado del alumno
         const statusBadge = student.estatus === 'Activo' 
             ? '<span class="badge bg-success">✅ Activo</span>'
             : '<span class="badge bg-danger">❌ Baja</span>';
@@ -405,34 +398,25 @@ function renderStudentsTable() {
                     <strong>${student.nombre}</strong>
                     ${student.telefono ? `<br><small class="text-muted">${student.telefono}</small>` : ''}
                 </td>
-                <td>${age}</td>
                 <td>
-                    <small>${teacherName}</small>
-                </td>
-                <td>
-                    <span class="badge bg-${classColor}">
-                        <i class="${classIcon} me-1"></i>${student.clase || 'Sin clase'}
+                    <span class="badge bg-primary">
+                        <i class="fas fa-music me-1"></i>${student.clase || 'Sin clase'}
                     </span>
                 </td>
                 <td>
-                    <small>${enrollmentDate}</small>
-                </td>
-                <td>
-                    <strong>${monthlyFee}</strong>
-                </td>
-                <td>
-                    <small>${paymentInfo.nextPaymentDate}</small>
-                </td>
-                <td>
-                    ${paymentInfo.alertBadge}
+                    <small>${teacherName}</small>
                 </td>
                 <td>
                     ${statusBadge}
                 </td>
                 <td>
+                    <small>${paymentInfo.nextPaymentDate}</small><br>
+                    ${paymentInfo.alertBadge}
+                </td>
+                <td>
                     <div class="btn-group" role="group">
                         <button class="btn btn-sm btn-outline-primary" 
-                                onclick="showStudentDetail(${student.id})" 
+                                onclick="viewStudentDetail(${student.id})" 
                                 title="Ver detalle del alumno">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -455,7 +439,8 @@ function renderStudentsTable() {
 
 const data = result.data || [];
 
-// AGREGAR DESPUÉS DE renderizar tabla (línea ~680)
+// AGREGAR DESPUÉS DE renderizar tabla
+updateStudentsPagination();
 // Poblar filtros después de cargar datos
 populateFiltersFromData(result.data);
 
@@ -508,20 +493,20 @@ function populateFiltersFromData(studentsData) {
  * Renderizar paginación de alumnos
  */
 function renderStudentsPagination() {
-    const paginationContainer = document.getElementById('studentsPagination');
-    if (!paginationContainer) {
-        console.warn('⚠️ Contenedor studentsPagination no encontrado - widget no disponible');
+    const paginationContainer = document.getElementById('studentsPaginationList');
+    const paginationWrapper = document.getElementById('studentsPaginationContainer');
+    
+    if (!paginationContainer || !paginationWrapper) {
+        console.warn('⚠️ Contenedores de paginación no encontrados');
         return;
     }
 
-    const paginationNav = document.getElementById('studentsPaginationContainer') || document.getElementById('studentsPaginationContainer')
-    
     if (totalStudentsPages <= 1) {
-        paginationNav.style.display = 'none';
+        paginationWrapper.style.display = 'none';
         return;
     }
     
-    paginationNav.style.display = 'block';
+    paginationWrapper.style.display = 'block';
     
     let paginationHTML = '';
     
@@ -561,6 +546,20 @@ function renderStudentsPagination() {
     }
     
     paginationContainer.innerHTML = paginationHTML;
+    
+    // Actualizar información de paginación
+    const showingFrom = document.getElementById('studentsShowingFrom');
+    const showingTo = document.getElementById('studentsShowingTo');
+    const totalRecords = document.getElementById('studentsTotalRecords');
+    
+    if (showingFrom && showingTo && totalRecords) {
+        const startRecord = totalStudentsRecords > 0 ? ((currentStudentsPage - 1) * studentsPerPage) + 1 : 0;
+        const endRecord = Math.min(currentStudentsPage * studentsPerPage, totalStudentsRecords);
+        
+        showingFrom.textContent = startRecord;
+        showingTo.textContent = endRecord;
+        totalRecords.textContent = totalStudentsRecords;
+    }
 }
 
 /**
@@ -892,53 +891,39 @@ function toggleNewStudentDomiciliadoName() {
 /**
  * Editar alumno - cargar datos en modal
  */
-async function editStudent(studentId) {
-    console.log('✏️ Editando alumno ID:', studentId);
+async function editStudent(id) {
+    console.log('✏️ Editando alumno:', id);
     
     try {
-        // Buscar datos del estudiante
-        const student = studentsData.find(s => s.id == studentId);
+        // Obtener datos del alumno desde la tabla actual
+        const student = studentsData.find(s => s.id === id);
         if (!student) {
-            showAlert('error', 'Alumno no encontrado');
+            showAlert('warning', 'Alumno no encontrado en los datos actuales');
             return;
         }
         
-        // Verificar modal
-        let modalElement = document.getElementById('editStudentModal');
-        if (!modalElement) {
-            console.error('❌ Modal editStudentModal no encontrado');
-            showAlert('error', 'Modal de edición no disponible');
-            return;
-        }
+        // Prellenar formulario de edición (IDs del HTML original)
+        document.getElementById('editStudentId').value = student.id;
+        document.getElementById('editStudentName').value = student.nombre || '';
+        document.getElementById('editStudentAge').value = student.edad || '';
+        document.getElementById('editStudentPhone').value = student.telefono || '';
+        document.getElementById('editStudentEmail').value = student.email || '';
+        document.getElementById('editStudentEnrollmentDate').value = student.fecha_inscripcion || '';
+        document.getElementById('editStudentInstrument').value = student.clase || '';
+        document.getElementById('editStudentTeacher').value = student.maestro_id || '';
+        document.getElementById('editStudentSchedule').value = student.horario || '';
+        document.getElementById('editStudentStatus').value = student.estatus || 'Activo';
+        document.getElementById('editStudentPromotion').value = student.promocion || '';
+        document.getElementById('editStudentMonthlyFee').value = student.precio_mensual || '';
+        document.getElementById('editStudentPaymentMethod').value = student.forma_pago || '';
+        document.getElementById('editStudentDomiciled').value = student.domiciliado ? 'Si' : 'No';
+        document.getElementById('editStudentDomiciliedName').value = student.titular_domicilado || '';
         
-        // Crear contenido si está vacío
-        if (!modalElement.querySelector('.modal-dialog')) {
-            modalElement.innerHTML = createEditStudentModalHTML();
-        }
-        
-        // Llenar formulario con datos del alumno
-        const form = modalElement.querySelector('#editStudentForm');
-        if (form) {
-            const fields = {
-                'editStudentName': student.nombre,
-                'editStudentAge': student.edad,
-                'editStudentInstrument': student.clase,
-                'editStudentTeacher': student.maestro,
-                'editStudentSchedule': student.horario,
-                'editStudentStatus': student.estatus
-            };
-            
-            Object.entries(fields).forEach(([fieldId, value]) => {
-                const field = form.querySelector(`#${fieldId}`);
-                if (field) field.value = value || '';
-            });
-        }
-        
-        // Guardar ID para edición
-        modalElement.dataset.studentId = studentId;
+        // Configurar campo domiciliado
+        toggleDomiciliadoName();
         
         // Mostrar modal
-        const modal = new bootstrap.Modal(modalElement);
+        const modal = new bootstrap.Modal(document.getElementById('editStudentModal'));
         modal.show();
         
     } catch (error) {
@@ -948,7 +933,7 @@ async function editStudent(studentId) {
 }
 
 // AGREGAR DESPUÉS DE editStudent:
-function showStudentDetail(studentId) {
+function viewStudentDetail(studentId) {
     console.log('👁️ Mostrando detalle del alumno:', studentId);
     
     try {
@@ -958,20 +943,80 @@ function showStudentDetail(studentId) {
             return;
         }
         
+        // Obtener modal existente
         let modalElement = document.getElementById('studentDetailModal');
         if (!modalElement) {
             console.error('❌ Modal studentDetailModal no encontrado');
-            showAlert('error', 'Modal de detalle no disponible');
             return;
         }
         
         // Crear contenido dinámico del modal
-        if (!modalElement.querySelector('.modal-dialog')) {
-            modalElement.innerHTML = createStudentDetailModalHTML();
-        }
-        
-        // Llenar datos del alumno
-        fillStudentDetailModal(modalElement, student);
+        modalElement.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content" style="background: rgba(25, 28, 36, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-white">
+                            <i class="fas fa-user me-2"></i>Información del Alumno
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-white"><i class="fas fa-user me-2"></i>Información Personal</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td><strong>Nombre:</strong></td><td>${student.nombre}</td></tr>
+                                    <tr><td><strong>Edad:</strong></td><td>${student.edad || 'No especificada'}</td></tr>
+                                    <tr><td><strong>Teléfono:</strong></td><td>${student.telefono || 'No registrado'}</td></tr>
+                                    <tr><td><strong>Email:</strong></td><td>${student.email || 'No registrado'}</td></tr>
+                                    <tr><td><strong>Estatus:</strong></td><td>
+                                        <span class="badge ${student.estatus === 'Activo' ? 'bg-success' : 'bg-danger'}">
+                                            ${student.estatus}
+                                        </span>
+                                    </td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-white"><i class="fas fa-music me-2"></i>Información Académica</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td><strong>Instrumento:</strong></td><td>${student.clase || 'No especificado'}</td></tr>
+                                    <tr><td><strong>Maestro:</strong></td><td>${getTeacherName(student.maestro_id) || 'Sin asignar'}</td></tr>
+                                    <tr><td><strong>Horario:</strong></td><td>${student.horario || 'Sin definir'}</td></tr>
+                                    <tr><td><strong>Fecha de Inscripción:</strong></td><td>${student.fecha_inscripcion ? formatDate(student.fecha_inscripcion) : 'No registrada'}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-white"><i class="fas fa-dollar-sign me-2"></i>Información de Pagos</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td><strong>Mensualidad:</strong></td><td>${student.precio_mensual ? formatCurrency(student.precio_mensual) : 'No definida'}</td></tr>
+                                    <tr><td><strong>Forma de Pago:</strong></td><td>${student.forma_pago || 'No especificada'}</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-white"><i class="fas fa-chart-line me-2"></i>Historial de Pagos</h6>
+                                <div id="chartLoadingState" class="text-center py-3" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                                </div>
+                                <div class="text-muted">
+                                    <small>Historial de pagos disponible próximamente</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="editStudent(${student.id}); bootstrap.Modal.getInstance(document.getElementById('studentDetailModal')).hide();">
+                            <i class="fas fa-edit me-1"></i>Editar
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
         
         // Mostrar modal
         const modal = new bootstrap.Modal(modalElement);
@@ -1415,6 +1460,35 @@ function renderTransactionsTable(transactions) {
     `).join('');
 }
 
+/**
+ * Cargar historial de pagos (función del original)
+ */
+async function loadPaymentHistory(studentId, studentName) {
+    try {
+        console.log(`📊 Cargando historial de pagos para alumno ${studentId}`);
+        
+        document.getElementById('chartLoadingState').style.display = 'block';
+        
+        // Obtener datos reales del backend
+        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`);
+        const data = await response.json();
+        
+        document.getElementById('chartLoadingState').style.display = 'none';
+        
+        if (data.success && data.data) {
+            // Crear gráfico con Chart.js (si está disponible)
+            if (typeof Chart !== 'undefined') {
+                // Implementar gráfico real
+                console.log('📈 Datos de historial:', data.data);
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cargando historial:', error);
+        document.getElementById('chartLoadingState').style.display = 'none';
+    }
+}
+
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
@@ -1447,5 +1521,8 @@ window.setClassDistributionDataOriginal = function(data) {
     classDistributionData = window.classDistributionData;
     console.log('💾 classDistributionData sincronizada:', classDistributionData.length, 'clases');
 };
+
+window.viewStudentDetail = viewStudentDetail;
+window.loadPaymentHistory = loadPaymentHistory;
 
 console.log('✅ Dashboard Students Module cargado - Todas las funciones disponibles');
