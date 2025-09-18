@@ -732,7 +732,11 @@ router.get('/balance', async (req, res) => {
 router.get('/alertas-pagos', async (req, res) => {
     try {
         console.log('📅 Calculando alertas de pagos...');
-        
+        console.log('🔍 Verificando pagos recientes para filtrar alertas...');
+        console.log('📊 Configuración de alertas:');
+        console.log('  - Próximos a vencer: 0-3 días antes de fecha de corte');
+        console.log('  - Vencidos: más de 5 días después de fecha de corte');
+        console.log('  - Se excluyen alumnos con pagos recientes');
         // OBTENER ALUMNOS REALES DE LA BASE DE DATOS
         console.log('🔍 Verificando datos de alumnos...');
 
@@ -794,25 +798,58 @@ router.get('/alertas-pagos', async (req, res) => {
             vencidos: []
         };
 
-        alumnos.forEach(alumno => {
+        // Procesar cada alumno y verificar pagos recientes
+        for (const alumno of alumnos) {
             const fechaInscripcion = new Date(alumno.fecha_inscripcion);
-            const diaCorte = fechaInscripcion.getDate(); // Día del mes de inscripción = día de corte
+            const diaCorte = fechaInscripcion.getDate();
             
             // Calcular próxima fecha de corte basada en el día de inscripción
             const hoy = new Date();
             const mesActual = hoy.getMonth();
             const anoActual = hoy.getFullYear();
             
-            // Próxima fecha de corte en el mes actual
-            let proximaFechaCorte = new Date(anoActual, mesActual, diaCorte);
-            
-            // Si la fecha de corte del mes actual ya pasó, usar la del próximo mes
-            if (proximaFechaCorte < hoy) {
+            // Calcular fecha de corte del mes ACTUAL (no próximo)
+            const fechaCorteActual = new Date(anoActual, mesActual, diaCorte);
+            let proximaFechaCorte = new Date(fechaCorteActual);
+
+            // Calcular días transcurridos desde la fecha de corte actual
+            const diasDesdeFechaCorte = Math.ceil((hoy - fechaCorteActual) / (1000 * 60 * 60 * 24));
+
+            // Si la fecha de corte ya pasó, próxima fecha será el próximo mes
+            if (fechaCorteActual < hoy) {
                 proximaFechaCorte.setMonth(proximaFechaCorte.getMonth() + 1);
             }
-            
+
             const diasHastaCorte = Math.ceil((proximaFechaCorte - hoy) / (1000 * 60 * 60 * 24));
             
+            // NUEVO: Buscar el último pago del alumno y comparar vs fecha de corte
+            const ultimoPago = await executeQuery(`
+                SELECT fecha, concepto
+                FROM transacciones 
+                WHERE tipo = 'I' 
+                    AND empresa_id = 1 
+                    AND concepto LIKE ?
+                ORDER BY fecha DESC
+                LIMIT 1
+            `, [`%${alumno.nombre}%`]);
+
+            let debeAparecerEnAlertas = false;
+
+            if (ultimoPago.length === 0) {
+                // No tiene pagos registrados, verificar según fecha de corte
+                debeAparecerEnAlertas = true;
+            } else {
+               // Tiene pagos, verificar si el último pago fue antes de la fecha de corte actual
+                const fechaUltimoPago = new Date(ultimoPago[0].fecha);
+
+                // LÓGICA CORREGIDA: Si han pasado más de 5 días desde la fecha de corte actual
+                // y el último pago fue antes de esa fecha de corte
+                if (diasDesdeFechaCorte > 5 && fechaUltimoPago < fechaCorteActual) {
+                    debeAparecerEnAlertas = true;
+                }
+            }
+
+            // Solo incluir en alertas si debe aparecer según la lógica de pagos
             // PRÓXIMOS A VENCER: 3 días o menos antes de fecha de corte
             if (diasHastaCorte >= 0 && diasHastaCorte <= 3) {
                 alertas.proximos_vencer.push({
@@ -821,15 +858,15 @@ router.get('/alertas-pagos', async (req, res) => {
                     fecha_proximo_pago: proximaFechaCorte.toISOString().split('T')[0]
                 });
             }
-            // VENCIDOS: Más de 5 días después de la fecha de corte
-            else if (diasHastaCorte < -5) {
+            // VENCIDOS: Más de 5 días después de la fecha de corte actual
+            else if (diasDesdeFechaCorte > 5) {
                 alertas.vencidos.push({
                     ...alumno,
-                    dias_vencido: Math.abs(diasHastaCorte),
+                    dias_vencido: diasDesdeFechaCorte,
                     fecha_proximo_pago: proximaFechaCorte.toISOString().split('T')[0]
                 });
             }
-        });
+        }
         
         res.json({
             success: true,

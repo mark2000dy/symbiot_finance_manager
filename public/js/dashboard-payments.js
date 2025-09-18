@@ -49,9 +49,8 @@ async function refreshPaymentAlerts() {
             
             if (proximos_vencer.length > 0) {
                 proximos_vencer.slice(0, 10).forEach(alumno => {
-                    const fechaProxRaw = alumno.proximo_pago || alumno.next_payment_date;
-                    const nextDate = fechaProxRaw ? new Date(fechaProxRaw) : getNextPaymentDate(alumno);
-                    const daysUntilDue = nextDate ? daysBetweenDates(new Date(), nextDate) : 'N/A';
+                    // Usar datos directos del backend
+                    const diasRestantes = alumno.dias_restantes !== undefined ? alumno.dias_restantes : 'N/A';
                     
                     alertsHTML += `
                         <div class="alert-item d-flex justify-content-between align-items-center mb-2">
@@ -60,7 +59,7 @@ async function refreshPaymentAlerts() {
                                 <small class="text-muted">${alumno.clase || 'Sin clase'}</small>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-warning">${daysUntilDue} días</span>
+                                <span class="badge bg-warning">${diasRestantes} días</span>
                             </div>
                         </div>
                     `;
@@ -90,9 +89,8 @@ async function refreshPaymentAlerts() {
             
             if (vencidos.length > 0) {
                 vencidos.slice(0, 10).forEach(alumno => {
-                    const fechaProxRaw = alumno.proximo_pago || alumno.next_payment_date;
-                    const nextDate = fechaProxRaw ? new Date(fechaProxRaw) : getNextPaymentDate(alumno);
-                    const daysOverdue = nextDate ? daysBetweenDates(nextDate, new Date()) : 'N/A';
+                    // Usar datos directos del backend
+                    const diasVencidos = alumno.dias_vencido !== undefined ? alumno.dias_vencido : 'N/A';
                     
                     alertsHTML += `
                         <div class="alert-item d-flex justify-content-between align-items-center mb-2">
@@ -101,7 +99,7 @@ async function refreshPaymentAlerts() {
                                 <small class="text-muted">${alumno.clase || 'Sin clase'}</small>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-danger">${daysOverdue} días</span>
+                                <span class="badge bg-danger">${diasVencidos} días</span>
                             </div>
                         </div>
                     `;
@@ -263,6 +261,9 @@ async function getPaymentAlertsummary() {
         const data = await response.json();
         
         if (data.success) {
+            console.log('🔍 Datos recibidos del backend:', data.data);
+            console.log('📊 Próximos a vencer:', data.data.proximos_vencer);
+            console.log('📊 Vencidos:', data.data.vencidos);
             const proximos = Array.isArray(data.data.proximos_vencer) ? data.data.proximos_vencer : [];
             const vencidos = Array.isArray(data.data.vencidos) ? data.data.vencidos : [];
             
