@@ -455,12 +455,9 @@ function renderStudentsTable() {
 
 const data = result.data || [];
 
-// Poblar filtros después de cargar datos
-populateFiltersFromData(data.data);
-
 // AGREGAR DESPUÉS DE renderizar tabla (línea ~680)
 // Poblar filtros después de cargar datos
-populateFiltersFromData(data.data);
+populateFiltersFromData(result.data);
 
 // AGREGAR ESTA NUEVA FUNCIÓN antes de loadStudentsList:
 function populateFiltersFromData(studentsData) {

@@ -86,6 +86,22 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
         console.log('📋 FASE 6: Cargando transacciones recientes...');
         if (typeof loadRecentTransactions === 'function') {
             await loadRecentTransactions(1);
+            // CORRECCIÓN: Debug de elementos DOM de transacciones
+            const transactionsElements = {
+                tbody: document.getElementById('transactionsBody') || document.getElementById('tableBody'),
+                table: document.getElementById('transactionsTable') || document.querySelector('.table-responsive'),
+                empty: document.getElementById('emptyState')
+            };
+
+            console.log('🔍 Elementos de transacciones encontrados:', {
+                tbody: !!transactionsElements.tbody,
+                table: !!transactionsElements.table,
+                empty: !!transactionsElements.empty
+            });
+
+            if (!transactionsElements.tbody) {
+                console.error('❌ CRÍTICO: Elemento tbody de transacciones no encontrado');
+            }
         } else {
             console.warn('⚠️ Función loadRecentTransactions no disponible');
         }

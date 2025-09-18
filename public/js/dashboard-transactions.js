@@ -40,6 +40,20 @@ async function loadRecentTransactions(page = 1) {
             currentPage = page;
             
             console.log(`✅ ${response.data.length} transacciones cargadas`);
+
+            // CORRECCIÓN: Verificar que los elementos DOM existan antes de renderizar
+            const tbody = document.getElementById('transactionsBody') || document.getElementById('tableBody');
+            const table = document.getElementById('transactionsTable') || document.querySelector('.table-responsive');
+
+            if (!tbody) {
+                console.warn('⚠️ Elemento tbody de transacciones no encontrado');
+                return;
+            }
+
+            if (!table) {
+                console.warn('⚠️ Elemento table de transacciones no encontrado');
+                return;
+            }
             
             // Ocultar estado de carga
             showTransactionsLoadingState(false);
