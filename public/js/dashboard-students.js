@@ -30,58 +30,6 @@ function verifyStudentsElements() {
     return true;
 }
 
-// Funciones del dashboard original que faltan en el modular
-function getFormattedNextPaymentDate(student) {
-    try {
-        if (student.estatus === 'Baja') {
-            return '<span class="text-muted">No aplica</span>';
-        }
-        
-        const nextPaymentDate = new Date(student.proximo_pago || student.fecha_ultimo_pago);
-        if (isNaN(nextPaymentDate)) {
-            return '<span class="text-muted">Sin fecha</span>';
-        }
-        
-        const formattedDate = nextPaymentDate.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: 'short',
-            year: '2-digit'
-        });
-        
-        return formattedDate;
-    } catch (error) {
-        return '<span class="text-muted">Error</span>';
-    }
-}
-
-function getPaymentStatusBadge(student) {
-    if (student.estatus === 'Baja') {
-        return '<span class="badge bg-secondary">No aplica</span>';
-    }
-    
-    try {
-        const today = new Date();
-        const nextPayment = new Date(student.proximo_pago || student.fecha_ultimo_pago);
-        
-        if (isNaN(nextPayment)) {
-            return '<span class="badge bg-warning">Sin fecha</span>';
-        }
-        
-        const diffTime = nextPayment - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays < -5) {
-            return '<span class="badge bg-danger">Vencido</span>';
-        } else if (diffDays >= -5 && diffDays <= 3) {
-            return '<span class="badge bg-warning">Próximo</span>';
-        } else {
-            return '<span class="badge bg-success">Al corriente</span>';
-        }
-    } catch (error) {
-        return '<span class="badge bg-secondary">Error</span>';
-    }
-}
-
 // Función del dashboard original para formatear fechas correctamente
 function getFormattedNextPaymentDate(student) {
     try {
@@ -89,7 +37,35 @@ function getFormattedNextPaymentDate(student) {
             return '<span class="text-muted">No aplica</span>';
         }
         
-        const nextPaymentDate = new Date(student.proximo_pago || student.fecha_ultimo_pago);
+        // ⭐ CALCULAR próximo pago basado en fecha de inscripción
+        let nextPaymentDate;
+        
+        if (student.proximo_pago && student.proximo_pago !== null) {
+            nextPaymentDate = new Date(student.proximo_pago);
+        } else if (student.fecha_ultimo_pago && student.fecha_ultimo_pago !== null) {
+            nextPaymentDate = new Date(student.fecha_ultimo_pago);
+        } else if (student.fecha_inscripcion) {
+            // ⭐ CÁLCULO BASADO EN FECHA DE INSCRIPCIÓN
+            const inscripcion = new Date(student.fecha_inscripcion);
+            const today = new Date();
+            const dayOfMonth = inscripcion.getDate();
+            
+            // Crear fecha para el mes actual con el día de inscripción
+            nextPaymentDate = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
+            
+            // Si ya pasó este mes, usar el siguiente
+            if (nextPaymentDate <= today) {
+                nextPaymentDate = new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth);
+            }
+        } else {
+            return '<span class="text-muted">Sin fecha</span>';
+        }
+        
+        // Validar que la fecha sea válida
+        if (isNaN(nextPaymentDate.getTime())) {
+            return '<span class="text-muted">Sin fecha</span>';
+        }
+        
         const today = new Date();
         const daysDiff = Math.ceil((nextPaymentDate - today) / (1000 * 60 * 60 * 24));
         
@@ -108,7 +84,8 @@ function getFormattedNextPaymentDate(student) {
             return `${formattedDate} <small class="text-danger">(hace ${Math.abs(daysDiff)} días)</small>`;
         }
     } catch (error) {
-        return 'Fecha no válida';
+        console.error('Error calculando próximo pago:', error);
+        return '<span class="text-muted">Error</span>';
     }
 }
 
@@ -128,50 +105,6 @@ function getPaymentStatusBadge(student) {
         return '<span class="badge bg-warning">Próximo</span>';
     } else {
         return '<span class="badge bg-success">Al corriente</span>';
-    }
-}
-
-/**
- * Poblar filtros de maestros e instrumentos al inicializar el widget
- */
-async function initializeStudentFilters() {
-    try {
-        console.log('🔧 Inicializando filtros de alumnos...');
-        
-        // Poblar filtro de maestros
-        const maestrosResponse = await fetch('/gastos/api/maestros');
-        if (maestrosResponse.ok) {
-            const maestrosData = await maestrosResponse.json();
-            if (maestrosData.success) {
-                const teacherSelect = document.getElementById('teacherFilter');
-                if (teacherSelect) {
-                    const teacherOptions = maestrosData.data
-                        .map(maestro => `<option value="${maestro.id}">${maestro.nombre}</option>`)
-                        .join('');
-                    teacherSelect.innerHTML = '<option value="">👨‍🏫 Todos los Maestros</option>' + teacherOptions;
-                }
-            }
-        }
-        
-        // Poblar filtro de instrumentos
-        const instrumentosResponse = await fetch('/gastos/api/instrumentos');
-        if (instrumentosResponse.ok) {
-            const instrumentosData = await instrumentosResponse.json();
-            if (instrumentosData.success) {
-                const instrumentSelect = document.getElementById('instrumentFilter');
-                if (instrumentSelect) {
-                    const instrumentOptions = instrumentosData.data
-                        .map(instrumento => `<option value="${instrumento.nombre}">${instrumento.nombre}</option>`)
-                        .join('');
-                    instrumentSelect.innerHTML = '<option value="">🎵 Todos</option>' + instrumentOptions;
-                }
-            }
-        }
-        
-        console.log('✅ Filtros de alumnos inicializados');
-        
-    } catch (error) {
-        console.error('❌ Error inicializando filtros:', error);
     }
 }
 
@@ -225,9 +158,6 @@ async function loadStudentsList(page = 1) {
             currentStudentsPage = page;
             totalStudentsPages = result.pagination?.total_pages || 1;
             totalStudentsRecords = result.pagination?.total_records || 0;
-
-            // CORRECCIÓN: Definir response para evitar error línea 453
-            const response = result;
             
             console.log(`✅ Página ${page} de ${totalStudentsPages} cargada`);
             
@@ -275,104 +205,98 @@ async function loadStudentsList(page = 1) {
 }
 
 /**
- * CORRECCIÓN CRÍTICA: Función saveNewStudent() completa
- * PROBLEMA ORIGINAL: Función estaba cortada e incompleta
+ * Guardar nuevo alumno
  */
 async function saveNewStudent() {
+    if (typeof hasPermission === 'function' && !hasPermission('create_student')) {
+        showAlert('danger', 'No tienes permisos para crear alumnos');
+        return;
+    }
     try {
         console.log('🚀 Iniciando saveNewStudent...');
         
         // Proteger contra múltiples envíos
         const submitBtn = document.querySelector('#addStudentModal .btn-success');
-        if (submitBtn.disabled) {
+        if (submitBtn && submitBtn.disabled) {
             console.log('⚠️ Envío ya en progreso...');
             return;
         }
 
-        // Deshabilitar botón y cambiar texto
-        submitBtn.disabled = true;
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Registrando...';
+        // Deshabilitar botón
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Registrando...';
+        }
 
         const form = document.getElementById('addStudentForm');
-
         if (!form.checkValidity()) {
             console.log('❌ Formulario no válido');
             form.reportValidity();
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Registrar Alumno';
+            }
             return;
         }
         
-        console.log('✅ Formulario válido, continuando...');
+        console.log('✅ Formulario válido, recopilando datos...');
         
-        // CORRECCIÓN: Recopilar datos completos del formulario
+        // Recopilar datos completos
         const studentData = {
-            nombre: document.getElementById('newStudentName').value.trim(),
-            edad: document.getElementById('newStudentAge').value ? parseInt(document.getElementById('newStudentAge').value) : null,
-            telefono: document.getElementById('newStudentPhone').value || null,
-            email: document.getElementById('newStudentEmail').value || null,
-            fecha_inscripcion: document.getElementById('newStudentEnrollmentDate').value || null,
-            clase: document.getElementById('newStudentInstrument').value || null,
-            tipo_clase: 'Individual',
-            maestro_id: document.getElementById('newStudentTeacher').value || null,
-            horario: document.getElementById('newStudentSchedule').value || null,
+            nombre: document.getElementById('newStudentName')?.value.trim() || '',
+            edad: parseInt(document.getElementById('newStudentAge')?.value) || null,
+            telefono: document.getElementById('newStudentPhone')?.value || null,
+            email: document.getElementById('newStudentEmail')?.value || null,
+            fecha_inscripcion: document.getElementById('newStudentEnrollmentDate')?.value || null,
+            clase: document.getElementById('newStudentInstrument')?.value || null,
+            tipo_clase: document.getElementById('newStudentClassType')?.value || 'Individual',
+            maestro_id: document.getElementById('newStudentTeacher')?.value || null,
+            horario: document.getElementById('newStudentSchedule')?.value || null,
             estatus: 'Activo',
-            promocion: document.getElementById('newStudentPromotion').value || null,
-            precio_mensual: document.getElementById('newStudentMonthlyFee').value ? 
-                parseFloat(document.getElementById('newStudentMonthlyFee').value) : null,
-            forma_pago: document.getElementById('newStudentPaymentMethod').value || null,
-            domiciliado: document.getElementById('newStudentDomiciled').value === 'Si',
-            titular_domicilado: document.getElementById('newStudentDomiciliedName').value || null,
+            promocion: document.getElementById('newStudentPromotion')?.value || null,
+            precio_mensual: parseFloat(document.getElementById('newStudentMonthlyFee')?.value) || null,
+            forma_pago: document.getElementById('newStudentPaymentMethod')?.value || null,
+            domiciliado: document.getElementById('newStudentDomiciled')?.value === 'Si',
+            nombre_domiciliado: document.getElementById('newStudentDomiciliedName')?.value || null,
             empresa_id: currentCompanyFilter || 1
         };
-        
-        console.log('📤 Datos a enviar:', studentData);
-        
-        // CORRECCIÓN: Llamada completa al backend
+
+        console.log('📤 Enviando datos:', studentData);
+
+        // Enviar al backend
         const response = await fetch('/gastos/api/alumnos', {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
             body: JSON.stringify(studentData)
         });
 
-        // CORRECCIÓN: Manejo correcto de errores HTTP
-        if (!response.ok) {
-            let errorMessage = `Error ${response.status}`;
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-                errorMessage = 'Error de comunicación con el servidor';
-            }
-            throw new Error(errorMessage);
-        }
-
         const result = await response.json();
-        
-        if (result.success) {
+
+        if (response.ok && result.success) {
+            console.log('✅ Alumno creado exitosamente');
             showAlert('success', `Alumno "${studentData.nombre}" registrado exitosamente`);
             
             // Cerrar modal
-            const addModal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
-            if (addModal) {
-                addModal.hide();
-            }
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
+            if (modal) modal.hide();
+            
+            // Limpiar formulario
+            form.reset();
             
             // Recargar lista
-            await loadStudentsList(currentStudentsPage);
-            
-            console.log('✅ Alumno registrado correctamente');
+            await loadStudentsList(1);
         } else {
-            throw new Error(result.message || 'Error registrando alumno');
+            throw new Error(result.message || 'Error al crear alumno');
         }
-        
+
     } catch (error) {
-        console.error('❌ Error registrando alumno:', error);
-        showAlert('danger', 'Error registrando alumno: ' + error.message);
+        console.error('❌ Error creando alumno:', error);
+        showAlert('danger', `Error: ${error.message}`);
     } finally {
-        // Restaurar botón siempre
+        // Restaurar botón
         const submitBtn = document.querySelector('#addStudentModal .btn-success');
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -542,11 +466,6 @@ function renderStudentsTable() {
     `).join('');
 }
 
-const data = result.data || [];
-
-// AGREGAR DESPUÉS DE renderizar tabla
-updateStudentsPagination();
-
 /**
  * Renderizar paginación de alumnos
  */
@@ -662,7 +581,7 @@ function showStudentsEmptyState(message = 'No se encontraron alumnos') {
     const emptyState = document.getElementById('studentsEmptyState');
     const tableContainer = document.getElementById('studentsTableContainer');
     const loadingState = document.getElementById('studentsLoadingState');
-    const paginationNav = document.getElementById('studentsPaginationContainer') || document.getElementById('studentsPaginationContainer')
+    const paginationNav = document.getElementById('studentsPaginationContainer');
     
     if (emptyState) {
         emptyState.style.display = 'block';
@@ -886,13 +805,157 @@ function getNextPaymentDate(student) {
 // ============================================================
 
 /**
+ * Crear HTML del modal de nuevo alumno
+ */
+function createAddStudentModalHTML() {
+    return `
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus me-2"></i>Nuevo Alumno
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <form id="addStudentForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Nombre Completo *
+                                </label>
+                                <input type="text" class="form-control" id="newStudentName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentAge" class="form-label">
+                                    <i class="fas fa-birthday-cake me-1"></i>Edad *
+                                </label>
+                                <input type="number" class="form-control" id="newStudentAge" min="1" max="100" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentPhone" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Teléfono
+                                </label>
+                                <input type="tel" class="form-control" id="newStudentPhone">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentEmail" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>Email
+                                </label>
+                                <input type="email" class="form-control" id="newStudentEmail">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentEnrollmentDate" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Fecha de Inscripción *
+                                </label>
+                                <input type="date" class="form-control" id="newStudentEnrollmentDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentInstrument" class="form-label">
+                                    <i class="fas fa-music me-1"></i>Instrumento *
+                                </label>
+                                <select class="form-select" id="newStudentInstrument" required>
+                                    <option value="">Selecciona instrumento</option>
+                                    <option value="Guitarra">🎸 Guitarra</option>
+                                    <option value="Teclado">🎹 Teclado</option>
+                                    <option value="Batería">🥁 Batería</option>
+                                    <option value="Bajo">🎸 Bajo</option>
+                                    <option value="Canto">🎤 Canto</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentTeacher" class="form-label">
+                                    <i class="fas fa-chalkboard-teacher me-1"></i>Maestro
+                                </label>
+                                <select class="form-select" id="newStudentTeacher">
+                                    <option value="">Sin asignar</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentSchedule" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>Horario
+                                </label>
+                                <input type="text" class="form-control" id="newStudentSchedule">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentPromotion" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>Promoción
+                                </label>
+                                <input type="text" class="form-control" id="newStudentPromotion">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentMonthlyFee" class="form-label">
+                                    <i class="fas fa-dollar-sign me-1"></i>Mensualidad *
+                                </label>
+                                <input type="number" class="form-control" id="newStudentMonthlyFee" step="0.01" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentPaymentMethod" class="form-label">
+                                    <i class="fas fa-credit-card me-1"></i>Forma de Pago
+                                </label>
+                                <select class="form-select" id="newStudentPaymentMethod">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Efectivo">💵 Efectivo</option>
+                                    <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="TPV">📱 TPV</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentDomiciled" class="form-label">
+                                    <i class="fas fa-home me-1"></i>Domiciliado
+                                </label>
+                                <select class="form-select" id="newStudentDomiciled" onchange="toggleNewStudentDomiciliadoName()">
+                                    <option value="No">No</option>
+                                    <option value="Si">Sí</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="newStudentDomiciliedName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Titular Domiciliado
+                                </label>
+                                <input type="text" class="form-control" id="newStudentDomiciliedName" disabled>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveNewStudent()">
+                        <i class="fas fa-save me-1"></i>Registrar Alumno
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
  * Mostrar modal de nuevo alumno
  */
 function showAddStudentModal() {
     console.log('➕ Mostrando modal de nuevo alumno...');
     
     try {
-        // Verificar que el modal existe
         let modalElement = document.getElementById('addStudentModal');
         if (!modalElement) {
             console.error('❌ Modal addStudentModal no encontrado en DOM');
@@ -909,6 +972,42 @@ function showAddStudentModal() {
         const form = modalElement.querySelector('#addStudentForm');
         if (form) form.reset();
         
+        // ✅ POBLAR SELECT DE MAESTROS
+        const teacherSelect = document.getElementById('newStudentTeacher');
+        if (teacherSelect) {
+            teacherSelect.innerHTML = `
+                <option value="">Sin asignar</option>
+                <option value="1">Hugo Vazquez</option>
+                <option value="2">Julio Olvera</option>
+                <option value="3">Demian Andrade</option>
+                <option value="4">Irwin Hernandez</option>
+                <option value="5">Nahomy Perez</option>
+                <option value="6">Luis Blanquet</option>
+                <option value="7">Manuel Reyes</option>
+                <option value="8">Harim Lopez</option>
+            `;
+        }
+        
+        // ✅ AGREGAR SELECT DE TIPO DE CLASE SI NO EXISTE
+        let classTypeSelect = document.getElementById('newStudentClassType');
+        if (!classTypeSelect) {
+            const teacherField = document.getElementById('newStudentTeacher');
+            if (teacherField && teacherField.parentElement) {
+                const classTypeDiv = document.createElement('div');
+                classTypeDiv.className = 'col-md-6 mb-3';
+                classTypeDiv.innerHTML = `
+                    <label for="newStudentClassType" class="form-label">
+                        <i class="fas fa-users me-1"></i>Tipo de Clase *
+                    </label>
+                    <select class="form-select" id="newStudentClassType" required>
+                        <option value="Individual">👤 Individual</option>
+                        <option value="Grupal">👥 Grupal</option>
+                    </select>
+                `;
+                teacherField.parentElement.parentElement.appendChild(classTypeDiv);
+            }
+        }
+        
         // Establecer valores por defecto
         const today = new Date().toISOString().split('T')[0];
         const enrollmentField = modalElement.querySelector('#newStudentEnrollmentDate');
@@ -917,7 +1016,7 @@ function showAddStudentModal() {
         const feeField = modalElement.querySelector('#newStudentMonthlyFee');
         if (feeField) feeField.value = '1200';
         
-        // Mostrar modal usando Bootstrap
+        // Mostrar modal
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
@@ -947,46 +1046,244 @@ function toggleNewStudentDomiciliadoName() {
 }
 
 /**
+ * Crear HTML del modal de editar alumno
+ */
+function createEditStudentModalHTML() {
+    return `
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Editar Información del Alumno
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <form id="editStudentForm">
+                        <input type="hidden" id="editStudentId">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Nombre Completo *
+                                </label>
+                                <input type="text" class="form-control" id="editStudentName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentAge" class="form-label">
+                                    <i class="fas fa-birthday-cake me-1"></i>Edad *
+                                </label>
+                                <input type="number" class="form-control" id="editStudentAge" min="1" max="100" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentPhone" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Teléfono
+                                </label>
+                                <input type="tel" class="form-control" id="editStudentPhone">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentEmail" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>Email
+                                </label>
+                                <input type="email" class="form-control" id="editStudentEmail">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentEnrollmentDate" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Fecha de Inscripción *
+                                </label>
+                                <input type="date" class="form-control" id="editStudentEnrollmentDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentInstrument" class="form-label">
+                                    <i class="fas fa-music me-1"></i>Instrumento *
+                                </label>
+                                <select class="form-select" id="editStudentInstrument" required>
+                                    <option value="">Selecciona instrumento</option>
+                                    <option value="Guitarra">🎸 Guitarra</option>
+                                    <option value="Teclado">🎹 Teclado</option>
+                                    <option value="Batería">🥁 Batería</option>
+                                    <option value="Bajo">🎸 Bajo</option>
+                                    <option value="Canto">🎤 Canto</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentTeacher" class="form-label">
+                                    <i class="fas fa-chalkboard-teacher me-1"></i>Maestro
+                                </label>
+                                <select class="form-select" id="editStudentTeacher">
+                                    <option value="">Sin asignar</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentSchedule" class="form-label">
+                                    <i class="fas fa-clock me-1"></i>Horario
+                                </label>
+                                <input type="text" class="form-control" id="editStudentSchedule">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentStatus" class="form-label">
+                                    <i class="fas fa-toggle-on me-1"></i>Estatus *
+                                </label>
+                                <select class="form-select" id="editStudentStatus" required>
+                                    <option value="Activo">✅ Activo</option>
+                                    <option value="Baja">❌ Baja</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentPromotion" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>Promoción
+                                </label>
+                                <input type="text" class="form-control" id="editStudentPromotion">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentMonthlyFee" class="form-label">
+                                    <i class="fas fa-dollar-sign me-1"></i>Mensualidad *
+                                </label>
+                                <input type="number" class="form-control" id="editStudentMonthlyFee" step="0.01" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentPaymentMethod" class="form-label">
+                                    <i class="fas fa-credit-card me-1"></i>Forma de Pago
+                                </label>
+                                <select class="form-select" id="editStudentPaymentMethod">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Efectivo">💵 Efectivo</option>
+                                    <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="TPV">📱 TPV</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentDomiciled" class="form-label">
+                                    <i class="fas fa-home me-1"></i>Domiciliado
+                                </label>
+                                <select class="form-select" id="editStudentDomiciled" onchange="toggleDomiciliadoName()">
+                                    <option value="No">No</option>
+                                    <option value="Si">Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentDomiciliedName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Titular
+                                </label>
+                                <input type="text" class="form-control" id="editStudentDomiciliedName" disabled>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="deleteStudent()">
+                        <i class="fas fa-trash me-1"></i>Eliminar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="saveStudentChanges()">
+                        <i class="fas fa-save me-1"></i>Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
  * Editar alumno - cargar datos en modal
  */
 async function editStudent(id) {
     console.log('✏️ Editando alumno:', id);
-    // VERIFICAR que el modal exista
+    
     const modalElement = document.getElementById('editStudentModal');
     if (!modalElement) {
         console.error('❌ Modal editStudentModal no encontrado');
         return;
     }
+    
     try {
-        // Obtener datos del alumno desde la tabla actual
         const student = studentsData.find(s => s.id === id);
         if (!student) {
             showAlert('warning', 'Alumno no encontrado en los datos actuales');
             return;
         }
         
-        // Prellenar formulario de edición (IDs del HTML original)
-        document.getElementById('editStudentId').value = student.id;
-        document.getElementById('editStudentName').value = student.nombre || '';
-        document.getElementById('editStudentAge').value = student.edad || '';
-        document.getElementById('editStudentPhone').value = student.telefono || '';
-        document.getElementById('editStudentEmail').value = student.email || '';
-        document.getElementById('editStudentEnrollmentDate').value = student.fecha_inscripcion || '';
-        document.getElementById('editStudentInstrument').value = student.clase || '';
-        document.getElementById('editStudentTeacher').value = student.maestro_id || '';
-        document.getElementById('editStudentSchedule').value = student.horario || '';
-        document.getElementById('editStudentStatus').value = student.estatus || 'Activo';
-        document.getElementById('editStudentPromotion').value = student.promocion || '';
-        document.getElementById('editStudentMonthlyFee').value = student.precio_mensual || '';
-        document.getElementById('editStudentPaymentMethod').value = student.forma_pago || '';
-        document.getElementById('editStudentDomiciled').value = student.domiciliado ? 'Si' : 'No';
-        document.getElementById('editStudentDomiciliedName').value = student.titular_domicilado || '';
+        // ✅ CREAR CONTENIDO DEL MODAL SI ESTÁ VACÍO
+        if (!modalElement.querySelector('.modal-dialog')) {
+            const modalHTML = createEditStudentModalHTML();
+            modalElement.innerHTML = modalHTML;
+        }
+        
+        // ✅ POBLAR SELECT DE MAESTROS
+        const teacherSelect = document.getElementById('editStudentTeacher');
+        if (teacherSelect) {
+            teacherSelect.innerHTML = `
+                <option value="">Sin asignar</option>
+                <option value="1">Hugo Vazquez</option>
+                <option value="2">Julio Olvera</option>
+                <option value="3">Demian Andrade</option>
+                <option value="4">Irwin Hernandez</option>
+                <option value="5">Nahomy Perez</option>
+                <option value="6">Luis Blanquet</option>
+                <option value="7">Manuel Reyes</option>
+                <option value="8">Harim Lopez</option>
+            `;
+        }
+        
+        // ✅ LLENAR CAMPOS CON VALIDACIÓN
+        const setFieldValue = (id, value) => {
+            const field = document.getElementById(id);
+            if (field) {
+                field.value = value || '';
+            } else {
+                console.warn(`⚠️ Campo ${id} no encontrado`);
+            }
+        };
+        
+        setFieldValue('editStudentId', student.id);
+        setFieldValue('editStudentName', student.nombre);
+        setFieldValue('editStudentAge', student.edad);
+        setFieldValue('editStudentPhone', student.telefono);
+        setFieldValue('editStudentEmail', student.email);
+        setFieldValue('editStudentEnrollmentDate', student.fecha_inscripcion);
+        setFieldValue('editStudentInstrument', student.clase);
+        setFieldValue('editStudentTeacher', student.maestro_id);
+        setFieldValue('editStudentSchedule', student.horario);
+        setFieldValue('editStudentStatus', student.estatus || 'Activo');
+        setFieldValue('editStudentPromotion', student.promocion);
+        setFieldValue('editStudentMonthlyFee', student.precio_mensual);
+        setFieldValue('editStudentPaymentMethod', student.forma_pago);
+        setFieldValue('editStudentDomiciled', student.domiciliado ? 'Si' : 'No');
+        setFieldValue('editStudentDomiciliedName', student.titular_domicilado);
         
         // Configurar campo domiciliado
         toggleDomiciliadoName();
         
+        // ✅ AGREGAR SCROLL AL MODAL
+        const modalBody = modalElement.querySelector('.modal-body');
+        if (modalBody) {
+            modalBody.style.maxHeight = '70vh';
+            modalBody.style.overflowY = 'auto';
+        }
+        
         // Mostrar modal
-        const modal = new bootstrap.Modal(document.getElementById('editStudentModal'));
+        const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
     } catch (error) {
@@ -1049,6 +1346,17 @@ function viewStudentDetail(studentId) {
                                 </table>
                             </div>
                         </div>
+                         <!-- ⭐⭐⭐ AGREGAR AQUÍ ⭐⭐⭐ -->
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+                        <div id="studentPaymentHistory" class="mt-3">
+                            <h6 class="text-white">
+                                <i class="fas fa-chart-line me-2"></i>Historial de Pagos
+                            </h6>
+                            <div class="text-center py-3">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                            </div>
+                        </div>
+                        <!-- FIN -->
                         <hr>
                         <div class="row">
                             <div class="col-md-6">
@@ -1080,6 +1388,11 @@ function viewStudentDetail(studentId) {
                 </div>
             </div>
         `;
+
+        // Cargar historial de pagos
+        setTimeout(() => {
+            showPaymentHistory(student.id, student.nombre);
+        }, 300);
         
         // Mostrar modal
         const modal = new bootstrap.Modal(modalElement);
@@ -1095,10 +1408,16 @@ function viewStudentDetail(studentId) {
  * Toggle para campo domiciliado en edición
  */
 function toggleDomiciliadoName() {
-    const domicilied = document.getElementById('editStudentDomiciled').value;
+    const domicilied = document.getElementById('editStudentDomiciled');
     const nameField = document.getElementById('editStudentDomiciliedName');
     
-    if (domicilied === 'Si') {
+    // ✅ VALIDAR QUE LOS CAMPOS EXISTAN
+    if (!domicilied || !nameField) {
+        console.warn('⚠️ Campos de domiciliado no encontrados en modal de edición');
+        return;
+    }
+    
+    if (domicilied.value === 'Si') {
         nameField.disabled = false;
         nameField.required = true;
         nameField.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
@@ -1240,46 +1559,6 @@ async function initializeStudentsModule() {
 // ============================================================
 
 /**
- * Actualizar lista de alumnos (botón Actualizar)
- */
-function refreshStudentsList() {
-    console.log('🔄 Actualizando lista de alumnos...');
-    loadStudentsList(1);
-}
-
-/**
- * Exportar lista de alumnos
- */
-function exportStudentsList() {
-    console.log('📤 Exportando lista de alumnos...');
-    showAlert('info', 'Función de exportación en desarrollo');
-}
-
-/**
- * Filtrar estudiantes (llamada desde selects)
- */
-function filterStudents() {
-    console.log('🔍 Aplicando filtros de alumnos...');
-    
-    // Obtener valores de filtros
-    const teacherFilter = document.getElementById('teacherFilter')?.value || '';
-    const statusFilter = document.getElementById('statusFilter')?.value || '';
-    const instrumentFilter = document.getElementById('instrumentFilter')?.value || '';
-    const paymentFilter = document.getElementById('paymentFilter')?.value || '';
-    
-    // Actualizar filtros globales
-    currentStudentFilters = {
-        teacherFilter,
-        statusFilter,
-        instrumentFilter,
-        paymentFilter
-    };
-    
-    // Recargar lista con filtros
-    loadStudentsList(1);
-}
-
-/**
  * Filtrar alumnos por estatus (HOMOLOGADA CON ORIGINAL)
  */
 function filterStudentsByStatus(status) {
@@ -1411,6 +1690,21 @@ function updateStatusIndicators(selectedStatus) {
 }
 
 /**
+ * Obtener icono para cada clase
+ */
+function getClassIcon(className) {
+    const icons = {
+        'Guitarra': 'fas fa-guitar',
+        'Teclado': 'fas fa-keyboard',
+        'Batería': 'fas fa-drum',
+        'Bajo': 'fas fa-guitar',
+        'Canto': 'fas fa-microphone',
+        'Piano': 'fas fa-piano'
+    };
+    return icons[className] || 'fas fa-music';
+}
+
+/**
  * Actualizar distribución de clases (HOMOLOGADA CON ORIGINAL)
  */
 function updateClassDistributionOriginal(classes) {
@@ -1535,31 +1829,160 @@ async function loadPaymentHistory(studentId, studentName) {
     }
 }
 
+/**
+ * Mostrar historial de pagos real en el modal de detalle
+ */
+async function showPaymentHistory(studentId, studentName) {
+    try {
+        console.log(`📊 Cargando historial de pagos para: ${studentName}`);
+        
+        const historyContainer = document.getElementById('studentPaymentHistory');
+        if (!historyContainer) {
+            console.warn('⚠️ Contenedor de historial no encontrado');
+            return;
+        }
+        
+        // Mostrar estado de carga
+        historyContainer.innerHTML = `
+            <h6 class="text-white">
+                <i class="fas fa-chart-line me-2"></i>Historial de Pagos
+            </h6>
+            <div class="text-center py-3">
+                <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+            </div>
+        `;
+        
+        // Obtener datos del backend
+        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`);
+        const data = await response.json();
+        
+        console.log('📥 Datos recibidos:', data); // ✅ DEBUG
+        
+        if (data.success && data.data) {
+            let html = `
+                <h6 class="text-white">
+                    <i class="fas fa-chart-line me-2"></i>Historial de Pagos (últimos 12 meses)
+                </h6>
+            `;
+            
+            // ✅ VERIFICAR ESTRUCTURA DE DATOS
+            const pagosPorMes = data.data.pagosPorMes || {};
+            const totalPagado = data.data.totalPagado || 0;
+            const totalTransacciones = data.data.totalTransacciones || 0;
+            
+            // Verificar si hay pagos
+            const hasPagos = Object.values(pagosPorMes).some(monto => parseFloat(monto) > 0);
+            
+            console.log('💰 Tiene pagos:', hasPagos, 'Total:', totalPagado); // ✅ DEBUG
+            
+            if (hasPagos || totalPagado > 0) {
+                html += '<div class="table-responsive"><table class="table table-dark table-sm">';
+                html += '<thead><tr><th>Mes/Año</th><th class="text-end">Monto</th></tr></thead>';
+                html += '<tbody>';
+                
+                // Ordenar meses del más reciente al más antiguo
+                const mesesOrdenados = Object.entries(pagosPorMes)
+                    .filter(([_, monto]) => parseFloat(monto) > 0)
+                    .sort((a, b) => {
+                        const [yearA, monthA] = a[0].split('-');
+                        const [yearB, monthB] = b[0].split('-');
+                        return (yearB - yearA) || (monthB - monthA);
+                    });
+                
+                mesesOrdenados.forEach(([mes, monto]) => {
+                    const [year, month] = mes.split('-');
+                    const fecha = new Date(year, month - 1);
+                    const mesNombre = fecha.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+                    const montoNum = parseFloat(monto);
+                    
+                    html += `
+                        <tr>
+                            <td>${mesNombre}</td>
+                            <td class="text-end text-success">
+                                <strong>$${montoNum.toFixed(2)}</strong>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                
+                // Resumen total
+                html += `
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Total pagado:</strong> $${parseFloat(totalPagado).toFixed(2)} 
+                        <span class="text-muted ms-2">(${totalTransacciones} transacciones)</span>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No se encontraron pagos registrados en los últimos 12 meses
+                    </div>
+                `;
+            }
+            
+            historyContainer.innerHTML = html;
+            
+        } else {
+            throw new Error(data.message || 'Error al obtener historial');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cargando historial:', error);
+        const historyContainer = document.getElementById('studentPaymentHistory');
+        if (historyContainer) {
+            historyContainer.innerHTML = `
+                <h6 class="text-white">
+                    <i class="fas fa-chart-line me-2"></i>Historial de Pagos
+                </h6>
+                <div class="alert alert-danger">
+                    <i class="fas fa-times-circle me-2"></i>
+                    Error al cargar el historial: ${error.message}
+                </div>
+            `;
+        }
+    }
+}
+
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
 
-// Hacer funciones disponibles globalmente
+// Funciones principales de gestión de alumnos
 window.loadStudentsList = loadStudentsList;
 window.saveNewStudent = saveNewStudent;
 window.saveStudentChanges = saveStudentChanges;
-window.filterStudents = filterStudents;
-window.showAddStudentModal = showAddStudentModal;
 window.editStudent = editStudent;
 window.deleteStudent = deleteStudent;
-window.refreshStudentsList = refreshStudentsList;
-window.exportStudentsList = exportStudentsList;
+window.viewStudentDetail = viewStudentDetail;
+window.initializeStudentsModule = initializeStudentsModule;
+
+// Funciones de modales y formularios
+window.showAddStudentModal = showAddStudentModal;
 window.toggleNewStudentDomiciliadoName = toggleNewStudentDomiciliadoName;
 window.toggleDomiciliadoName = toggleDomiciliadoName;
-window.initializeStudentsModule = initializeStudentsModule;
-window.refreshStudentsList = refreshStudentsList;
-window.exportStudentsList = exportStudentsList;
-window.showAddStudentModal = showAddStudentModal;
+
+// Funciones de filtros y búsqueda
 window.filterStudents = filterStudents;
 window.filterStudentsByStatus = filterStudentsByStatus;
+
+// Funciones de acciones adicionales
+window.refreshStudentsList = refreshStudentsList;
+window.exportStudentsList = exportStudentsList;
+
+// Funciones de visualización y reportes
+window.loadPaymentHistory = loadPaymentHistory;
+window.showPaymentHistory = showPaymentHistory;
 window.renderTransactionsTable = renderTransactionsTable;
 
-// Funciones específicas del widget de alumnos (HOMOLOGADAS CON ORIGINAL)
+// Exponer funciones globalmente
+window.createEditStudentModalHTML = createEditStudentModalHTML;
+window.createAddStudentModalHTML = createAddStudentModalHTML;
+
+// Funciones del widget de alumnos (homologadas con original)
 window.updateStatusIndicators = updateStatusIndicators;
 window.updateClassDistributionOriginal = updateClassDistributionOriginal;
 window.setClassDistributionDataOriginal = function(data) {
@@ -1567,8 +1990,5 @@ window.setClassDistributionDataOriginal = function(data) {
     classDistributionData = window.classDistributionData;
     console.log('💾 classDistributionData sincronizada:', classDistributionData.length, 'clases');
 };
-
-window.viewStudentDetail = viewStudentDetail;
-window.loadPaymentHistory = loadPaymentHistory;
 
 console.log('✅ Dashboard Students Module cargado - Todas las funciones disponibles');

@@ -288,10 +288,15 @@ async function initializeSpecificModules() {
         // Configurar listeners de cálculo
         setupCalculationListeners();
         
-        // Inicializar widget de alumnos si corresponde Y existe el contenedor
+        // ⭐ SIEMPRE inicializar filtros de alumnos (independientemente del widget)
+        console.log('🎓 Inicializando filtros de alumnos...');
+        await initializeStudentsModule();
+
+        // Solo cargar datos si el widget está visible
         if ((currentCompanyFilter === '1' || !currentCompanyFilter) && document.getElementById('studentsContainer')) {
-            console.log('🎓 Inicializando módulo de alumnos...');
-            await initializeStudentsModule();
+            console.log('📊 Widget de alumnos visible, cargando lista...');
+            // Widget existe, no hacer nada adicional aquí
+            // loadStudentsList() se ejecuta desde handleCompanyChange() 
             
             // Inicializar alertas de pagos solo si existe el contenedor
             if (document.getElementById('paymentAlertsContainer')) {

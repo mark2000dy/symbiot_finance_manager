@@ -1082,19 +1082,54 @@ export const transaccionesController = {
             }
             
             if (maestro_id) {
-            // Si es un número, buscar por ID, si no por nombre del maestro
-            if (!isNaN(maestro_id)) {
-                whereClause += ' AND a.maestro_id = ?';
-                params.push(maestro_id);
-            } else {
-                whereClause += ' AND m.nombre = ?';
-                params.push(maestro_id);
+                // Si es un número, buscar por ID, si no por nombre del maestro
+                if (!isNaN(maestro_id)) {
+                    whereClause += ' AND a.maestro_id = ?';
+                    params.push(maestro_id);
+                } else {
+                    whereClause += ' AND m.nombre = ?';
+                    params.push(maestro_id);
+                }
             }
-        }
             
             if (clase) {
                 whereClause += ' AND a.clase = ?';
                 params.push(clase);
+            }
+
+            // FILTRO DE PAGOS - USANDO SUBCONSULTA PARA ACCEDER AL CAMPO CALCULADO
+            if (req.query.pago) {
+                const pagoFilter = req.query.pago;
+                
+                switch(pagoFilter) {
+                    case 'overdue': // Vencidos (próximo pago pasó hace más de 5 días)
+                        whereClause += ` AND DATEDIFF(CURDATE(), DATE_ADD(
+                            DATE_ADD(a.fecha_inscripcion, 
+                            INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH), 
+                            INTERVAL CASE WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 ELSE 0 END MONTH
+                        )) > 5`;
+                        break;
+                        
+                    case 'upcoming': // Próximos a vencer (entre 0 y 3 días antes del vencimiento)
+                        whereClause += ` AND DATEDIFF(DATE_ADD(
+                            DATE_ADD(a.fecha_inscripcion, 
+                            INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH), 
+                            INTERVAL CASE WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 ELSE 0 END MONTH
+                        ), CURDATE()) BETWEEN 0 AND 3`;
+                        break;
+                        
+                    case 'current': // Al corriente (más de 3 días antes del vencimiento)
+                        whereClause += ` AND DATEDIFF(DATE_ADD(
+                            DATE_ADD(a.fecha_inscripcion, 
+                            INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH), 
+                            INTERVAL CASE WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 ELSE 0 END MONTH
+                        ), CURDATE()) > 3 AND a.estatus = 'Activo'`;
+                        break;
+                        
+                    case 'inactive': // Alumnos dados de baja
+                        whereClause += ` AND a.estatus = 'Baja'`;
+                        break;
+                }
             }
             
             // Query principal con JOIN a maestros
@@ -1116,13 +1151,28 @@ export const transaccionesController = {
                     a.domiciliado,
                     a.estatus,
                     COALESCE(m.nombre, 'Sin asignar') as maestro,
+                    
+                    -- CALCULAR PRÓXIMO PAGO BASADO EN FECHA DE INSCRIPCIÓN
+                    DATE_ADD(
+                        DATE_ADD(
+                            a.fecha_inscripcion, 
+                            INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH
+                        ), 
+                        INTERVAL 
+                        CASE 
+                            WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 
+                            ELSE 0 
+                        END 
+                        MONTH
+                    ) as proximo_pago,
+                    
                     COALESCE(a.precio_mensual, 0) * GREATEST(1, FLOOR(DATEDIFF(CURDATE(), a.fecha_inscripcion) / 30)) as total_pagado
                 FROM alumnos a
                 LEFT JOIN maestros m ON a.maestro_id = m.id
                 ${whereClause}
                 ORDER BY a.nombre
                 LIMIT ? OFFSET ?
-            `, [...params, parseInt(limit), offset]);
+            `, [...params, parseInt(limit), parseInt(offset)]);
 
             // Query para contar total de registros
             const [countResult] = await executeQuery(`

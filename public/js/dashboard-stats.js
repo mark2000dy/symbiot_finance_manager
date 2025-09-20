@@ -415,7 +415,7 @@ function updateClassDistribution(clases, filter = 'all') {
     
     const container = document.getElementById('classDistributionContainer');
     if (!container) {
-        console.warn('⚠️ Contenedor classDistributionContainer no encontrado');
+        // Silenciar warning - contenedor opcional en vista modular
         return;
     }
     
