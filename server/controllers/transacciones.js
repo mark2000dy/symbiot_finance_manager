@@ -525,15 +525,14 @@ export const transaccionesController = {
                 INSERT INTO alumnos (
                     nombre, edad, telefono, email, fecha_inscripcion, clase, tipo_clase,
                     maestro_id, horario, estatus, promocion, precio_mensual, forma_pago,
-                    domiciliado, titular_domicilado, empresa_id, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    domiciliado, titular_domicilado, empresa_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `, [
                 datosLimpios.nombre, datosLimpios.edad, datosLimpios.telefono, datosLimpios.email,
                 datosLimpios.fecha_inscripcion, datosLimpios.clase, datosLimpios.tipo_clase,
                 datosLimpios.maestro_id, datosLimpios.horario, datosLimpios.estatus,
                 datosLimpios.promocion, datosLimpios.precio_mensual, datosLimpios.forma_pago,
-                datosLimpios.domiciliado, datosLimpios.titular_domicilado, datosLimpios.empresa_id,
-                user.id
+                datosLimpios.domiciliado, datosLimpios.titular_domicilado, datosLimpios.empresa_id
             ]);
 
             console.log(`✅ Alumno creado: ${nombre} - ID: ${result.insertId}`);
@@ -552,12 +551,6 @@ export const transaccionesController = {
                 success: true,
                 message: 'Alumno registrado exitosamente',
                 data: nuevoAlumno[0]
-            });
-
-            res.json({
-                success: true,
-                message: 'Alumno registrado exitosamente',
-                data: { id: result.insertId, nombre: nombre }
             });
 
         } catch (error) {

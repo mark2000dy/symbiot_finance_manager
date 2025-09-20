@@ -266,6 +266,7 @@ async function saveNewStudent() {
         // Enviar al backend
         const response = await fetch('/gastos/api/alumnos', {
             method: 'POST',
+            credentials: 'same-origin',  // ⭐ AGREGAR ESTA LÍNEA
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
@@ -346,6 +347,7 @@ async function saveStudentChanges() {
         // CORRECCIÓN: Manejo correcto de la respuesta asíncrona
         const response = await fetch('/gastos/api/alumnos/' + studentData.id, {
             method: 'PUT',
+            credentials: 'same-origin',  // ⭐ AGREGAR ESTA LÍNEA
             headers: { 
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
@@ -1206,6 +1208,23 @@ function createEditStudentModalHTML() {
 }
 
 /**
+ * Convertir nombre de maestro a ID
+ */
+function getMaestroIdByName(nombreMaestro) {
+    const maestros = {
+        'Hugo Vazquez': '1',
+        'Julio Olvera': '2',
+        'Demian Andrade': '3',
+        'Irwin Hernandez': '4',
+        'Nahomy Perez': '5',
+        'Luis Blanquet': '6',
+        'Manuel Reyes': '7',
+        'Harim Lopez': '8'
+    };
+    return maestros[nombreMaestro] || '';
+}
+
+/**
  * Editar alumno - cargar datos en modal
  */
 async function editStudent(id) {
@@ -1261,9 +1280,12 @@ async function editStudent(id) {
         setFieldValue('editStudentAge', student.edad);
         setFieldValue('editStudentPhone', student.telefono);
         setFieldValue('editStudentEmail', student.email);
-        setFieldValue('editStudentEnrollmentDate', student.fecha_inscripcion);
+        const fechaInscripcion = student.fecha_inscripcion ? 
+            student.fecha_inscripcion.split(' ')[0] : '';
+        setFieldValue('editStudentEnrollmentDate', fechaInscripcion);
         setFieldValue('editStudentInstrument', student.clase);
-        setFieldValue('editStudentTeacher', student.maestro_id);
+        const maestroId = getMaestroIdByName(student.maestro || student.maestro_id);
+        setFieldValue('editStudentTeacher', maestroId);
         setFieldValue('editStudentSchedule', student.horario);
         setFieldValue('editStudentStatus', student.estatus || 'Activo');
         setFieldValue('editStudentPromotion', student.promocion);
@@ -1779,25 +1801,38 @@ function renderTransactionsTable(transactions) {
         return;
     }
     
-    tableBody.innerHTML = transactions.map(transaction => `
-        <tr>
-            <td>${formatDate(transaction.fecha)}</td>
-            <td>${transaction.concepto}</td>
-            <td>${transaction.socio}</td>
-            <td>${transaction.nombre_empresa || 'N/A'}</td>
-            <td><span class="badge ${transaction.tipo === 'I' ? 'bg-success' : 'bg-danger'}">
-                ${transaction.tipo === 'I' ? 'Ingreso' : 'Gasto'}
-            </span></td>
-            <td class="${transaction.tipo === 'I' ? 'text-success' : 'text-danger'}">
-                ${formatCurrency(transaction.total || (transaction.cantidad * transaction.precio_unitario) || 0)}
-            </td>
-            <td>
-                <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransaction(${transaction.id})">
-                    <i class="fas fa-edit"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+    tableBody.innerHTML = transactions.map(transaction => {
+        // 🔥 CALCULAR TOTAL CORRECTAMENTE
+        let total = 0;
+        if (transaction.total && parseFloat(transaction.total) !== 0) {
+            total = parseFloat(transaction.total);
+        } else if (transaction.cantidad && transaction.precio_unitario) {
+            total = parseFloat(transaction.cantidad) * parseFloat(transaction.precio_unitario);
+        }
+        
+        return `
+            <tr>
+                <td>${formatDate(transaction.fecha)}</td>
+                <td>${transaction.concepto}</td>
+                <td>${transaction.socio}</td>
+                <td>${transaction.nombre_empresa || 'N/A'}</td>
+                <td>
+                    <span class="badge ${transaction.tipo === 'I' ? 'bg-success' : 'bg-danger'}">
+                        <i class="fas ${transaction.tipo === 'I' ? 'fa-arrow-up' : 'fa-arrow-down'} me-1"></i>
+                        ${transaction.tipo === 'I' ? 'Ingreso' : 'Gasto'}
+                    </span>
+                </td>
+                <td class="${transaction.tipo === 'I' ? 'text-success' : 'text-danger'}">
+                    <strong>${formatCurrency(total)}</strong>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransaction(${transaction.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 /**
@@ -1853,7 +1888,9 @@ async function showPaymentHistory(studentId, studentName) {
         `;
         
         // Obtener datos del backend
-        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`);
+        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`, {
+            credentials: 'same-origin'  // ⭐ AGREGAR OPCIONES
+        });
         const data = await response.json();
         
         console.log('📥 Datos recibidos:', data); // ✅ DEBUG

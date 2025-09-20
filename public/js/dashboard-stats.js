@@ -216,6 +216,9 @@ async function loadRockstarSkullDataReal() {
                 const indicators = document.getElementById('rockstarSpecificIndicators');
                 if (indicators) indicators.style.display = 'block';
             }
+
+            // Calcular métricas de pagos con datos actualizados
+            await updatePaymentMetrics();
             
             // Almacenar datos para filtros
             if (clases && clases.length > 0) {
@@ -252,6 +255,67 @@ async function loadRockstarSkullDataReal() {
         
     } catch (error) {
         console.error('❌ Error cargando datos REALES de RockstarSkull:', error);
+    }
+}
+
+/**
+ * Calcular y actualizar métricas de pagos de alumnos
+ */
+async function updatePaymentMetrics() {
+    try {
+        console.log('💰 Calculando métricas de pagos de alumnos...');
+        
+        // CRÍTICO: Solicitar TODOS los alumnos sin paginación
+        const response = await fetch('/gastos/api/alumnos?empresa_id=1&estatus=Activo&limit=1000', {
+            credentials: 'same-origin'
+        });
+        
+        const result = await response.json();
+        
+        console.log('📊 Alumnos recibidos:', result.data?.length || 0);
+        
+        if (result.success && result.data) {
+            const alumnos = result.data;
+            const today = new Date();
+            
+            let alCorriente = 0;
+            let pendientes = 0;
+            let proximos = 0; // Para debugging
+            
+            alumnos.forEach(alumno => {
+                const proximoPago = alumno.proximo_pago || alumno.fecha_ultimo_pago;
+                
+                if (!proximoPago) {
+                    pendientes++;
+                    console.log(`⚠️ ${alumno.nombre}: Sin fecha de pago`);
+                    return;
+                }
+                
+                const fechaPago = new Date(proximoPago);
+                const diffDays = Math.ceil((fechaPago - today) / (1000 * 60 * 60 * 24));
+                
+                // Clasificar según días de diferencia
+                if (diffDays < -5) {
+                    pendientes++; // Vencido más de 5 días
+                    console.log(`🔴 ${alumno.nombre}: Vencido ${Math.abs(diffDays)} días`);
+                } else if (diffDays >= -5 && diffDays <= 3) {
+                    proximos++; // Próximo a vencer (no se cuenta en selector)
+                    console.log(`🟡 ${alumno.nombre}: Próximo ${diffDays} días`);
+                } else {
+                    alCorriente++; // Al corriente
+                    console.log(`🟢 ${alumno.nombre}: Al corriente +${diffDays} días`);
+                }
+            });
+            
+            // Actualizar UI (sin contar próximos)
+            updateElement('currentStudents', alCorriente);
+            updateElement('pendingStudents', pendientes);
+            
+            console.log(`✅ Métricas: ${alCorriente} al corriente, ${pendientes} vencidos, ${proximos} próximos`);
+            console.log(`📊 Total procesado: ${alCorriente + pendientes + proximos} de ${alumnos.length} alumnos`);
+        }
+    } catch (error) {
+        console.error('❌ Error calculando métricas de pagos:', error);
     }
 }
 
@@ -373,6 +437,8 @@ async function handleCompanyChange() {
             if (window.refreshPaymentAlerts) {
                 refreshPaymentAlerts();
             }
+
+            await updatePaymentMetrics();
         }
         
         console.log('✅ Cambio de empresa completado');
@@ -730,6 +796,7 @@ window.refreshMaestrosData = refreshMaestrosData;
 
 // Funciones de RockstarSkull
 window.loadRockstarSkullDataReal = loadRockstarSkullDataReal;
+window.updatePaymentMetrics = updatePaymentMetrics; 
 
 // Funciones auxiliares
 window.getClassIcon = getClassIcon;

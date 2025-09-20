@@ -287,6 +287,9 @@ async function initializeSpecificModules() {
         
         // Configurar listeners de cálculo
         setupCalculationListeners();
+
+        // ⭐ AGREGAR ESTA LÍNEA NUEVA:
+        initializeStudentModals();
         
         // ⭐ SIEMPRE inicializar filtros de alumnos (independientemente del widget)
         console.log('🎓 Inicializando filtros de alumnos...');

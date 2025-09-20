@@ -409,13 +409,6 @@
                                         </table>
                                     </div>
 
-                                    <div class="pagination-info mb-2">
-                                        <small>
-                                            Mostrando <span id="studentsShowingFrom">1</span> - <span id="studentsShowingTo">10</span> 
-                                            de <span id="studentsTotalRecords">0</span> alumnos
-                                        </small>
-                                    </div>
-
                                     <!-- Students Pagination -->
                                     <div class="pagination-container" id="studentsPaginationContainer" style="display: none;">
                                         <div class="pagination-info">
@@ -544,8 +537,14 @@
                                     <label for="transactionPartner" class="form-label">
                                         <i class="fas fa-user me-1"></i>Socio
                                     </label>
-                                    <input type="text" class="form-control" id="transactionPartner" 
-                                           placeholder="Nombre del socio" required maxlength="50">
+                                    <select class="form-select" id="transactionPartner" required>
+                                        <option value="">Seleccionar socio...</option>
+                                        <option value="Hugo Vazquez">Hugo Vazquez</option>
+                                        <option value="Marco Delgado">Marco Delgado</option>
+                                        <option value="Antonio Razo">Antonio Razo</option>
+                                        <option value="Symbiot Technologies">Symbiot Technologies</option>
+                                        <option value="Rockstar Skull">Rockstar Skull</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="transactionCompany" class="form-label">

@@ -541,6 +541,7 @@ async function deleteTransactionFromList(transactionId) {
         // Recargar lista y estadísticas
         await loadRecentTransactions(currentPage);
         await loadDashboardStats(currentCompanyFilter);
+        await loadRecentTransactions(currentTransactionsPage);
         
         console.log(`✅ Transacción eliminada: ${transaction.concepto}`);
         
