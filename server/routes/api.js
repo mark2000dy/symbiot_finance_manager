@@ -162,6 +162,8 @@ router.get('/dashboard', async (req, res) => {
 
 // GET /api/dashboard/alumnos - Estadísticas de alumnos para dashboard
 router.get('/dashboard/alumnos', transaccionesController.getDashboardAlumnos);
+router.get('/dashboard/alertas-pagos', transaccionesController.getAlertasPagos);
+
 
 // ============================================================
 // RUTAS ESPECÍFICAS DE GASTOS

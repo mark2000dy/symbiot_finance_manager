@@ -68,7 +68,8 @@ async function loadDashboardData() {
             const resumen = {
                 ingresos: data.data.ingresos || 0,
                 gastos: data.data.gastos || 0,
-                balance: data.data.balance || 0
+                balance: data.data.balance || 0,
+                total_transacciones: data.data.total_transacciones || 0
             };
             
             console.log('🔄 Resumen procesado para actualización:', resumen);
@@ -160,33 +161,33 @@ function updateMainStatsReal(resumen) {
 /**
  * Actualizar estadísticas de empresa en el selector
  */
-function updateCompanyStatsReal(data) {
+function updateCompanyStatsReal(resumen) {
     try {
-        console.log('🏢 Actualizando estadísticas del selector de empresa:', data);
+        console.log('🏢 Actualizando estadísticas del selector de empresa:', resumen);
         
-        // Balance de empresa
-        const companyBalanceElement = document.getElementById('companyBalance');
-        if (companyBalanceElement) {
-            const balance = data.balance || data.balance_general || (data.ingresos - data.gastos) || 0;
-            companyBalanceElement.textContent = formatCurrency(balance);
-            
-            // Cambiar color según el balance
-            companyBalanceElement.className = balance >= 0 ? 'stat-number text-success' : 'stat-number text-danger';
+        // Balance empresa
+        const balanceElement = document.getElementById('companyBalance');
+        if (balanceElement) {
+            const balance = resumen.balance || 0;
+            balanceElement.textContent = formatCurrency(balance);
+            balanceElement.className = balance >= 0 ? 'stat-number text-success' : 'stat-number text-danger';
         }
         
-        // Total transacciones
-        const companyTransactionsElement = document.getElementById('companyTransactions');
-        if (companyTransactionsElement) {
-            companyTransactionsElement.textContent = data.total_transacciones || 0;
+        // Total transacciones - ✅ CORREGIDO
+        const transactionsElement = document.getElementById('companyTransactions');
+        if (transactionsElement) {
+            const totalTx = resumen.total_transacciones || 0;
+            transactionsElement.textContent = totalTx;
+            console.log(`📊 Transacciones mostradas: ${totalTx}`);
         }
         
         // Alumnos activos (solo para RockstarSkull)
-        const companyStudentsElement = document.getElementById('companyStudents');
-        if (companyStudentsElement) {
+        const studentsElement = document.getElementById('companyStudents');
+        if (studentsElement) {
             if (currentCompanyFilter === '1') {
-                companyStudentsElement.textContent = '0'; // Se actualizará después
+                studentsElement.textContent = '0'; // Se actualizará después
             } else {
-                companyStudentsElement.textContent = '0';
+                studentsElement.textContent = '0';
             }
         }
         
@@ -316,22 +317,31 @@ async function updatePaymentMetrics() {
             
             alumnos.forEach(alumno => {
                 const proximoPago = alumno.proximo_pago || alumno.fecha_ultimo_pago;
-                
+                            
                 if (!proximoPago) {
                     pendientes++;
                     console.log(`⚠️ ${alumno.nombre}: Sin fecha de pago`);
                     return;
                 }
-                
+                            
                 const fechaPago = new Date(proximoPago);
                 const diffDays = Math.ceil((fechaPago - today) / (1000 * 60 * 60 * 24));
                 
-                // Clasificar según días de diferencia
-                if (diffDays < -5) {
+                // ✅ VERIFICAR SI YA PAGÓ ESTE MES
+                const lastPaymentDate = alumno.fecha_ultimo_pago ? new Date(alumno.fecha_ultimo_pago) : null;
+                const hasPaidThisMonth = lastPaymentDate && 
+                    lastPaymentDate.getMonth() === today.getMonth() && 
+                    lastPaymentDate.getFullYear() === today.getFullYear();
+                
+                // ✅ Si ya pagó este mes, está al corriente
+                if (hasPaidThisMonth) {
+                    alCorriente++;
+                    console.log(`🟢 ${alumno.nombre}: Al corriente (pagó este mes)`);
+                } else if (diffDays < -5) {
                     pendientes++; // Vencido más de 5 días
                     console.log(`🔴 ${alumno.nombre}: Vencido ${Math.abs(diffDays)} días`);
                 } else if (diffDays >= -5 && diffDays <= 3) {
-                    proximos++; // Próximo a vencer (no se cuenta en selector)
+                    proximos++; // Próximo a vencer
                     console.log(`🟡 ${alumno.nombre}: Próximo ${diffDays} días`);
                 } else {
                     alCorriente++; // Al corriente
