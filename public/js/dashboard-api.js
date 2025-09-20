@@ -414,6 +414,18 @@ async function deleteTransaction(transactionId) {
         
         if (response.success) {
             console.log('✅ Transacción eliminada exitosamente');
+            
+            // 🔥 CRÍTICO: Actualizar estadísticas PRIMERO
+            if (typeof window.loadDashboardData === 'function') {
+                await window.loadDashboardData();
+            }
+            
+            // 🔥 CRÍTICO: Luego actualizar lista de transacciones
+            if (typeof window.loadRecentTransactions === 'function') {
+                const pageToLoad = window.currentPage || 1;
+                await window.loadRecentTransactions(pageToLoad);
+            }
+            
             return response;
         } else {
             throw new Error(response.message || 'Error eliminando transacción');

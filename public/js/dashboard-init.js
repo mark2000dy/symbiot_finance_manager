@@ -288,8 +288,12 @@ async function initializeSpecificModules() {
         // Configurar listeners de cálculo
         setupCalculationListeners();
 
-        // ⭐ AGREGAR ESTA LÍNEA NUEVA:
-        initializeStudentModals();
+        // Inicializar modales de estudiantes (si la función existe)
+        if (typeof initializeStudentModals === 'function') {
+            initializeStudentModals();
+        } else {
+            console.log('ℹ️ Función initializeStudentModals no disponible');
+        }
         
         // ⭐ SIEMPRE inicializar filtros de alumnos (independientemente del widget)
         console.log('🎓 Inicializando filtros de alumnos...');

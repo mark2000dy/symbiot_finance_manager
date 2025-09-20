@@ -22,8 +22,7 @@ export const transaccionesController = {
             let query = `
                 SELECT 
                     t.*,
-                    e.nombre as nombre_empresa,
-                    (t.cantidad * t.precio_unitario) as total
+                    e.nombre as nombre_empresa
                 FROM transacciones t 
                 LEFT JOIN empresas e ON t.empresa_id = e.id 
                 WHERE 1=1

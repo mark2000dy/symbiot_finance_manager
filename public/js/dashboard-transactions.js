@@ -107,7 +107,7 @@ function renderTransactions(transactions) {
                 ${transaction.tipo === 'I' ? 'Ingreso' : 'Gasto'}
             </span></td>
             <td class="${transaction.tipo === 'I' ? 'text-success' : 'text-danger'}">
-                ${formatCurrency(transaction.total || (transaction.cantidad * transaction.precio_unitario) || 0)}
+                ${formatCurrency(parseFloat(transaction.total) || parseFloat(transaction.cantidad) * parseFloat(transaction.precio_unitario) || 0)}
             </td>
             <td>
                 <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransactionFromDashboard(${transaction.id})" title="Editar">
@@ -534,19 +534,10 @@ async function deleteTransactionFromList(transactionId) {
         
         console.log(`🗑️ Eliminando transacción: ${transaction.concepto} (ID: ${transactionId})`);
         
-        // Llamar API para eliminar
-        await deleteTransaction(transactionId);
+        // 🔥 LLAMAR directamente a la función global
+        await window.deleteTransaction(transactionId);
 
         showAlert('success', `Transacción "${transaction.concepto}" eliminada exitosamente`);
-
-        // ✅ ACTUALIZAR ESTADÍSTICAS PRIMERO (esto actualiza los totales)
-        if (typeof loadDashboardData === 'function') {
-            await loadDashboardData();
-        }
-
-        // ✅ LUEGO RECARGAR TRANSACCIONES (esto actualiza la tabla)
-        const pageToLoad = currentTransactionsPage || currentPage || 1;
-        await loadRecentTransactions(pageToLoad);
         
         console.log(`✅ Transacción eliminada: ${transaction.concepto}`);
         

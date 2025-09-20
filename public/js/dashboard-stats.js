@@ -42,6 +42,9 @@ if (typeof window.currentStudentFilters === 'undefined') {
  * Cargar datos principales del dashboard
  */
 async function loadDashboardData() {
+    // 🔥 ASEGURAR que la función sea accesible globalmente
+    window.loadDashboardData = loadDashboardData;
+    
     try {
         console.log('📊 Cargando estadísticas con filtro de empresa...');
         
@@ -55,21 +58,22 @@ async function loadDashboardData() {
         
         const response = await fetch(`/gastos/api/transacciones/resumen${queryParam}`);
         const data = await response.json();
-
-        if (data.success) {
+        
+        console.log('📥 Respuesta completa del API:', data);
+        
+        if (data.success && data.data) {
             console.log('✅ Datos cargados:', data.data);
             
-            // ✅ CRÍTICO: Asegurar que el resumen tenga la estructura correcta
-            const resumen = data.data || {};
+            // 🔥 CRÍTICO: Los datos vienen en data.data
+            const resumen = {
+                ingresos: data.data.ingresos || 0,
+                gastos: data.data.gastos || 0,
+                balance: data.data.balance || 0
+            };
             
-            // Validar que los datos existan
-            if (!resumen.ingresos && !resumen.gastos) {
-                console.error('❌ Datos de resumen inválidos:', resumen);
-                resetMainStats();
-                return;
-            }
+            console.log('🔄 Resumen procesado para actualización:', resumen);
             
-            // Actualizar estadísticas principales
+            // 🔥 FORZAR la actualización inmediata
             updateMainStatsReal(resumen);
             
             // Actualizar selector de empresa
@@ -78,6 +82,7 @@ async function loadDashboardData() {
             console.log('✅ Estadísticas actualizadas correctamente');
             
         } else {
+            console.error('❌ Error en la respuesta:', data);
             throw new Error(data.message || 'Error cargando estadísticas');
         }
         
@@ -97,36 +102,55 @@ function updateMainStatsReal(resumen) {
     try {
         console.log('📊 Actualizando con datos REALES:', resumen);
         
-        const elements = {
-            'balanceTotal': resumen.balance || 0,
-            'totalIngresos': resumen.ingresos || 0,
-            'totalGastos': resumen.gastos || 0,
-            'esteMes': resumen.balance || 0
+        const updates = {
+            'balanceTotal': {
+                value: resumen.balance || 0,
+                defaultClass: 'text-info mb-0'
+            },
+            'totalIngresos': {
+                value: resumen.ingresos || 0,
+                defaultClass: 'text-success mb-0'
+            },
+            'totalGastos': {
+                value: resumen.gastos || 0,
+                defaultClass: 'text-danger mb-0'
+            },
+            'esteMes': {
+                value: resumen.balance || 0,
+                defaultClass: 'text-warning mb-0'
+            }
         };
         
-        console.log('📊 Valores REALES a mostrar:', elements);
+        console.log('📊 Valores REALES a mostrar:', updates);
         
         // Actualizar cada elemento
-        Object.entries(elements).forEach(([elementId, value]) => {
+        Object.entries(updates).forEach(([elementId, config]) => {
             const element = document.getElementById(elementId);
+            
             if (element) {
-                // Remover spinner
-                const spinner = element.querySelector('.loading-spinner');
-                if (spinner) spinner.remove();
+                // 🔥 LIMPIAR TODO EL CONTENIDO PREVIO (incluido el spinner)
+                element.innerHTML = '';
                 
-                // Actualizar valor con datos reales
-                element.textContent = formatCurrency(value);
+                // 🔥 INSERTAR EL VALOR FORMATEADO
+                const formattedValue = formatCurrency(config.value);
+                element.textContent = formattedValue;
                 
-                // Color según valor
+                // 🔥 APLICAR LA CLASE CORRECTA
                 if (elementId === 'balanceTotal') {
-                    element.className = value >= 0 ? 'text-success mb-0' : 'text-danger mb-0';
+                    // Balance cambia color según si es positivo o negativo
+                    element.className = config.value >= 0 ? 'text-success mb-0' : 'text-danger mb-0';
+                } else {
+                    // Otros elementos mantienen su color por defecto
+                    element.className = config.defaultClass;
                 }
                 
-                console.log(`✅ ${elementId} = ${formatCurrency(value)} (REAL)`);
+                console.log(`✅ ${elementId} = ${formattedValue} (REAL) - Clase: ${element.className}`);
+            } else {
+                console.error(`❌ Elemento NO encontrado: ${elementId}`);
             }
         });
         
-        console.log('✅ Estadísticas REALES actualizadas');
+        console.log('✅ Estadísticas REALES actualizadas exitosamente');
         
     } catch (error) {
         console.error('❌ Error actualizando estadísticas REALES:', error);
@@ -345,18 +369,19 @@ function updateElement(elementId, value) {
  */
 function resetMainStats() {
     try {
-        const elements = {
-            'balanceTotal': '$0.00',
-            'totalIngresos': '$0.00',
-            'totalGastos': '$0.00',
-            'esteMes': '$0.00'
+        const defaults = {
+            'balanceTotal': { value: '$0.00', class: 'text-info mb-0' },
+            'totalIngresos': { value: '$0.00', class: 'text-success mb-0' },
+            'totalGastos': { value: '$0.00', class: 'text-danger mb-0' },
+            'esteMes': { value: '$0.00', class: 'text-warning mb-0' }
         };
         
-        Object.entries(elements).forEach(([elementId, defaultValue]) => {
+        Object.entries(defaults).forEach(([elementId, config]) => {
             const element = document.getElementById(elementId);
             if (element) {
-                element.textContent = defaultValue;
-                element.className = 'text-info mb-0'; // Color neutro
+                element.innerHTML = '';
+                element.textContent = config.value;
+                element.className = config.class;
             }
         });
         
