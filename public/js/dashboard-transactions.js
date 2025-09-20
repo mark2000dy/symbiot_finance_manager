@@ -35,8 +35,9 @@ async function loadRecentTransactions(page = 1) {
         const response = await apiGet('/gastos/api/transacciones', params);
         
         if (response.success && response.data) {
-            // Actualizar cache global
-            window.recentTransactionsCache = response.data;
+            // ✅ LIMPIAR Y ACTUALIZAR cache global
+            window.recentTransactionsCache = [];  // Limpiar primero
+            window.recentTransactionsCache = response.data.slice(); // Copiar array nuevo
             currentPage = page;
             
             console.log(`✅ ${response.data.length} transacciones cargadas`);
@@ -538,14 +539,14 @@ async function deleteTransactionFromList(transactionId) {
 
         showAlert('success', `Transacción "${transaction.concepto}" eliminada exitosamente`);
 
-        // 🔥 RECARGAR CORRECTAMENTE
-        const pageToLoad = currentTransactionsPage || currentPage || 1;
-        await loadRecentTransactions(pageToLoad);
-
-        // Si estamos en dashboard, actualizar estadísticas
+        // ✅ ACTUALIZAR ESTADÍSTICAS PRIMERO (esto actualiza los totales)
         if (typeof loadDashboardData === 'function') {
             await loadDashboardData();
         }
+
+        // ✅ LUEGO RECARGAR TRANSACCIONES (esto actualiza la tabla)
+        const pageToLoad = currentTransactionsPage || currentPage || 1;
+        await loadRecentTransactions(pageToLoad);
         
         console.log(`✅ Transacción eliminada: ${transaction.concepto}`);
         

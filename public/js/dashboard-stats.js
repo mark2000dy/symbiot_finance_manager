@@ -55,11 +55,19 @@ async function loadDashboardData() {
         
         const response = await fetch(`/gastos/api/transacciones/resumen${queryParam}`);
         const data = await response.json();
-        
+
         if (data.success) {
             console.log('✅ Datos cargados:', data.data);
             
-            const resumen = data.data;
+            // ✅ CRÍTICO: Asegurar que el resumen tenga la estructura correcta
+            const resumen = data.data || {};
+            
+            // Validar que los datos existan
+            if (!resumen.ingresos && !resumen.gastos) {
+                console.error('❌ Datos de resumen inválidos:', resumen);
+                resetMainStats();
+                return;
+            }
             
             // Actualizar estadísticas principales
             updateMainStatsReal(resumen);
