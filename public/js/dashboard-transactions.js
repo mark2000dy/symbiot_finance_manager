@@ -535,13 +535,17 @@ async function deleteTransactionFromList(transactionId) {
         
         // Llamar API para eliminar
         await deleteTransaction(transactionId);
-        
+
         showAlert('success', `Transacción "${transaction.concepto}" eliminada exitosamente`);
-        
-        // Recargar lista y estadísticas
-        await loadRecentTransactions(currentPage);
-        await loadDashboardStats(currentCompanyFilter);
-        await loadRecentTransactions(currentTransactionsPage);
+
+        // 🔥 RECARGAR CORRECTAMENTE
+        const pageToLoad = currentTransactionsPage || currentPage || 1;
+        await loadRecentTransactions(pageToLoad);
+
+        // Si estamos en dashboard, actualizar estadísticas
+        if (typeof loadDashboardData === 'function') {
+            await loadDashboardData();
+        }
         
         console.log(`✅ Transacción eliminada: ${transaction.concepto}`);
         

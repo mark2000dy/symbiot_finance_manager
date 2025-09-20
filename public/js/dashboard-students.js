@@ -1787,6 +1787,12 @@ function updateClassDistributionOriginal(classes) {
 /**
  * Renderizar tabla de alumnos (función faltante)
  */
+/**
+ * Renderizar tabla de transacciones
+ */
+/**
+ * Renderizar tabla de transacciones
+ */
 function renderTransactionsTable(transactions) {
     console.log('📊 Renderizando tabla de transacciones:', transactions.length);
     
@@ -1802,12 +1808,19 @@ function renderTransactionsTable(transactions) {
     }
     
     tableBody.innerHTML = transactions.map(transaction => {
-        // 🔥 CALCULAR TOTAL CORRECTAMENTE
-        let total = 0;
-        if (transaction.total && parseFloat(transaction.total) !== 0) {
-            total = parseFloat(transaction.total);
-        } else if (transaction.cantidad && transaction.precio_unitario) {
-            total = parseFloat(transaction.cantidad) * parseFloat(transaction.precio_unitario);
+        // 🔥 PARSEAR VALORES CORRECTAMENTE
+        const total = parseFloat(transaction.total) || 
+                     (parseFloat(transaction.cantidad) * parseFloat(transaction.precio_unitario)) || 0;
+        
+        // Debug: Ver valores originales
+        if (total === 0) {
+            console.warn('⚠️ Total en 0:', {
+                id: transaction.id,
+                concepto: transaction.concepto,
+                total_original: transaction.total,
+                cantidad: transaction.cantidad,
+                precio_unitario: transaction.precio_unitario
+            });
         }
         
         return `
@@ -1826,8 +1839,11 @@ function renderTransactionsTable(transactions) {
                     <strong>${formatCurrency(total)}</strong>
                 </td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransaction(${transaction.id})">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editTransaction(${transaction.id})" title="Editar">
                         <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTransactionFromList(${transaction.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </td>
             </tr>
