@@ -952,7 +952,9 @@ router.put('/alumnos/:id/estatus', async (req, res) => {
 });
 
 // ==================== RUTAS DASHBOARD ====================
+router.get('/dashboard', transaccionesController.getResumen);
 router.get('/dashboard/alumnos', transaccionesController.getDashboardAlumnos);
+router.get('/dashboard/alertas-pagos', transaccionesController.getAlertasPagos);
 router.get('/alumnos', transaccionesController.getAlumnos);
 
 // ✅ NUEVO: CRUD completo de alumnos

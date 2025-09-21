@@ -324,27 +324,30 @@ async function updatePaymentMetrics() {
                     return;
                 }
                             
-                const fechaPago = new Date(proximoPago);
-                const diffDays = Math.ceil((fechaPago - today) / (1000 * 60 * 60 * 24));
-                
-                // ✅ VERIFICAR SI YA PAGÓ ESTE MES
+                // Verificar si pagó este mes
                 const lastPaymentDate = alumno.fecha_ultimo_pago ? new Date(alumno.fecha_ultimo_pago) : null;
                 const hasPaidThisMonth = lastPaymentDate && 
                     lastPaymentDate.getMonth() === today.getMonth() && 
                     lastPaymentDate.getFullYear() === today.getFullYear();
                 
-                // ✅ Si ya pagó este mes, está al corriente
                 if (hasPaidThisMonth) {
                     alCorriente++;
                     console.log(`🟢 ${alumno.nombre}: Al corriente (pagó este mes)`);
-                } else if (diffDays < -5) {
-                    pendientes++; // Vencido más de 5 días
+                    return;
+                }
+                
+                // Calcular días desde fecha próximo pago
+                const fechaPago = new Date(proximoPago);
+                const diffDays = Math.ceil((fechaPago - today) / (1000 * 60 * 60 * 24));
+                            
+                if (diffDays < -5) {
+                    pendientes++;
                     console.log(`🔴 ${alumno.nombre}: Vencido ${Math.abs(diffDays)} días`);
-                } else if (diffDays >= -5 && diffDays <= 3) {
-                    proximos++; // Próximo a vencer
+                } else if (diffDays >= 0 && diffDays <= 3) {
+                    proximos++;
                     console.log(`🟡 ${alumno.nombre}: Próximo ${diffDays} días`);
                 } else {
-                    alCorriente++; // Al corriente
+                    alCorriente++;
                     console.log(`🟢 ${alumno.nombre}: Al corriente +${diffDays} días`);
                 }
             });

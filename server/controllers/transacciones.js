@@ -5,6 +5,29 @@
 
 import { executeQuery } from '../config/database.js';
 
+// ====================================================
+// CONSTANTES SQL PARA CÁLCULO DE PAGOS
+// ====================================================
+
+// Fecha de corte del mes ACTUAL con manejo de días inválidos
+const SQL_FECHA_CORTE_ACTUAL = `
+    LEAST(
+        LAST_DAY(CURDATE()),
+        DATE_FORMAT(CURDATE(), CONCAT('%Y-%m-', LPAD(DAY(a.fecha_inscripcion), 2, '0')))
+    )
+`;
+
+const SQL_PROXIMO_PAGO = `
+    CASE
+        WHEN CURDATE() >= ${SQL_FECHA_CORTE_ACTUAL}
+        THEN LEAST(
+            LAST_DAY(DATE_ADD(CURDATE(), INTERVAL 1 MONTH)),
+            DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 MONTH), CONCAT('%Y-%m-', LPAD(DAY(a.fecha_inscripcion), 2, '0')))
+        )
+        ELSE ${SQL_FECHA_CORTE_ACTUAL}
+    END
+`;
+
 export const transaccionesController = {
     // Obtener todas las transacciones con filtros
     getTransacciones: async (req, res) => {
@@ -144,56 +167,52 @@ export const transaccionesController = {
                 cantidad, precio_unitario, tipo, created_by
             ]);
 
-            // ✅ ACTUALIZAR fecha_ultimo_pago si es un pago de alumno (Ingreso)
+            // ✅ ACTUALIZAR fecha_ultimo_pago si es un pago de alumno
             if (tipo === 'I' && concepto && empresa_id == 1) {
                 try {
-                    // Extraer nombre del alumno del concepto
-                    // Patrón: "Mensualidad clase [Instrumento] [G/I] [NombreAlumno]"
-                    const match = concepto.match(/(?:Mensualidad|mensualidad)\s+clase\s+\w+\s+[GI]\s+(.+?)(?:\s*,|$)/i);
+                    // Extraer nombre: buscar después de "G " o "I "
+                    const match = concepto.match(/[GI]\s+(.+?)(?:\s*,|$)/i);
                     
                     if (match && match[1]) {
                         let nombreExtraido = match[1].trim();
                         
-                        console.log(`🔍 Buscando alumno con nombre: "${nombreExtraido}"`);
-                        
-                        // Buscar alumno por coincidencia parcial (primeras palabras del nombre)
-                        const updateResult = await executeQuery(`
-                            UPDATE alumnos 
-                            SET fecha_ultimo_pago = ?
-                            WHERE empresa_id = 1
+                        // Buscar alumno con coincidencia exacta o parcial
+                        const alumnoQuery = `
+                            SELECT id, nombre 
+                            FROM alumnos 
+                            WHERE empresa_id = 1 
                                 AND estatus = 'Activo'
                                 AND (
                                     nombre = ? 
                                     OR nombre LIKE CONCAT(?, '%')
-                                    OR ? LIKE CONCAT(nombre, '%')
+                                    OR REPLACE(nombre, '  ', ' ') = ?
                                 )
                             LIMIT 1
-                        `, [fecha, nombreExtraido, nombreExtraido, nombreExtraido]);
+                        `;
                         
-                        if (updateResult.affectedRows > 0) {
-                            console.log(`✅ fecha_ultimo_pago actualizada para alumno que coincide con: "${nombreExtraido}" -> ${fecha}`);
+                        const alumnos = await executeQuery(alumnoQuery, [
+                            nombreExtraido, 
+                            nombreExtraido.split(' ').slice(0, 2).join(' '),
+                            nombreExtraido
+                        ]);
+                        
+                        if (alumnos.length > 0) {
+                            const alumnoId = alumnos[0].id;
+                            const alumnoNombre = alumnos[0].nombre;
+                            
+                            await executeQuery(`
+                                UPDATE alumnos 
+                                SET fecha_ultimo_pago = ?
+                                WHERE id = ?
+                            `, [fecha, alumnoId]);
+                            
+                            console.log(`✅ fecha_ultimo_pago actualizada: ${alumnoNombre} -> ${fecha}`);
                         } else {
-                            console.log(`⚠️ No se encontró alumno activo que coincida con: "${nombreExtraido}"`);
-                            
-                            // Log de depuración: mostrar alumnos similares
-                            const similares = await executeQuery(`
-                                SELECT nombre 
-                                FROM alumnos 
-                                WHERE empresa_id = 1 
-                                    AND estatus = 'Activo'
-                                    AND nombre LIKE ?
-                                LIMIT 3
-                            `, [`%${nombreExtraido.split(' ')[0]}%`]);
-                            
-                            if (similares.length > 0) {
-                                console.log(`📋 Alumnos similares encontrados:`, similares.map(a => a.nombre));
-                            }
+                            console.log(`⚠️ No se encontró alumno: "${nombreExtraido}"`);
                         }
-                    } else {
-                        console.log(`⚠️ No se pudo extraer nombre del alumno del concepto: "${concepto}"`);
                     }
-                } catch (updateError) {
-                    console.error('❌ Error actualizando fecha_ultimo_pago:', updateError);
+                } catch (error) {
+                    console.error('❌ Error actualizando fecha_ultimo_pago:', error);
                 }
             }
 
@@ -1071,9 +1090,7 @@ export const transaccionesController = {
     getAlertasPagos: async (req, res) => {
         try {
             const { empresa_id = 1 } = req.query;
-            console.log('📅 Calculando alertas de pagos REALES...');
             
-            // Obtener alumnos activos con cálculo de próximo pago
             const alumnos = await executeQuery(`
                 SELECT 
                     a.id,
@@ -1081,45 +1098,30 @@ export const transaccionesController = {
                     a.clase,
                     a.precio_mensual,
                     a.fecha_ultimo_pago,
-                    a.fecha_inscripcion,
-                    CASE
-                        WHEN a.fecha_ultimo_pago IS NOT NULL
-                        THEN DATE_ADD(a.fecha_ultimo_pago, INTERVAL 1 MONTH)
-                        ELSE DATE_ADD(
-                            DATE_ADD(a.fecha_inscripcion, 
-                                INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH
-                            ), 
-                            INTERVAL CASE WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 ELSE 0 END MONTH
-                        )
-                    END as fecha_proximo_pago,
-                    DATEDIFF(
-                        CASE
-                            WHEN a.fecha_ultimo_pago IS NOT NULL
-                            THEN DATE_ADD(a.fecha_ultimo_pago, INTERVAL 1 MONTH)
-                            ELSE DATE_ADD(
-                                DATE_ADD(a.fecha_inscripcion, 
-                                    INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH
-                                ), 
-                                INTERVAL CASE WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 ELSE 0 END MONTH
-                            )
-                        END,
-                        CURDATE()
-                    ) as dias_diferencia
+                    ${SQL_FECHA_CORTE_ACTUAL} as fecha_corte_actual,
+                    ${SQL_PROXIMO_PAGO} as fecha_proximo_pago,
+                    DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) as dias_hasta_corte
                 FROM alumnos a
                 WHERE a.empresa_id = ?
                     AND a.estatus = 'Activo'
                     AND a.nombre NOT LIKE '[ELIMINADO]%'
             `, [empresa_id]);
             
-            // Clasificar alumnos
             const proximos_vencer = [];
             const vencidos = [];
             
             alumnos.forEach(alumno => {
-                const dias = alumno.dias_diferencia;
+                // Verificar si pagó este mes
+                const pagoEsteMes = alumno.fecha_ultimo_pago && 
+                    new Date(alumno.fecha_ultimo_pago).getMonth() === new Date().getMonth() &&
+                    new Date(alumno.fecha_ultimo_pago).getFullYear() === new Date().getFullYear();
+                
+                if (pagoEsteMes) return; // Ya pagó, no mostrar
+                
+                const dias = alumno.dias_hasta_corte;
                 
                 if (dias < -5) {
-                    // Vencido más de 5 días
+                    // Vencido: pasaron más de 5 días de la fecha de corte
                     vencidos.push({
                         id: alumno.id,
                         nombre: alumno.nombre,
@@ -1128,20 +1130,20 @@ export const transaccionesController = {
                         dias_vencido: Math.abs(dias),
                         fecha_proximo_pago: alumno.fecha_proximo_pago
                     });
-                } else if (dias >= 0 && dias <= 3) {
-                    // Próximo a vencer (0 a 3 días)
+                } else if (dias >= -3 && dias <= 0) {
+                    // Próximo a vencer: entre 3 días antes y el día de corte
                     proximos_vencer.push({
                         id: alumno.id,
                         nombre: alumno.nombre,
                         clase: alumno.clase,
                         precio_mensual: alumno.precio_mensual,
-                        dias_restantes: dias,
+                        dias_restantes: Math.abs(dias),
                         fecha_proximo_pago: alumno.fecha_proximo_pago
                     });
                 }
             });
             
-            console.log(`✅ Alertas: ${vencidos.length} vencidos, ${proximos_vencer.length} próximos a vencer`);
+            console.log(`✅ Alertas: ${vencidos.length} vencidos, ${proximos_vencer.length} próximos`);
             
             res.json({
                 success: true,
@@ -1152,13 +1154,9 @@ export const transaccionesController = {
                     fecha_calculo: new Date().toISOString()
                 }
             });
-            
         } catch (error) {
-            console.error('Error alertas pagos:', error);
-            res.status(500).json({ 
-                success: false, 
-                error: 'Error interno del servidor' 
-            });
+            console.error('Error alertas:', error);
+            res.status(500).json({ success: false, error: 'Error interno' });
         }
     },
 
@@ -1202,63 +1200,46 @@ export const transaccionesController = {
                 const pagoFilter = req.query.pago;
                 
                 switch(pagoFilter) {
-                    case 'overdue': // Vencidos - próximo pago pasó hace más de 5 días
+                    case 'overdue': // Vencidos: NO pagaron este mes Y pasaron 5 días de la fecha de corte
                         whereClause += ` 
                             AND a.estatus = 'Activo'
-                            AND DATEDIFF(CURDATE(), 
-                                CASE
-                                    WHEN a.fecha_ultimo_pago IS NOT NULL
-                                    THEN DATE_ADD(a.fecha_ultimo_pago, INTERVAL 1 MONTH)
-                                    ELSE DATE_ADD(
-                                        DATE_ADD(a.fecha_inscripcion, 
-                                            INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH
-                                        ), 
-                                        INTERVAL CASE WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 ELSE 0 END MONTH
-                                    )
-                                END
-                            ) > 5
+                            AND DATEDIFF(CURDATE(), ${SQL_FECHA_CORTE_ACTUAL}) > 5
+                            AND (
+                                a.fecha_ultimo_pago IS NULL 
+                                OR MONTH(a.fecha_ultimo_pago) != MONTH(CURDATE()) 
+                                OR YEAR(a.fecha_ultimo_pago) != YEAR(CURDATE())
+                            )
                         `;
                         break;
                         
-                    case 'upcoming': // Próximos a vencer (entre 0 y 3 días antes del vencimiento)
+                    case 'upcoming': // Próximos: NO pagaron este mes Y entre 3 días antes y fecha de corte
                         whereClause += ` 
                             AND a.estatus = 'Activo'
-                            AND DATEDIFF(
-                                CASE
-                                    WHEN a.fecha_ultimo_pago IS NOT NULL
-                                    THEN DATE_ADD(a.fecha_ultimo_pago, INTERVAL 1 MONTH)
-                                    ELSE DATE_ADD(
-                                        DATE_ADD(a.fecha_inscripcion, 
-                                            INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH
-                                        ), 
-                                        INTERVAL CASE WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 ELSE 0 END MONTH
-                                    )
-                                END,
-                                CURDATE()
-                            ) BETWEEN 0 AND 3
+                            AND DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) BETWEEN -3 AND 0
+                            AND (
+                                a.fecha_ultimo_pago IS NULL 
+                                OR MONTH(a.fecha_ultimo_pago) != MONTH(CURDATE()) 
+                                OR YEAR(a.fecha_ultimo_pago) != YEAR(CURDATE())
+                            )
                         `;
                         break;
                         
-                    case 'current': // Al corriente (más de 3 días antes del vencimiento)
+                    case 'current': // Al corriente: Pagaron este mes O aún no llega la fecha próximo
                         whereClause += ` 
                             AND a.estatus = 'Activo'
-                            AND DATEDIFF(
-                                CASE
-                                    WHEN a.fecha_ultimo_pago IS NOT NULL
-                                    THEN DATE_ADD(a.fecha_ultimo_pago, INTERVAL 1 MONTH)
-                                    ELSE DATE_ADD(
-                                        DATE_ADD(a.fecha_inscripcion, 
-                                            INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH
-                                        ), 
-                                        INTERVAL CASE WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 ELSE 0 END MONTH
-                                    )
-                                END,
-                                CURDATE()
-                            ) > 3
+                            AND (
+                                (
+                                    a.fecha_ultimo_pago IS NOT NULL 
+                                    AND MONTH(a.fecha_ultimo_pago) = MONTH(CURDATE()) 
+                                    AND YEAR(a.fecha_ultimo_pago) = YEAR(CURDATE())
+                                )
+                                OR 
+                                DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) > 3
+                            )
                         `;
                         break;
                         
-                    case 'inactive': // Alumnos dados de baja
+                    case 'inactive':
                         whereClause += ` AND a.estatus = 'Baja'`;
                         break;
                 }
@@ -1284,23 +1265,8 @@ export const transaccionesController = {
                     a.estatus,
                     COALESCE(m.nombre, 'Sin asignar') as maestro,
                     
-                    -- CALCULAR PRÓXIMO PAGO: Siempre usar fecha_ultimo_pago si existe
-                    CASE
-                        WHEN a.fecha_ultimo_pago IS NOT NULL
-                        THEN DATE_ADD(a.fecha_ultimo_pago, INTERVAL 1 MONTH)
-                        ELSE DATE_ADD(
-                            DATE_ADD(
-                                a.fecha_inscripcion, 
-                                INTERVAL TIMESTAMPDIFF(MONTH, a.fecha_inscripcion, CURDATE()) MONTH
-                            ), 
-                            INTERVAL 
-                            CASE 
-                                WHEN DAY(CURDATE()) > DAY(a.fecha_inscripcion) THEN 1 
-                                ELSE 0 
-                            END 
-                            MONTH
-                        )
-                    END as proximo_pago,
+                    -- Próximo pago usando constante SQL
+                    ${SQL_PROXIMO_PAGO} as proximo_pago,
                     
                     COALESCE(a.precio_mensual, 0) * GREATEST(1, FLOOR(DATEDIFF(CURDATE(), a.fecha_inscripcion) / 30)) as total_pagado
                 FROM alumnos a

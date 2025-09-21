@@ -23,7 +23,10 @@ async function refreshPaymentAlerts() {
         }
         
         const empresaParam = currentCompanyFilter || 1;
-        const response = await fetch(`/gastos/api/alertas-pagos?empresa_id=${empresaParam}`, { cache: 'no-store' });
+        const response = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=${empresaParam}`, { 
+            cache: 'no-store',
+            credentials: 'include'  // Agregar credenciales
+        });
         const data = await response.json();
         
         if (data.success) {
@@ -257,7 +260,10 @@ function calculatePaymentStatus(alumno) {
 async function getPaymentAlertsummary() {
     try {
         const empresaParam = currentCompanyFilter || 1;
-        const response = await fetch(`/gastos/api/alertas-pagos?empresa_id=${empresaParam}`, { cache: 'no-store' });
+        const response = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=${empresaParam}`, { 
+            cache: 'no-store',
+            credentials: 'include'
+        });
         const data = await response.json();
         
         if (data.success) {
@@ -323,7 +329,10 @@ async function generateOverduePaymentsReport() {
         console.log('📊 Generando reporte de pagos vencidos...');
         
         const empresaParam = currentCompanyFilter || 1;
-        const response = await fetch(`/gastos/api/alertas-pagos?empresa_id=${empresaParam}`, { cache: 'no-store' });
+        const response = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=${empresaParam}`, { 
+            cache: 'no-store',
+            credentials: 'include'
+        });
         const data = await response.json();
         
         if (data.success) {
