@@ -72,17 +72,58 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
         } else {
             console.warn('⚠️ loadCompanyFilterFromURL no disponible, omitiendo configuración de URL');
         }
+
+        // CORRECCIÓN NAVEGACIÓN: Verificar y recargar datos perdidos
+        setTimeout(async () => {
+            const balanceElement = document.getElementById('balanceTotal');
+            if (balanceElement && balanceElement.textContent === '$0.00') {
+                console.log('🔄 Datos perdidos por navegación, recargando...');
+                await window.loadDashboardData();
+                
+                if (window.currentCompanyFilter === '1') {
+                    if (typeof window.loadRockstarSkullDataReal === 'function') {
+                        await window.loadRockstarSkullDataReal();
+                    }
+                }
+            }
+        }, 2000);
         
         // FASE 5: Inicializar modales y UI
         console.log('📋 FASE 4: Inicializando interfaz de usuario...');
         initializeModals();
         setupEventListeners();
         
-        // FASE 6: Cargar datos principales
+       // FASE 6: Cargar datos principales
         console.log('📋 FASE 5: Cargando datos del dashboard...');
         await loadDashboardData();
+
+        // CORRECCIÓN NAVEGACIÓN: Verificar si los datos se cargaron correctamente
+        setTimeout(async () => {
+            const balanceElement = document.getElementById('balanceTotal');
+            if (balanceElement && (balanceElement.textContent === '$0.00' || balanceElement.innerHTML.includes('spinner'))) {
+                console.log('🔄 Datos no cargados correctamente, reintentando...');
+                await loadDashboardData();
+                
+                // Si sigue siendo RockstarSkull, forzar carga de datos específicos
+                if (window.currentCompanyFilter === '1') {
+                    if (typeof window.loadRockstarSkullDataReal === 'function') {
+                        await window.loadRockstarSkullDataReal();
+                    }
+                }
+            }
+        }, 1500);
+
+        // FASE 7: FORZAR CARGA INICIAL DE DATOS
+        console.log('🔋 FASE 7: Cargando datos iniciales...');
+        await forcedDataInitialization();
+
+        // FASE 8: VERIFICACIÓN FINAL DE DATOS
+        setTimeout(async () => {
+            console.log('🔄 Verificación final de datos...');
+            await verifyDataIntegrity();
+        }, 2000);
         
-        // FASE 7: Cargar transacciones recientes
+        // FASE 9: Cargar transacciones recientes
         console.log('📋 FASE 6: Cargando transacciones recientes...');
         if (typeof loadRecentTransactions === 'function') {
             await loadRecentTransactions(1);
@@ -106,21 +147,44 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
             console.warn('⚠️ Función loadRecentTransactions no disponible');
         }
         
-        // FASE 8: Inicializar módulos específicos
+        // FASE 10: Inicializar módulos específicos
         console.log('📋 FASE 7: Inicializando módulos específicos...');
         await initializeSpecificModules();
+
+        // ✅ CORRECCIÓN: Cargar lista de alumnos cuando es RockstarSkull
+        if ((currentCompanyFilter === '1' || !currentCompanyFilter) && typeof loadStudentsList === 'function') {
+            console.log('🎓 Cargando lista inicial de alumnos...');
+            await loadStudentsList(1);
+        }
         
-        // FASE 9: Configurar actualizaciones automáticas
+        // FASE 11: Configurar actualizaciones automáticas
         console.log('📋 FASE 8: Configurando actualizaciones automáticas...');
         setupAutoRefreshSystems();
         
-        // FASE 10: Configurar monitoreo de sesión
+        // FASE 12: Configurar monitoreo de sesión
         console.log('📋 FASE 9: Iniciando monitoreo de sesión...');
         startSessionMonitoring();
         
-        // FASE 11: Finalización
+        // FASE 13: Finalización
         console.log('📋 FASE 10: Finalizando inicialización...');
         await finalizeDashboardSetup();
+
+        // CORRECCIÓN CRÍTICA: Forzar carga inicial de datos
+        console.log('🔄 Ejecutando carga forzada inicial...');
+        try {
+            await window.loadDashboardData();
+            console.log('✅ Datos iniciales cargados exitosamente');
+        } catch (error) {
+            console.error('❌ Error carga inicial:', error);
+            // Reintentar una vez más después de 1 segundo
+            setTimeout(async () => {
+                try {
+                    await window.loadDashboardData();
+                } catch (retryError) {
+                    console.error('❌ Error en reintento:', retryError);
+                }
+            }, 1000);
+        }
         
         // Ocultar loader y mostrar dashboard
         hideInitializationLoader();
@@ -225,6 +289,93 @@ function hideInitializationLoader() {
                 loader.parentNode.removeChild(loader);
             }
         }, 500);
+    }
+}
+
+/**
+ * Forzar inicialización de datos críticos
+ */
+async function forcedDataInitialization() {
+    try {
+        console.log('💪 Forzando carga de datos críticos...');
+        
+        // Asegurar que currentCompanyFilter esté definido
+        if (typeof window.currentCompanyFilter === 'undefined') {
+            window.currentCompanyFilter = '';
+        }
+        
+        // Cargar datos principales con reintentos
+        let retries = 0;
+        while (retries < 3) {
+            try {
+                await window.loadDashboardData();
+                console.log('✅ loadDashboardData() ejecutado exitosamente');
+                break;
+            } catch (error) {
+                retries++;
+                console.warn(`⚠️ Reintento ${retries} de loadDashboardData():`, error);
+                if (retries < 3) await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+        
+        // Cargar datos de RockstarSkull si es empresa 1
+        if (window.currentCompanyFilter === '1' || !window.currentCompanyFilter) {
+            retries = 0;
+            while (retries < 3) {
+                try {
+                    if (typeof window.loadRockstarSkullData === 'function') {
+                        await window.loadRockstarSkullData();
+                        console.log('✅ loadRockstarSkullData() ejecutado exitosamente');
+                    }
+                    break;
+                } catch (error) {
+                    retries++;
+                    console.warn(`⚠️ Reintento ${retries} de loadRockstarSkullData():`, error);
+                    if (retries < 3) await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en forcedDataInitialization:', error);
+    }
+}
+
+/**
+ * Verificar integridad de datos después de la inicialización
+ */
+async function verifyDataIntegrity() {
+    try {
+        console.log('🔍 Verificando integridad de datos...');
+        
+        // Verificar elementos principales
+        const criticalElements = [
+            'balanceTotal', 'totalIngresos', 'totalGastos', 'esteMes',
+            'totalStudents', 'activeStudents', 'currentStudents', 'pendingStudents'
+        ];
+        
+        let elementsWithZero = 0;
+        criticalElements.forEach(elementId => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const value = element.textContent.trim();
+                if (value === '$0.00' || value === '0' || value.includes('spinner')) {
+                    elementsWithZero++;
+                    console.warn(`⚠️ Elemento ${elementId} tiene valor: ${value}`);
+                }
+            }
+        });
+        
+        // Si muchos elementos están en 0, recargar datos
+        if (elementsWithZero > 4) {
+            console.warn('🔄 Demasiados elementos en 0, recargando datos...');
+            await forcedDataInitialization();
+        } else {
+            console.log('✅ Integridad de datos verificada correctamente');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error verificando integridad:', error);
     }
 }
 

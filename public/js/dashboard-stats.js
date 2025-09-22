@@ -183,12 +183,32 @@ function updateCompanyStatsReal(resumen) {
         
         // Alumnos activos (solo para RockstarSkull)
         const studentsElement = document.getElementById('companyStudents');
-        if (studentsElement) {
-            if (currentCompanyFilter === '1') {
-                studentsElement.textContent = '0'; // Se actualizará después
-            } else {
+        if (studentsElement && currentCompanyFilter === '1') {
+            // Usar misma lógica que alertas de pagos
+            fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=1`, { 
+                cache: 'no-store',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(alertsData => {
+                if (alertsData.success) {
+                    const proximos = Array.isArray(alertsData.data.proximos_vencer) ? 
+                        alertsData.data.proximos_vencer.filter(a => String(a.estatus || '').toLowerCase() !== 'baja') : [];
+                    const vencidos = Array.isArray(alertsData.data.vencidos) ? 
+                        alertsData.data.vencidos.filter(a => String(a.estatus || '').toLowerCase() !== 'baja') : [];
+                    
+                    const totalPendientes = proximos.length + vencidos.length;
+                    studentsElement.textContent = totalPendientes;
+                } else {
+                    studentsElement.textContent = '0';
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error calculando pendientes:', error);
                 studentsElement.textContent = '0';
-            }
+            });
+        } else if (studentsElement) {
+            studentsElement.textContent = '0';
         }
         
         console.log('✅ Estadísticas del selector actualizadas');
@@ -476,8 +496,10 @@ async function handleCompanyChange() {
         if (selectedCompany === '1') {
             await loadRockstarSkullDataReal();
             
-            // Cargar lista de alumnos (COMO EN EL ORIGINAL - SIN typeof)
-            loadStudentsList(1);
+            if (typeof loadStudentsList === 'function') {
+                await loadStudentsList(1);
+                console.log('✅ Lista de alumnos cargada después de cambio de empresa');
+            }
             
             // Refrescar alertas de pagos (COMO EN EL ORIGINAL - SIN typeof)
             if (window.refreshPaymentAlerts) {

@@ -89,6 +89,7 @@ function getFormattedNextPaymentDate(student) {
     }
 }
 
+// ✅ ESTA ES LA VERSIÓN CORRECTA - Mantenerla
 function getPaymentStatusBadge(student) {
     if (student.estatus === 'Baja') {
         return '<span class="badge bg-secondary">No aplica</span>';
