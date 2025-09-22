@@ -979,27 +979,66 @@ export const transaccionesController = {
                         SELECT 
                             -- Estimación de grupales vs individuales basada en precio
                             SUM(CASE 
-                                WHEN estatus = 'Activo' AND precio_mensual <= 1500 THEN 1 
+                                WHEN a.estatus = 'Activo' AND a.precio_mensual <= 1500 THEN 1 
                                 ELSE 0 
                             END) as clases_grupales_estimadas,
                             SUM(CASE 
-                                WHEN estatus = 'Activo' AND precio_mensual > 1500 THEN 1 
+                                WHEN a.estatus = 'Activo' AND a.precio_mensual > 1500 THEN 1 
                                 ELSE 0 
                             END) as clases_individuales_estimadas,
-                            -- Alumnos al corriente (último pago reciente)
+                            
+                            -- Alumnos al corriente: pagaron este mes O aún no llega su fecha de corte (con período de gracia)
                             SUM(CASE 
-                                WHEN estatus = 'Activo' AND (
-                                    fecha_ultimo_pago >= DATE_SUB(CURDATE(), INTERVAL 35 DAY) 
-                                    OR fecha_ultimo_pago IS NULL
+                                WHEN a.estatus = 'Activo' AND (
+                                    -- Pagaron este mes
+                                    (
+                                        a.fecha_ultimo_pago IS NOT NULL 
+                                        AND MONTH(a.fecha_ultimo_pago) = MONTH(CURDATE()) 
+                                        AND YEAR(a.fecha_ultimo_pago) = YEAR(CURDATE())
+                                    )
+                                    OR 
+                                    -- O aún no llega su fecha de corte (más de 3 días antes)
+                                    DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) > 3
+                                    OR
+                                    -- O está en período de gracia (hasta 5 días después de su fecha de corte)
+                                    (
+                                        DATEDIFF(CURDATE(), ${SQL_FECHA_CORTE_ACTUAL}) >= 0
+                                        AND DATEDIFF(CURDATE(), ${SQL_FECHA_CORTE_ACTUAL}) <= 5
+                                        AND (
+                                            a.fecha_ultimo_pago IS NOT NULL 
+                                            AND MONTH(a.fecha_ultimo_pago) = MONTH(CURDATE()) 
+                                            AND YEAR(a.fecha_ultimo_pago) = YEAR(CURDATE())
+                                        )
+                                    )
                                 ) THEN 1 ELSE 0 
                             END) as alumnos_corriente,
-                            -- Alumnos pendientes (último pago antiguo)
+                            
+                            -- Alumnos pendientes: próximos a vencer O vencidos
                             SUM(CASE 
-                                WHEN estatus = 'Activo' AND fecha_ultimo_pago < DATE_SUB(CURDATE(), INTERVAL 35 DAY) 
-                                THEN 1 ELSE 0 
+                                WHEN a.estatus = 'Activo' AND (
+                                    -- Próximos a vencer (entre 3 días antes y la fecha de corte)
+                                    (
+                                        DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) BETWEEN 0 AND 3
+                                        AND (
+                                            a.fecha_ultimo_pago IS NULL 
+                                            OR MONTH(a.fecha_ultimo_pago) != MONTH(CURDATE()) 
+                                            OR YEAR(a.fecha_ultimo_pago) != YEAR(CURDATE())
+                                        )
+                                    )
+                                    OR
+                                    -- Vencidos (más de 5 días después de su fecha de corte)
+                                    (
+                                        DATEDIFF(CURDATE(), ${SQL_FECHA_CORTE_ACTUAL}) > 5
+                                        AND (
+                                            a.fecha_ultimo_pago IS NULL 
+                                            OR MONTH(a.fecha_ultimo_pago) != MONTH(CURDATE()) 
+                                            OR YEAR(a.fecha_ultimo_pago) != YEAR(CURDATE())
+                                        )
+                                    )
+                                ) THEN 1 ELSE 0 
                             END) as alumnos_pendientes
-                        FROM alumnos 
-                        WHERE empresa_id = 1 AND nombre NOT LIKE '[ELIMINADO]%'
+                        FROM alumnos a
+                        WHERE a.empresa_id = 1 AND a.nombre NOT LIKE '[ELIMINADO]%'
                     `);
 
                     if (metricasQuery.length > 0) {

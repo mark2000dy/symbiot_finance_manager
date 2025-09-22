@@ -95,13 +95,29 @@ function getPaymentStatusBadge(student) {
     }
     
     const today = new Date();
-    const nextPayment = new Date(student.proximo_pago || student.fecha_ultimo_pago);
-    const diffTime = nextPayment - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // ✅ VERIFICAR SI PAGÓ ESTE MES
+    const lastPaymentDate = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
+    const hasPaidThisMonth = lastPaymentDate && 
+        lastPaymentDate.getMonth() === today.getMonth() && 
+        lastPaymentDate.getFullYear() === today.getFullYear();
+    
+    if (hasPaidThisMonth) {
+        return '<span class="badge bg-success">Al corriente</span>';
+    }
+    
+    // ✅ CALCULAR DÍAS DESDE PRÓXIMO PAGO
+    const nextPayment = student.proximo_pago ? new Date(student.proximo_pago) : null;
+    
+    if (!nextPayment) {
+        return '<span class="badge bg-warning">Sin fecha</span>';
+    }
+    
+    const diffDays = Math.ceil((nextPayment - today) / (1000 * 60 * 60 * 24));
     
     if (diffDays < -5) {
         return '<span class="badge bg-danger">Vencido</span>';
-    } else if (diffDays >= -5 && diffDays <= 3) {
+    } else if (diffDays >= -5 && diffDays <= 0) {
         return '<span class="badge bg-warning">Próximo</span>';
     } else {
         return '<span class="badge bg-success">Al corriente</span>';
