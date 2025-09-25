@@ -92,6 +92,7 @@ CREATE TABLE alumnos (
     titular_domicilado VARCHAR(150) NULL,
     estatus ENUM('Activo', 'Baja') DEFAULT 'Activo',
     fecha_ultimo_pago DATE,
+    pago_fuera_tiempo BOOLEAN DEFAULT FALSE COMMENT 'TRUE si el pago se realizó fuera del periodo de tolerancia',
 
     -- METADATA
     empresa_id INT NOT NULL,

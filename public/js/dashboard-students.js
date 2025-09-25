@@ -89,39 +89,65 @@ function getFormattedNextPaymentDate(student) {
     }
 }
 
-// ✅ ESTA ES LA VERSIÓN CORRECTA - Mantenerla
+// ✅ HOMOLOGADO: Función para generar badge usando función de estado homologada
 function getPaymentStatusBadge(student) {
-    if (student.estatus === 'Baja') {
-        return '<span class="badge bg-secondary">No aplica</span>';
-    }
+    // Usar la función homologada para obtener el estado
+    const paymentStatus = getPaymentStatus(student);
     
-    const today = new Date();
+    // Generar badge basado en el estado homologado
+    const badges = {
+        'overdue': '<span class="badge bg-danger">Vencido</span>',
+        'upcoming': '<span class="badge bg-warning">Próximo</span>',
+        'current': '<span class="badge bg-success">Al corriente</span>',
+        'inactive': '<span class="badge bg-secondary">No aplica</span>'
+    };
     
-    // ✅ VERIFICAR SI PAGÓ ESTE MES
-    const lastPaymentDate = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
-    const hasPaidThisMonth = lastPaymentDate && 
-        lastPaymentDate.getMonth() === today.getMonth() && 
-        lastPaymentDate.getFullYear() === today.getFullYear();
-    
-    if (hasPaidThisMonth) {
-        return '<span class="badge bg-success">Al corriente</span>';
-    }
-    
-    // ✅ CALCULAR DÍAS DESDE PRÓXIMO PAGO
-    const nextPayment = student.proximo_pago ? new Date(student.proximo_pago) : null;
-    
-    if (!nextPayment) {
-        return '<span class="badge bg-warning">Sin fecha</span>';
-    }
-    
-    const diffDays = Math.ceil((nextPayment - today) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < -5) {
-        return '<span class="badge bg-danger">Vencido</span>';
-    } else if (diffDays >= -5 && diffDays <= 0) {
-        return '<span class="badge bg-warning">Próximo</span>';
-    } else {
-        return '<span class="badge bg-success">Al corriente</span>';
+    return badges[paymentStatus] || badges['current'];
+}
+
+/**
+ * ✅ FUNCIÓN HOMOLOGADA: Determinar estado de pago usando función global
+ */
+function getPaymentStatus(student) {
+    try {
+        // Usar la función homologada del módulo stats
+        if (typeof window.getPaymentStatusHomologado === 'function') {
+            return window.getPaymentStatusHomologado(student);
+        }
+        
+        // ✅ IMPLEMENTACIÓN LOCAL IDÉNTICA A LA GLOBAL
+        if (student.estatus === 'Baja') return 'inactive';
+
+        const today = new Date();
+        const fechaInscripcion = new Date(student.fecha_inscripcion);
+        const diaCorte = fechaInscripcion.getDate();
+        
+        let fechaCorte = new Date(today.getFullYear(), today.getMonth(), diaCorte);
+        if (fechaCorte.getDate() !== diaCorte) {
+            fechaCorte = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        }
+        
+        const diasHastaCorte = Math.floor((fechaCorte.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        const fechaUltimoPago = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
+        const pagoEsteMes = fechaUltimoPago && 
+            fechaUltimoPago.getMonth() === today.getMonth() && 
+            fechaUltimoPago.getFullYear() === today.getFullYear();
+            
+        const pagoMesAnterior = fechaUltimoPago && 
+            fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12 && 
+            (fechaUltimoPago.getFullYear() === today.getFullYear() || 
+             (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
+
+        // Mismo cálculo que la función global
+        if (pagoEsteMes || pagoMesAnterior) return 'current';
+        if (diasHastaCorte >= 0 && diasHastaCorte <= 3) return 'upcoming';
+        if (diasHastaCorte < -5) return 'overdue';
+        return 'current';
+        
+    } catch (error) {
+        console.error(`❌ Error calculando estado para ${student.nombre}:`, error);
+        return 'current';
     }
 }
 
@@ -163,7 +189,13 @@ async function loadStudentsList(page = 1) {
         
         console.log('📡 URL de solicitud:', url);
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
         const result = await response.json();
         
         console.log('📥 Respuesta del servidor:', result);
@@ -1878,7 +1910,13 @@ async function loadPaymentHistory(studentId, studentName) {
         document.getElementById('chartLoadingState').style.display = 'block';
         
         // Obtener datos reales del backend
-        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`);
+        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`, {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
         const data = await response.json();
         
         document.getElementById('chartLoadingState').style.display = 'none';
@@ -2051,6 +2089,9 @@ window.renderTransactionsTable = renderTransactionsTable;
 // Exponer funciones globalmente
 window.createEditStudentModalHTML = createEditStudentModalHTML;
 window.createAddStudentModalHTML = createAddStudentModalHTML;
+
+// ✅ AÑADIR esta línea en la sección de exposición de funciones
+window.getPaymentStatus = getPaymentStatus;
 
 // Funciones del widget de alumnos (homologadas con original)
 window.updateStatusIndicators = updateStatusIndicators;

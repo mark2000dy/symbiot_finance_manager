@@ -87,6 +87,29 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
                 }
             }
         }, 2000);
+
+        // FASE 5: Cargar datos del dashboard con verificación
+        console.log('📋 FASE 5: Cargando datos del dashboard...');
+        let dataLoadRetries = 0;
+        while (dataLoadRetries < 5) {
+            try {
+                if (typeof loadDashboardData === 'function') {
+                    await loadDashboardData();
+                    console.log('✅ Datos del dashboard cargados exitosamente');
+                    break;
+                } else {
+                    console.log(`⏳ Esperando módulo Stats... (intento ${dataLoadRetries + 1})`);
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    dataLoadRetries++;
+                }
+            } catch (error) {
+                console.error('❌ Error en carga de datos:', error);
+                dataLoadRetries++;
+                if (dataLoadRetries < 5) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+        }
         
         // FASE 5: Inicializar modales y UI
         console.log('📋 FASE 4: Inicializando interfaz de usuario...');

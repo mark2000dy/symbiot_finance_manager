@@ -25,17 +25,47 @@ async function refreshPaymentAlerts() {
         const empresaParam = currentCompanyFilter || 1;
         const response = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=${empresaParam}`, { 
             cache: 'no-store',
-            credentials: 'include'  // Agregar credenciales
+            credentials: 'same-origin',  // ⭐ CAMBIAR DE 'include' A 'same-origin'
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
         });
         const data = await response.json();
         
         if (data.success) {
+            console.log('🔔 DEBUG alertas recibidas:', data.data);
+
             let proximos_vencer = Array.isArray(data.data.proximos_vencer) ? data.data.proximos_vencer : [];
             let vencidos = Array.isArray(data.data.vencidos) ? data.data.vencidos : [];
+
+            console.log('🔔 Próximos originales:', proximos_vencer.length);
+            console.log('🔔 Vencidos originales:', vencidos.length);
 
             // Filtrar alumnos dados de baja
             proximos_vencer = proximos_vencer.filter(a => String(a.estatus || '').toLowerCase() !== 'baja');
             vencidos = vencidos.filter(a => String(a.estatus || '').toLowerCase() !== 'baja');
+
+            // ✅ HOMOLOGADO: Validar datos con función de estado homologada
+            console.log('🔍 Aplicando validación homologada a alertas...');
+            
+            // Re-validar próximos a vencer con lógica homologada
+            if (typeof getPaymentStatus === 'function') {
+                proximos_vencer = proximos_vencer.filter(alumno => {
+                    const estado = getPaymentStatus(alumno);
+                    return estado === 'upcoming';
+                });
+                
+                // Re-validar vencidos con lógica homologada  
+                vencidos = vencidos.filter(alumno => {
+                    const estado = getPaymentStatus(alumno);
+                    return estado === 'overdue';
+                });
+                
+                console.log(`✅ HOMOLOGADO: ${proximos_vencer.length} próximos, ${vencidos.length} vencidos`);
+            } else {
+                console.warn('⚠️ Función getPaymentStatus no disponible, usando datos del backend');
+            }
 
             // Generar HTML con dos columnas
             let alertsHTML = `

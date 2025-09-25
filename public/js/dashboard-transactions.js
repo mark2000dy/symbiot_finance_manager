@@ -533,9 +533,25 @@ async function deleteTransactionFromList(transactionId) {
         }
         
         console.log(`🗑️ Eliminando transacción: ${transaction.concepto} (ID: ${transactionId})`);
-        
-        // 🔥 LLAMAR directamente a la función global
-        await window.deleteTransaction(transactionId);
+    
+        // Llamar a la API directamente
+        const response = await fetch(`/gastos/api/transacciones/${transactionId}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Error eliminando transacción');
+        }
+
+        // Recargar transacciones
+        await loadRecentTransactions(currentPage);
 
         showAlert('success', `Transacción "${transaction.concepto}" eliminada exitosamente`);
         

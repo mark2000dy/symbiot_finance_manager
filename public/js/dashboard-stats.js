@@ -312,75 +312,92 @@ async function loadRockstarSkullDataReal() {
 }
 
 /**
- * Calcular y actualizar métricas de pagos de alumnos
+ * ✅ HOMOLOGADO: Calcular y actualizar métricas de pagos de alumnos
  */
 async function updatePaymentMetrics() {
     try {
-        console.log('💰 Calculando métricas de pagos de alumnos...');
+        console.log('💰 Calculando métricas HOMOLOGADAS de pagos de alumnos...');
         
-        // CRÍTICO: Solicitar TODOS los alumnos sin paginación
         const response = await fetch('/gastos/api/alumnos?empresa_id=1&estatus=Activo&limit=1000', {
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
         });
         
         const result = await response.json();
         
-        console.log('📊 Alumnos recibidos:', result.data?.length || 0);
-        
         if (result.success && result.data) {
             const alumnos = result.data;
-            const today = new Date();
-            
             let alCorriente = 0;
             let pendientes = 0;
-            let proximos = 0; // Para debugging
             
             alumnos.forEach(alumno => {
-                const proximoPago = alumno.proximo_pago || alumno.fecha_ultimo_pago;
-                            
-                if (!proximoPago) {
-                    pendientes++;
-                    console.log(`⚠️ ${alumno.nombre}: Sin fecha de pago`);
-                    return;
-                }
-                            
-                // Verificar si pagó este mes
-                const lastPaymentDate = alumno.fecha_ultimo_pago ? new Date(alumno.fecha_ultimo_pago) : null;
-                const hasPaidThisMonth = lastPaymentDate && 
-                    lastPaymentDate.getMonth() === today.getMonth() && 
-                    lastPaymentDate.getFullYear() === today.getFullYear();
+                const estadoPago = getPaymentStatusHomologado(alumno);
                 
-                if (hasPaidThisMonth) {
-                    alCorriente++;
-                    console.log(`🟢 ${alumno.nombre}: Al corriente (pagó este mes)`);
-                    return;
-                }
-                
-                // Calcular días desde fecha próximo pago
-                const fechaPago = new Date(proximoPago);
-                const diffDays = Math.ceil((fechaPago - today) / (1000 * 60 * 60 * 24));
-                            
-                if (diffDays < -5) {
-                    pendientes++;
-                    console.log(`🔴 ${alumno.nombre}: Vencido ${Math.abs(diffDays)} días`);
-                } else if (diffDays >= 0 && diffDays <= 3) {
-                    proximos++;
-                    console.log(`🟡 ${alumno.nombre}: Próximo ${diffDays} días`);
-                } else {
-                    alCorriente++;
-                    console.log(`🟢 ${alumno.nombre}: Al corriente +${diffDays} días`);
+                switch (estadoPago) {
+                    case 'current':
+                        alCorriente++;
+                        break;
+                    case 'upcoming':
+                    case 'overdue':
+                        pendientes++;
+                        break;
                 }
             });
             
-            // Actualizar UI (sin contar próximos)
             updateElement('currentStudents', alCorriente);
             updateElement('pendingStudents', pendientes);
             
-            console.log(`✅ Métricas: ${alCorriente} al corriente, ${pendientes} vencidos, ${proximos} próximos`);
-            console.log(`📊 Total procesado: ${alCorriente + pendientes + proximos} de ${alumnos.length} alumnos`);
+            console.log(`✅ MÉTRICAS HOMOLOGADAS: ${alCorriente} al corriente, ${pendientes} pendientes`);
         }
     } catch (error) {
-        console.error('❌ Error calculando métricas de pagos:', error);
+        console.error('❌ Error calculando métricas homologadas:', error);
+    }
+}
+
+/**
+ * ✅ NUEVA FUNCIÓN: Estado de pago homologado
+ */
+function getPaymentStatusHomologado(student) {
+    try {
+        if (student.estatus === 'Baja') return 'inactive';
+
+        const today = new Date();
+        const fechaInscripcion = new Date(student.fecha_inscripcion);
+        const diaCorte = fechaInscripcion.getDate();
+        
+        let fechaCorte = new Date(today.getFullYear(), today.getMonth(), diaCorte);
+        if (fechaCorte.getDate() !== diaCorte) {
+            fechaCorte = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        }
+        
+        const diasHastaCorte = Math.floor((fechaCorte.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        const fechaUltimoPago = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
+        const pagoEsteMes = fechaUltimoPago && 
+            fechaUltimoPago.getMonth() === today.getMonth() && 
+            fechaUltimoPago.getFullYear() === today.getFullYear();
+        const pagoMesAnterior = fechaUltimoPago && 
+            fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12 && 
+            (fechaUltimoPago.getFullYear() === today.getFullYear() || 
+             (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
+
+        // NUEVO: No considerar pagos pasados para estado "upcoming" y "overdue"
+        if (diasHastaCorte >= 0 && diasHastaCorte <= 3 && !pagoEsteMes) {
+            return 'upcoming';
+        }
+        
+        if (diasHastaCorte < -5 && !pagoEsteMes && !pagoMesAnterior) {
+            return 'overdue';  
+        }
+        
+        return 'current';
+        
+    } catch (error) {
+        console.error(`❌ Error calculando estado para ${student.nombre}:`, error);
+        return 'current';
     }
 }
 
@@ -865,6 +882,9 @@ window.refreshMaestrosData = refreshMaestrosData;
 // Funciones de RockstarSkull
 window.loadRockstarSkullDataReal = loadRockstarSkullDataReal;
 window.updatePaymentMetrics = updatePaymentMetrics; 
+
+// ✅ EXPORTAR función homologada
+window.getPaymentStatusHomologado = getPaymentStatusHomologado;
 
 // Funciones auxiliares
 window.getClassIcon = getClassIcon;

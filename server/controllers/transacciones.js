@@ -6,10 +6,11 @@
 import { executeQuery } from '../config/database.js';
 
 // ====================================================
-// CONSTANTES SQL PARA CÁLCULO DE PAGOS
+// CONSTANTES SQL HOMOLOGADAS PARA CÁLCULO DE PAGOS
+// Implementa lógica: -3 días antes, +5 días después de fecha corte
 // ====================================================
 
-// Fecha de corte del mes ACTUAL con manejo de días inválidos
+// Fecha de corte del mes ACTUAL (día de inscripción cada mes)
 const SQL_FECHA_CORTE_ACTUAL = `
     LEAST(
         LAST_DAY(CURDATE()),
@@ -17,6 +18,7 @@ const SQL_FECHA_CORTE_ACTUAL = `
     )
 `;
 
+// Próximo pago: si ya pasó la fecha de corte, usar el mismo día del siguiente mes
 const SQL_PROXIMO_PAGO = `
     CASE
         WHEN CURDATE() >= ${SQL_FECHA_CORTE_ACTUAL}
@@ -26,6 +28,62 @@ const SQL_PROXIMO_PAGO = `
         )
         ELSE ${SQL_FECHA_CORTE_ACTUAL}
     END
+`;
+
+// Estado de pago homologado: AL CORRIENTE si pagó este mes O mes anterior
+const SQL_ESTADO_AL_CORRIENTE = `
+    (
+        a.estatus = 'Activo' AND (
+            (
+                a.fecha_ultimo_pago IS NOT NULL 
+                AND (
+                    (MONTH(a.fecha_ultimo_pago) = MONTH(CURDATE()) AND YEAR(a.fecha_ultimo_pago) = YEAR(CURDATE()))
+                    OR 
+                    (MONTH(a.fecha_ultimo_pago) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(a.fecha_ultimo_pago) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)))
+                )
+            )
+            OR 
+            DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) > 3
+        )
+    )
+`;
+
+// Estado de pago: PRÓXIMO A VENCER (0-3 días para fecha corte y no pagó)
+const SQL_ESTADO_PROXIMO_VENCER = `
+    (
+        a.estatus = 'Activo' 
+        AND DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) BETWEEN 0 AND 3
+        AND (
+            a.fecha_ultimo_pago IS NULL 
+            OR (
+                MONTH(a.fecha_ultimo_pago) != MONTH(CURDATE()) 
+                OR YEAR(a.fecha_ultimo_pago) != YEAR(CURDATE())
+            )
+            AND (
+                MONTH(a.fecha_ultimo_pago) != MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) 
+                OR YEAR(a.fecha_ultimo_pago) != YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+            )
+        )
+    )
+`;
+
+// Estado de pago: VENCIDO (+5 días después de fecha corte y no pagó)
+const SQL_ESTADO_VENCIDO = `
+    (
+        a.estatus = 'Activo'
+        AND DATEDIFF(CURDATE(), ${SQL_FECHA_CORTE_ACTUAL}) > 5
+        AND (
+            a.fecha_ultimo_pago IS NULL 
+            OR (
+                MONTH(a.fecha_ultimo_pago) != MONTH(CURDATE()) 
+                OR YEAR(a.fecha_ultimo_pago) != YEAR(CURDATE())
+            )
+            AND (
+                MONTH(a.fecha_ultimo_pago) != MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) 
+                OR YEAR(a.fecha_ultimo_pago) != YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+            )
+        )
+    )
 `;
 
 export const transaccionesController = {
@@ -988,30 +1046,15 @@ export const transaccionesController = {
                             END) as clases_individuales_estimadas,
                             
                             -- Alumnos al corriente: pagaron este mes O aún no llega su fecha de corte (con período de gracia)
+                            -- ✅ HOMOLOGADO: Alumnos al corriente usando nueva constante
                             SUM(CASE 
-                                WHEN a.estatus = 'Activo' AND (
-                                    -- Pagaron este mes
-                                    (
-                                        a.fecha_ultimo_pago IS NOT NULL 
-                                        AND MONTH(a.fecha_ultimo_pago) = MONTH(CURDATE()) 
-                                        AND YEAR(a.fecha_ultimo_pago) = YEAR(CURDATE())
-                                    )
-                                    OR 
-                                    -- O aún no llega su fecha de corte (más de 3 días antes)
-                                    DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) > 3
-                                    OR
-                                    -- O está en período de gracia (hasta 5 días después de su fecha de corte)
-                                    (
-                                        DATEDIFF(CURDATE(), ${SQL_FECHA_CORTE_ACTUAL}) >= 0
-                                        AND DATEDIFF(CURDATE(), ${SQL_FECHA_CORTE_ACTUAL}) <= 5
-                                        AND (
-                                            a.fecha_ultimo_pago IS NOT NULL 
-                                            AND MONTH(a.fecha_ultimo_pago) = MONTH(CURDATE()) 
-                                            AND YEAR(a.fecha_ultimo_pago) = YEAR(CURDATE())
-                                        )
-                                    )
-                                ) THEN 1 ELSE 0 
+                                WHEN ${SQL_ESTADO_AL_CORRIENTE} THEN 1 ELSE 0 
                             END) as alumnos_corriente,
+
+                            -- ✅ HOMOLOGADO: Alumnos pendientes usando nuevas constantes
+                            SUM(CASE 
+                                WHEN ${SQL_ESTADO_PROXIMO_VENCER} OR ${SQL_ESTADO_VENCIDO} THEN 1 ELSE 0 
+                            END) as alumnos_pendientes,
                             
                             -- Alumnos pendientes: próximos a vencer O vencidos
                             SUM(CASE 
@@ -1130,71 +1173,69 @@ export const transaccionesController = {
         try {
             const { empresa_id = 1 } = req.query;
             
+            console.log(`🔔 Calculando alertas para empresa: ${empresa_id}`);
+            
             const alumnos = await executeQuery(`
                 SELECT 
-                    a.id,
-                    a.nombre,
-                    a.clase,
-                    a.precio_mensual,
-                    a.fecha_ultimo_pago,
-                    ${SQL_FECHA_CORTE_ACTUAL} as fecha_corte_actual,
-                    ${SQL_PROXIMO_PAGO} as fecha_proximo_pago,
-                    DATEDIFF(${SQL_FECHA_CORTE_ACTUAL}, CURDATE()) as dias_hasta_corte
-                FROM alumnos a
-                WHERE a.empresa_id = ?
-                    AND a.estatus = 'Activo'
-                    AND a.nombre NOT LIKE '[ELIMINADO]%'
+                    id, nombre, clase, estatus, precio_mensual, 
+                    fecha_ultimo_pago, fecha_inscripcion,
+                    DAY(fecha_inscripcion) as dia_corte
+                FROM alumnos
+                WHERE empresa_id = ? AND estatus = 'Activo' 
+                    AND nombre NOT LIKE '[ELIMINADO]%'
             `, [empresa_id]);
             
             const proximos_vencer = [];
             const vencidos = [];
+            const today = new Date();
             
             alumnos.forEach(alumno => {
-                // Verificar si pagó este mes
-                const pagoEsteMes = alumno.fecha_ultimo_pago && 
-                    new Date(alumno.fecha_ultimo_pago).getMonth() === new Date().getMonth() &&
-                    new Date(alumno.fecha_ultimo_pago).getFullYear() === new Date().getFullYear();
+                const diaCorte = alumno.dia_corte;
+                let fechaCorte = new Date(today.getFullYear(), today.getMonth(), diaCorte);
                 
-                if (pagoEsteMes) return; // Ya pagó, no mostrar
+                if (fechaCorte.getDate() !== diaCorte) {
+                    fechaCorte = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                }
                 
-                const dias = alumno.dias_hasta_corte;
+                const diasHastaCorte = Math.floor((fechaCorte.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 
-                if (dias < -5) {
-                    // Vencido: pasaron más de 5 días de la fecha de corte
-                    vencidos.push({
-                        id: alumno.id,
-                        nombre: alumno.nombre,
-                        clase: alumno.clase,
-                        precio_mensual: alumno.precio_mensual,
-                        dias_vencido: Math.abs(dias),
-                        fecha_proximo_pago: alumno.fecha_proximo_pago
-                    });
-                } else if (dias >= -3 && dias <= 0) {
-                    // Próximo a vencer: entre 3 días antes y el día de corte
+                // Verificar pagos
+                const fechaUltimoPago = alumno.fecha_ultimo_pago ? new Date(alumno.fecha_ultimo_pago) : null;
+                const pagoEsteMes = fechaUltimoPago && 
+                    fechaUltimoPago.getMonth() === today.getMonth() &&
+                    fechaUltimoPago.getFullYear() === today.getFullYear();
+                const pagoMesAnterior = fechaUltimoPago && 
+                    fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12;
+                
+                // LÓGICA CORREGIDA - NO FILTRAR POR PAGOS
+                if (diasHastaCorte >= 0 && diasHastaCorte <= 3) {
                     proximos_vencer.push({
                         id: alumno.id,
                         nombre: alumno.nombre,
                         clase: alumno.clase,
-                        precio_mensual: alumno.precio_mensual,
-                        dias_restantes: Math.abs(dias),
-                        fecha_proximo_pago: alumno.fecha_proximo_pago
+                        dias_restantes: diasHastaCorte,
+                        estatus: alumno.estatus
+                    });
+                } else if (diasHastaCorte < -5) {
+                    vencidos.push({
+                        id: alumno.id,
+                        nombre: alumno.nombre,
+                        clase: alumno.clase,
+                        dias_vencido: Math.abs(diasHastaCorte),
+                        estatus: alumno.estatus
                     });
                 }
             });
             
-            console.log(`✅ Alertas: ${vencidos.length} vencidos, ${proximos_vencer.length} próximos`);
+            console.log(`✅ BACKEND: ${proximos_vencer.length} próximos, ${vencidos.length} vencidos`);
             
             res.json({
                 success: true,
-                data: {
-                    proximos_vencer,
-                    vencidos,
-                    total_alertas: proximos_vencer.length + vencidos.length,
-                    fecha_calculo: new Date().toISOString()
-                }
+                data: { proximos_vencer, vencidos, total_alertas: proximos_vencer.length + vencidos.length }
             });
+            
         } catch (error) {
-            console.error('Error alertas:', error);
+            console.error('❌ Error alertas:', error);
             res.status(500).json({ success: false, error: 'Error interno' });
         }
     },
