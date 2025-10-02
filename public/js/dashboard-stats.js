@@ -413,20 +413,19 @@ function getPaymentStatusHomologado(student) {
         const pagoEsteMes = fechaUltimoPago && 
             fechaUltimoPago.getMonth() === today.getMonth() && 
             fechaUltimoPago.getFullYear() === today.getFullYear();
-        const pagoMesAnterior = fechaUltimoPago && 
-            fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12 && 
-            (fechaUltimoPago.getFullYear() === today.getFullYear() || 
-             (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
 
-        // NUEVO: No considerar pagos pasados para estado "upcoming" y "overdue"
-        if (diasHastaCorte >= 0 && diasHastaCorte <= 3 && !pagoEsteMes) {
+        // ✅ CORREGIDO: Próximos a vencer incluye período de gracia DESPUÉS del corte
+        // Desde 3 días antes hasta 5 días después del corte (8 días de advertencia)
+        if (diasHastaCorte >= -5 && diasHastaCorte <= 3 && !pagoEsteMes) {
             return 'upcoming';
         }
         
-        if (diasHastaCorte < -5 && !pagoEsteMes && !pagoMesAnterior) {
+        // Vencido: Más de 5 días después del corte sin pago
+        if (diasHastaCorte < -5 && !pagoEsteMes) {
             return 'overdue';  
         }
         
+        // Al corriente: Pagó este mes O falta más de 3 días para el corte
         return 'current';
         
     } catch (error) {

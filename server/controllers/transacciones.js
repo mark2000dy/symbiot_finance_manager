@@ -1242,11 +1242,9 @@ export const transaccionesController = {
                 const pagoEsteMes = fechaUltimoPago && 
                     fechaUltimoPago.getMonth() === today.getMonth() &&
                     fechaUltimoPago.getFullYear() === today.getFullYear();
-                const pagoMesAnterior = fechaUltimoPago && 
-                    fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12;
                 
-                // LÓGICA CORREGIDA - NO FILTRAR POR PAGOS
-                if (diasHastaCorte >= 0 && diasHastaCorte <= 3) {
+                // ✅ HOMOLOGADO: Próximos a vencer incluye período de gracia (3 días antes hasta 5 después)
+                if (diasHastaCorte >= -5 && diasHastaCorte <= 3 && !pagoEsteMes) {
                     proximos_vencer.push({
                         id: alumno.id,
                         nombre: alumno.nombre,
@@ -1254,7 +1252,7 @@ export const transaccionesController = {
                         dias_restantes: diasHastaCorte,
                         estatus: alumno.estatus
                     });
-                } else if (diasHastaCorte < -5) {
+                    } else if (diasHastaCorte < -5 && !pagoEsteMes) {
                     vencidos.push({
                         id: alumno.id,
                         nombre: alumno.nombre,
