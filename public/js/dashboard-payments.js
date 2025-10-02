@@ -46,26 +46,8 @@ async function refreshPaymentAlerts() {
             proximos_vencer = proximos_vencer.filter(a => String(a.estatus || '').toLowerCase() !== 'baja');
             vencidos = vencidos.filter(a => String(a.estatus || '').toLowerCase() !== 'baja');
 
-            // ✅ HOMOLOGADO: Validar datos con función de estado homologada
-            console.log('🔍 Aplicando validación homologada a alertas...');
-            
-            // Re-validar próximos a vencer con lógica homologada
-            if (typeof getPaymentStatus === 'function') {
-                proximos_vencer = proximos_vencer.filter(alumno => {
-                    const estado = getPaymentStatus(alumno);
-                    return estado === 'upcoming';
-                });
-                
-                // Re-validar vencidos con lógica homologada  
-                vencidos = vencidos.filter(alumno => {
-                    const estado = getPaymentStatus(alumno);
-                    return estado === 'overdue';
-                });
-                
-                console.log(`✅ HOMOLOGADO: ${proximos_vencer.length} próximos, ${vencidos.length} vencidos`);
-            } else {
-                console.warn('⚠️ Función getPaymentStatus no disponible, usando datos del backend');
-            }
+            // CONFIAR EN BACKEND: Los datos ya vienen correctamente calculados
+            console.log(`Alertas del backend: ${proximos_vencer.length} próximos, ${vencidos.length} vencidos`);
 
             // Generar HTML con dos columnas
             let alertsHTML = `

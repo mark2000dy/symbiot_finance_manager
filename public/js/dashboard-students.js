@@ -106,16 +106,16 @@ function getPaymentStatusBadge(student) {
 }
 
 /**
- * ✅ FUNCIÓN HOMOLOGADA: Determinar estado de pago usando función global
+ * Obtener estado de pago de un alumno - HOMOLOGADO
  */
 function getPaymentStatus(student) {
+    // Usar la función homologada del módulo stats
+    if (typeof window.getPaymentStatusHomologado === 'function') {
+        return window.getPaymentStatusHomologado(student);
+    }
+    
+    // Fallback si no está disponible
     try {
-        // Usar la función homologada del módulo stats
-        if (typeof window.getPaymentStatusHomologado === 'function') {
-            return window.getPaymentStatusHomologado(student);
-        }
-        
-        // ✅ IMPLEMENTACIÓN LOCAL IDÉNTICA A LA GLOBAL
         if (student.estatus === 'Baja') return 'inactive';
 
         const today = new Date();
@@ -133,30 +133,28 @@ function getPaymentStatus(student) {
         const pagoEsteMes = fechaUltimoPago && 
             fechaUltimoPago.getMonth() === today.getMonth() && 
             fechaUltimoPago.getFullYear() === today.getFullYear();
-            
-        const pagoMesAnterior = fechaUltimoPago && 
-            fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12 && 
-            (fechaUltimoPago.getFullYear() === today.getFullYear() || 
-             (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
 
-        // Mismo cálculo que la función global
-        if (pagoEsteMes || pagoMesAnterior) return 'current';
-        if (diasHastaCorte >= 0 && diasHastaCorte <= 3) return 'upcoming';
-        if (diasHastaCorte < -5) return 'overdue';
+        if (diasHastaCorte >= 0 && diasHastaCorte <= 3 && !pagoEsteMes) {
+            return 'upcoming';
+        }
+        
+        if (diasHastaCorte < -5 && !pagoEsteMes) {
+            return 'overdue';  
+        }
+        
         return 'current';
         
     } catch (error) {
-        console.error(`❌ Error calculando estado para ${student.nombre}:`, error);
+        console.error(`Error calculando estado para ${student.nombre}:`, error);
         return 'current';
     }
 }
 
 /**
  * Función principal para cargar lista de alumnos con paginación
- * CORRECCIÓN: Manejo mejorado de estado vacío y filtros
+ * CORRECCIÓN: Filtrado de pagos en frontend
  */
 async function loadStudentsList(page = 1) {
-    // CORRECCIÓN: Verificar que los elementos existan antes de proceder
     if (!verifyStudentsElements()) {
         console.log('📭 Widget de alumnos no disponible - saltando carga');
         return;
@@ -166,14 +164,13 @@ async function loadStudentsList(page = 1) {
         console.log(`🎓 Cargando alumnos - Página ${page}...`);
         console.log('🔍 Filtros actuales:', currentStudentFilters);
         
-        // Mostrar loading
         showStudentsLoadingState(true);
         
-        // Construir URL con parámetros
+        // Construir URL SIN filtro de pagos (se hace en frontend)
         const empresaIdParam = currentCompanyFilter || 1;
-        let url = `/gastos/api/alumnos?empresa_id=${empresaIdParam}&page=${page}&limit=${studentsPerPage}`;
+        let url = `/gastos/api/alumnos?empresa_id=${empresaIdParam}&limit=1000`; // Cargar todos
         
-        // Agregar filtros si existen
+        // Agregar solo filtros que el backend soporta
         if (currentStudentFilters.statusFilter) {
             url += `&estatus=${currentStudentFilters.statusFilter}`;
         }
@@ -182,9 +179,6 @@ async function loadStudentsList(page = 1) {
         }
         if (currentStudentFilters.teacherFilter) {
             url += `&maestro_id=${currentStudentFilters.teacherFilter}`;
-        }
-        if (currentStudentFilters.paymentFilter) {
-            url += `&pago=${currentStudentFilters.paymentFilter}`;
         }
         
         console.log('📡 URL de solicitud:', url);
@@ -199,34 +193,43 @@ async function loadStudentsList(page = 1) {
         const result = await response.json();
         
         console.log('📥 Respuesta del servidor:', result);
-        console.log('📊 Registros recibidos:', result.data?.length || 0);
 
         if (result.success && result.data) {
-            // Actualizar variables globales
-            studentsData = result.data;
-            currentStudentsPage = page;
-            totalStudentsPages = result.pagination?.total_pages || 1;
-            totalStudentsRecords = result.pagination?.total_records || 0;
+            let allStudents = result.data;
             
-            console.log(`✅ Página ${page} de ${totalStudentsPages} cargada`);
+            // FILTRAR POR ESTADO DE PAGO EN FRONTEND
+            if (currentStudentFilters.paymentFilter) {
+                console.log(`🔍 Aplicando filtro de pagos: ${currentStudentFilters.paymentFilter}`);
+                allStudents = allStudents.filter(student => {
+                    const status = getPaymentStatus(student);
+                    return status === currentStudentFilters.paymentFilter;
+                });
+                console.log(`✅ Filtrados: ${allStudents.length} alumnos con estado "${currentStudentFilters.paymentFilter}"`);
+            }
             
-            // Ocultar loading
+            // PAGINACIÓN EN FRONTEND
+            totalStudentsRecords = allStudents.length;
+            totalStudentsPages = Math.ceil(totalStudentsRecords / studentsPerPage);
+            currentStudentsPage = Math.min(page, totalStudentsPages || 1);
+            
+            const startIndex = (currentStudentsPage - 1) * studentsPerPage;
+            const endIndex = startIndex + studentsPerPage;
+            studentsData = allStudents.slice(startIndex, endIndex);
+            
+            console.log(`✅ Página ${currentStudentsPage} de ${totalStudentsPages} (${totalStudentsRecords} total)`);
+            
             showStudentsLoadingState(false);
             
-            if (studentsData.length === 0) {
-                // CORRECCIÓN: Manejo mejorado de estado vacío
+            if (totalStudentsRecords === 0) {
                 const hasActiveFilters = Object.values(currentStudentFilters).some(filter => filter !== '');
                 const message = hasActiveFilters 
                     ? 'No se encontraron alumnos que coincidan con los filtros aplicados'
                     : 'No hay alumnos registrados';
                 showStudentsEmptyState(message);
             } else {
-                // Renderizar tabla y paginación
                 renderStudentsTable();
                 renderStudentsPagination();
                 
-                
-                // Actualizar contadores si existen
                 const filteredCountElement = document.getElementById('filteredCount');
                 if (filteredCountElement) {
                     filteredCountElement.textContent = totalStudentsRecords;
@@ -238,7 +241,6 @@ async function loadStudentsList(page = 1) {
                 }
             }
             
-            // Actualizar resumen de filtros
             updateStudentsFilterSummary();
             
         } else {
@@ -1329,8 +1331,22 @@ async function editStudent(id) {
         setFieldValue('editStudentAge', student.edad);
         setFieldValue('editStudentPhone', student.telefono);
         setFieldValue('editStudentEmail', student.email);
-        const fechaInscripcion = student.fecha_inscripcion ? 
-            student.fecha_inscripcion.split(' ')[0] : '';
+        // Normalizar fecha de inscripción al formato YYYY-MM-DD
+        let fechaInscripcion = '';
+        if (student.fecha_inscripcion) {
+            try {
+                const fecha = new Date(student.fecha_inscripcion);
+                if (!isNaN(fecha.getTime())) {
+                    const year = fecha.getFullYear();
+                    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const day = String(fecha.getDate()).padStart(2, '0');
+                    fechaInscripcion = `${year}-${month}-${day}`;
+                }
+            } catch (e) {
+                console.warn('Error parseando fecha de inscripción:', e);
+            }
+        }
+        console.log('Fecha de inscripción procesada:', fechaInscripcion);
         setFieldValue('editStudentEnrollmentDate', fechaInscripcion);
         setFieldValue('editStudentInstrument', student.clase);
         const maestroId = getMaestroIdByName(student.maestro || student.maestro_id);
@@ -1411,7 +1427,7 @@ function viewStudentDetail(studentId) {
                                 <h6 class="text-white"><i class="fas fa-music me-2"></i>Información Académica</h6>
                                 <table class="table table-dark table-sm">
                                     <tr><td><strong>Instrumento:</strong></td><td>${student.clase || 'No especificado'}</td></tr>
-                                    <tr><td><strong>Maestro:</strong></td><td>${getTeacherName(student.maestro_id) || 'Sin asignar'}</td></tr>
+                                    <tr><td><strong>Maestro:</strong></td><td>${student.maestro || 'Sin asignar'}</td></tr>
                                     <tr><td><strong>Horario:</strong></td><td>${student.horario || 'Sin definir'}</td></tr>
                                     <tr><td><strong>Fecha de Inscripción:</strong></td><td>${student.fecha_inscripcion ? formatDate(student.fecha_inscripcion) : 'No registrada'}</td></tr>
                                 </table>
@@ -1433,18 +1449,13 @@ function viewStudentDetail(studentId) {
                             <div class="col-md-6">
                                 <h6 class="text-white"><i class="fas fa-dollar-sign me-2"></i>Información de Pagos</h6>
                                 <table class="table table-dark table-sm">
-                                    <tr><td><strong>Mensualidad:</strong></td><td>${student.precio_mensual ? formatCurrency(student.precio_mensual) : 'No definida'}</td></tr>
+                                    <tr><td><strong>Mensualidad:</strong></td><td>${formatCurrency(parseFloat(student.precio_mensual) || 0)}</td></tr>
                                     <tr><td><strong>Forma de Pago:</strong></td><td>${student.forma_pago || 'No especificada'}</td></tr>
+                                    <tr><td><strong>Último Pago:</strong></td><td>${student.fecha_ultimo_pago ? formatDate(student.fecha_ultimo_pago) : 'Sin registro'}</td></tr>
                                 </table>
                             </div>
                             <div class="col-md-6">
-                                <h6 class="text-white"><i class="fas fa-chart-line me-2"></i>Historial de Pagos</h6>
-                                <div id="chartLoadingState" class="text-center py-3" style="display: none;">
-                                    <i class="fas fa-spinner fa-spin"></i> Cargando historial...
-                                </div>
-                                <div class="text-muted">
-                                    <small>Historial de pagos disponible próximamente</small>
-                                </div>
+                                <!-- ESPACIO PARA GRÁFICA FUTURA -->
                             </div>
                         </div>
                     </div>
@@ -1776,10 +1787,10 @@ function getClassIcon(className) {
 }
 
 /**
- * Actualizar distribución de clases (HOMOLOGADA CON ORIGINAL)
+ * Actualizar distribución de clases - HOMOLOGADO CON REFERENCIA
  */
 function updateClassDistributionOriginal(classes) {
-    const container = document.getElementById('classDistribution'); // ID CORRECTO del original
+    const container = document.getElementById('classDistribution');
     
     if (!container) {
         console.warn('⚠️ Contenedor classDistribution no encontrado');
@@ -1787,14 +1798,12 @@ function updateClassDistributionOriginal(classes) {
     }
     
     if (!classes || classes.length === 0) {
-        // INTENTAR usar datos almacenados antes de mostrar mensaje vacío
         const fallbackData = window.classDistributionData || window.storedClassDistribution || classDistributionData;
         
         if (fallbackData && fallbackData.length > 0) {
             classes = fallbackData;
             console.log('✅ Usando datos almacenados para distribución inicial');
         } else {
-            // Solo mostrar mensaje vacío si realmente no hay datos
             container.innerHTML = `
                 <div class="text-center text-muted py-3">
                     <i class="fas fa-music fa-2x mb-2"></i>
@@ -1807,22 +1816,74 @@ function updateClassDistributionOriginal(classes) {
     
     const totalStudents = classes.reduce((sum, clase) => sum + (clase.total_alumnos || 0), 0);
     
+    // Función helper para obtener color del badge
+    const getClassColor = (clase) => {
+        const colors = {
+            'Guitarra': 'danger',
+            'Teclado': 'success', 
+            'Piano': 'success',
+            'Batería': 'warning', 
+            'Bajo': 'info', 
+            'Canto': 'secondary'
+        };
+        return colors[clase] || 'primary';
+    };
+    
+    // Función helper para obtener emoji
+    const getClassEmoji = (clase) => {
+        const emojis = {
+            'Guitarra': '🎸', 
+            'Teclado': '🎹',
+            'Piano': '🎹',
+            'Batería': '🥁', 
+            'Bajo': '🎸', 
+            'Canto': '🎤'
+        };
+        return emojis[clase] || '🎵';
+    };
+    
     const clasesHTML = classes.map(clase => {
         const count = clase.total_alumnos || 0;
         const percentage = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0;
+        const color = getClassColor(clase.clase);
+        const emoji = getClassEmoji(clase.clase);
         
         if (count === 0) return ''; // No mostrar clases sin alumnos
         
+        // Determinar información secundaria según filtro activo
+        let secondaryInfo = '';
+        if (clase.activos === 0 && clase.inactivos > 0) {
+            // Solo bajas
+            secondaryInfo = `${clase.inactivos} bajas | ${percentage}%`;
+        } else if (clase.inactivos === 0 && clase.activos > 0) {
+            // Solo activos
+            secondaryInfo = `${clase.activos} activos | ${percentage}%`;
+        } else {
+            // Vista completa
+            secondaryInfo = `${clase.activos || 0} activos, ${clase.inactivos || clase.bajas || 0} bajas | ${percentage}%`;
+        }
+        
         return `
-            <div class="class-item d-flex justify-content-between align-items-center p-2 mb-2" 
-                 style="background: rgba(255,255,255,0.05); border-radius: 6px;">
-                <div>
-                    <i class="${getClassIcon(clase.clase)} me-2 text-primary"></i>
-                    <strong class="text-white">${clase.clase}</strong>
+            <div class="class-item d-flex justify-content-between align-items-center mb-3 p-3 rounded" 
+                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; cursor: pointer;"
+                onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.2)';"
+                onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                <div class="class-info d-flex align-items-center">
+                    <span class="badge bg-${color} me-3 fs-6" style="padding: 8px 10px;">${emoji}</span>
+                    <div>
+                        <strong style="color: #E4E6EA; font-size: 1.1em;">${clase.clase}</strong>
+                        <div>
+                            <small style="color: #C8CCD0; font-weight: 500;">(${count} total inscritos)</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-end">
-                    <span class="badge bg-primary">${count}</span>
-                    <br><small class="text-muted">${percentage}%</small>
+                <div class="class-stats text-end">
+                    <div style="color: #E4E6EA; font-weight: 600; font-size: 1.05em; margin-bottom: 2px;">
+                        ${count}
+                    </div>
+                    <small style="color: #C8CCD0; font-weight: 500;">
+                        ${secondaryInfo}
+                    </small>
                 </div>
             </div>
         `;
@@ -1830,15 +1891,9 @@ function updateClassDistributionOriginal(classes) {
     
     container.innerHTML = clasesHTML || '<div class="text-center text-muted">Sin datos para mostrar</div>';
     
-    console.log('✅ Distribución de clases actualizada (homologada)');
+    console.log('✅ Distribución de clases actualizada (homologada con referencia)');
 }
 
-/**
- * Renderizar tabla de alumnos (función faltante)
- */
-/**
- * Renderizar tabla de transacciones
- */
 /**
  * Renderizar tabla de transacciones
  */
@@ -1940,7 +1995,7 @@ async function loadPaymentHistory(studentId, studentName) {
  */
 async function showPaymentHistory(studentId, studentName) {
     try {
-        console.log(`📊 Cargando historial de pagos para: ${studentName}`);
+        console.log(`📊 Cargando historial COMPLETO de pagos para: ${studentName}`);
         
         const historyContainer = document.getElementById('studentPaymentHistory');
         if (!historyContainer) {
@@ -1951,63 +2006,60 @@ async function showPaymentHistory(studentId, studentName) {
         // Mostrar estado de carga
         historyContainer.innerHTML = `
             <h6 class="text-white">
-                <i class="fas fa-chart-line me-2"></i>Historial de Pagos
+                <i class="fas fa-chart-line me-2"></i>Historial Completo de Pagos
             </h6>
             <div class="text-center py-3">
-                <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                <i class="fas fa-spinner fa-spin"></i> Cargando historial completo...
             </div>
         `;
         
-        // Obtener datos del backend
-        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`, {
-            credentials: 'same-origin'  // ⭐ AGREGAR OPCIONES
+        // ✅ CRÍTICO: Sin parámetro meses para obtener TODO
+        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos`, {
+            credentials: 'same-origin'
         });
         const data = await response.json();
         
-        console.log('📥 Datos recibidos:', data); // ✅ DEBUG
+        console.log('📥 Datos recibidos del backend:', data);
         
         if (data.success && data.data) {
             let html = `
                 <h6 class="text-white">
-                    <i class="fas fa-chart-line me-2"></i>Historial de Pagos (últimos 12 meses)
+                    <i class="fas fa-chart-line me-2"></i>Historial Completo de Pagos
                 </h6>
             `;
             
-            // ✅ VERIFICAR ESTRUCTURA DE DATOS
             const pagosPorMes = data.data.pagosPorMes || {};
-            const totalPagado = data.data.totalPagado || 0;
+            const totalPagado = parseFloat(data.data.totalPagado) || 0;
             const totalTransacciones = data.data.totalTransacciones || 0;
             
-            // Verificar si hay pagos
-            const hasPagos = Object.values(pagosPorMes).some(monto => parseFloat(monto) > 0);
+            const mesesConPagos = Object.entries(pagosPorMes).filter(([_, monto]) => parseFloat(monto) > 0);
             
-            console.log('💰 Tiene pagos:', hasPagos, 'Total:', totalPagado); // ✅ DEBUG
+            console.log('💰 Total pagado (calculado con reduce):', totalPagado, 'Transacciones:', totalTransacciones);
             
-            if (hasPagos || totalPagado > 0) {
-                html += '<div class="table-responsive"><table class="table table-dark table-sm">';
-                html += '<thead><tr><th>Mes/Año</th><th class="text-end">Monto</th></tr></thead>';
+            if (mesesConPagos.length > 0 || totalPagado > 0) {
+                html += '<div class="table-responsive" style="max-height: 300px; overflow-y: auto;">';
+                html += '<table class="table table-dark table-sm table-striped">';
+                html += '<thead class="sticky-top" style="background: #191C24;"><tr><th>Mes/Año</th><th class="text-end">Monto</th></tr></thead>';
                 html += '<tbody>';
                 
-                // Ordenar meses del más reciente al más antiguo
-                const mesesOrdenados = Object.entries(pagosPorMes)
-                    .filter(([_, monto]) => parseFloat(monto) > 0)
-                    .sort((a, b) => {
-                        const [yearA, monthA] = a[0].split('-');
-                        const [yearB, monthB] = b[0].split('-');
-                        return (yearB - yearA) || (monthB - monthA);
-                    });
+                // Ordenar del más reciente al más antiguo
+                mesesConPagos.sort((a, b) => {
+                    const [yearA, monthA] = a[0].split('-');
+                    const [yearB, monthB] = b[0].split('-');
+                    return (yearB - yearA) || (monthB - monthA);
+                });
                 
-                mesesOrdenados.forEach(([mes, monto]) => {
+                mesesConPagos.forEach(([mes, monto]) => {
                     const [year, month] = mes.split('-');
                     const fecha = new Date(year, month - 1);
-                    const mesNombre = fecha.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+                    const mesNombre = fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
                     const montoNum = parseFloat(monto);
                     
                     html += `
                         <tr>
-                            <td>${mesNombre}</td>
+                            <td class="text-capitalize">${mesNombre}</td>
                             <td class="text-end text-success">
-                                <strong>$${montoNum.toFixed(2)}</strong>
+                                <strong>${formatCurrency(montoNum)}</strong>
                             </td>
                         </tr>
                     `;
@@ -2017,17 +2069,23 @@ async function showPaymentHistory(studentId, studentName) {
                 
                 // Resumen total
                 html += `
-                    <div class="alert alert-info mt-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Total pagado:</strong> $${parseFloat(totalPagado).toFixed(2)} 
-                        <span class="text-muted ms-2">(${totalTransacciones} transacciones)</span>
+                    <div class="alert alert-success mt-3 mb-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Total Pagado:</strong> ${formatCurrency(totalPagado)}
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">${totalTransacciones} transacciones</small>
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
                 html += `
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        No se encontraron pagos registrados en los últimos 12 meses
+                        No se encontraron pagos registrados para este alumno
                     </div>
                 `;
             }

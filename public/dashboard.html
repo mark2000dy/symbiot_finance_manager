@@ -46,6 +46,11 @@
                             <i class="fas fa-coins me-1"></i>Ingresos
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="event.preventDefault(); showComingSoon('Reportes');">
+                            <i class="fas fa-chart-bar me-1"></i>Reportes
+                        </a>
+                    </li>
                 </ul>
                 
                 <ul class="navbar-nav">
@@ -243,30 +248,38 @@
                                 <h6 class="text-white mb-0">
                                     <i class="fas fa-users me-2"></i>Alumnos Inscritos
                                 </h6>
-                                <span class="badge bg-primary" id="totalStudents" style="cursor: pointer;" onclick="filterStudentsByStatus('all')">0</span>
+                                <span class="badge bg-primary" id="totalStudents" style="cursor: pointer; font-size: 1.1rem; padding: 0.5rem 0.75rem;" onclick="filterStudentsByStatus('all')">0</span>
                             </div>
                             <div class="card-body">
                                 <div class="row text-center">
                                     <div class="col-6">
                                         <div class="student-stat" style="cursor: pointer;" onclick="filterStudentsByStatus('active')">
-                                            <h4 class="text-success mb-1" id="activeStudents">0</h4>
-                                            <small style="color: #4ac711 !important;font-weight: 600;">Activos</small>
+                                            <h2 class="text-success mb-2 fw-bold" id="activeStudents" style="font-size: 2.5rem;">0</h2>
+                                            <small style="color: #4ac711 !important; font-weight: 700; font-size: 0.95rem;">Activos</small>
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="student-stat" style="cursor: pointer;" onclick="filterStudentsByStatus('inactive')">
-                                            <h4 class="text-danger mb-1" id="inactiveStudents">0</h4>
-                                            <small style="color: #dc1313 !important;font-weight: 600;">Bajas</small>
+                                            <h2 class="text-danger mb-2 fw-bold" id="inactiveStudents" style="font-size: 2.5rem;">0</h2>
+                                            <small style="color: #dc1313 !important; font-weight: 700; font-size: 0.95rem;">Bajas</small>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <!-- Classes Distribution -->
                                 <div class="mt-3">
-                                    <small style="color: #E4E6EA !important;">Distribución por Clase:</small>
+                                    <small style="color: #E4E6EA !important; font-weight: 600;">Distribución por Clase:</small>
                                     <div id="classDistribution" class="mt-2">
                                         <!-- Se llena dinámicamente -->
                                     </div>
+                                </div>
+                                
+                                <!-- Iconos de instrumentos -->
+                                <div class="mt-3 d-flex justify-content-around" style="font-size: 1.5rem; opacity: 0.6;">
+                                    <i class="fas fa-guitar text-primary" title="Guitarra"></i>
+                                    <i class="fas fa-drum text-danger" title="Batería"></i>
+                                    <i class="fas fa-music text-warning" title="Piano"></i>
+                                    <i class="fas fa-microphone text-info" title="Canto"></i>
                                 </div>
                             </div>
                         </div>

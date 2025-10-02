@@ -81,6 +81,9 @@ async function loadDashboardData() {
             updateCompanyStatsReal(resumen);
             
             console.log('✅ Estadísticas actualizadas correctamente');
+
+            // Cargar estadísticas del mes actual
+            await loadCurrentMonthData();
             
         } else {
             console.error('❌ Error en la respuesta:', data);
@@ -161,7 +164,7 @@ function updateMainStatsReal(resumen) {
 /**
  * Actualizar estadísticas de empresa en el selector
  */
-function updateCompanyStatsReal(resumen) {
+async function updateCompanyStatsReal(resumen) {
     try {
         console.log('🏢 Actualizando estadísticas del selector de empresa:', resumen);
         
@@ -181,34 +184,65 @@ function updateCompanyStatsReal(resumen) {
             console.log(`📊 Transacciones mostradas: ${totalTx}`);
         }
         
-        // Alumnos activos (solo para RockstarSkull)
+        // Alumnos activos (solo para RockstarSkull) - USAR DATOS CORRECTOS
         const studentsElement = document.getElementById('companyStudents');
         if (studentsElement && currentCompanyFilter === '1') {
-            // Usar misma lógica que alertas de pagos
-            fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=1`, { 
-                cache: 'no-store',
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(alertsData => {
+            try {
+                const alumnosResponse = await fetch(`/gastos/api/dashboard/alumnos?empresa_id=1`, {
+                    cache: 'no-store',
+                    credentials: 'same-origin'
+                });
+                const alumnosData = await alumnosResponse.json();
+                
+                if (alumnosData.success) {
+                    const totalActivos = alumnosData.data.total_alumnos || 0;
+                    studentsElement.textContent = totalActivos;
+                    console.log(`Alumnos activos: ${totalActivos}`);
+                }
+            } catch (error) {
+                console.error('Error cargando alumnos:', error);
+                studentsElement.textContent = '0';
+            }
+        }
+
+        // Actualizar "Al Corriente" y "Pendientes"
+        const currentStudents = document.getElementById('currentStudents');
+        const pendingStudents = document.getElementById('pendingStudents');
+
+        if (currentCompanyFilter === '1' && (currentStudents || pendingStudents)) {
+            try {
+                const alertsResponse = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=1`, {
+                    cache: 'no-store',
+                    credentials: 'same-origin'
+                });
+                const alertsData = await alertsResponse.json();
+                
                 if (alertsData.success) {
                     const proximos = Array.isArray(alertsData.data.proximos_vencer) ? 
                         alertsData.data.proximos_vencer.filter(a => String(a.estatus || '').toLowerCase() !== 'baja') : [];
-                    const vencidos = Array.isArray(alertsData.data.vencidos) ? 
+                    const vencidos = Array.isArray(alertsData.data.vencidos) ?
                         alertsData.data.vencidos.filter(a => String(a.estatus || '').toLowerCase() !== 'baja') : [];
                     
                     const totalPendientes = proximos.length + vencidos.length;
-                    studentsElement.textContent = totalPendientes;
-                } else {
-                    studentsElement.textContent = '0';
+                    
+                    const alumnosResp = await fetch(`/gastos/api/dashboard/alumnos?empresa_id=1`, { cache: 'no-store' });
+                    const alumnosData = await alumnosResp.json();
+                    const totalActivos = alumnosData.success ? (alumnosData.data.total_alumnos || 0) : 0;
+                    
+                    const alCorriente = totalActivos - totalPendientes;
+                    
+                    if (currentStudents) {
+                        currentStudents.textContent = alCorriente;
+                    }
+                    if (pendingStudents) {
+                        pendingStudents.textContent = totalPendientes;
+                    }
+                    
+                    console.log(`Selector: ${alCorriente} al corriente, ${totalPendientes} pendientes`);
                 }
-            })
-            .catch(error => {
-                console.error('❌ Error calculando pendientes:', error);
-                studentsElement.textContent = '0';
-            });
-        } else if (studentsElement) {
-            studentsElement.textContent = '0';
+            } catch (error) {
+                console.error('Error calculando pendientes:', error);
+            }
         }
         
         console.log('✅ Estadísticas del selector actualizadas');
@@ -620,30 +654,10 @@ function updateClassDistribution(clases, filter = 'all') {
 }
 
 /**
- * Función original para maestros (homologada con original)
- */
-/**
- * Función original para maestros (HOMOLOGADA CON ESTRUCTURA SEMÁNTICA ORIGINAL)
+ * Actualizar vista de maestros - HOMOLOGADO CON REFERENCIA
  */
 function updateTeachersOverview(maestros = []) {
-    console.log('👨‍🏫 Actualizando maestros con datos REALES:', maestros);
-    
-    // Debugging directo
-    if (window.debugMaestros) {
-        window.debugMaestros(maestros);
-    }
-    
-    // Debugging: Verificar datos de cada maestro
-    maestros.forEach((maestro, index) => {
-        console.log(`🔍 Maestro ${index + 1}:`, {
-            nombre: maestro.maestro,
-            especialidad: maestro.especialidad,
-            alumnos_activos: maestro.alumnos_activos,
-            alumnos_bajas: maestro.alumnos_bajas,
-            ingresos_activos: maestro.ingresos_activos,
-            ingresos_bajas: maestro.ingresos_bajas
-        });
-    });
+    console.log('👨‍🏫 Actualizando maestros:', maestros);
     
     const container = document.getElementById('teachersOverview');
     if (!container) {
@@ -657,7 +671,7 @@ function updateTeachersOverview(maestros = []) {
                 <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
                 <div class="text-white fw-bold">Sin datos de maestros</div>
                 <small class="text-warning">Verifique que hay alumnos asignados a maestros</small>
-                <button class="btn btn-sm btn-outline-info mt-2" onclick="refreshMaestrosData()">
+                <button class="btn btn-sm btn-outline-info mt-2" onclick="if(typeof refreshMaestrosData === 'function') refreshMaestrosData();">
                     <i class="fas fa-sync-alt me-1"></i>Recargar
                 </button>
             </div>
@@ -665,38 +679,64 @@ function updateTeachersOverview(maestros = []) {
         return;
     }
 
-    // ESTRUCTURA SEMÁNTICA ORIGINAL SIN ESTILOS INLINE
     const html = `
         <div class="teachers-grid">
-            ${maestros.map(maestro => `
-                <div class="teacher-card">
-                    <div class="teacher-header">
-                        <i class="${getClassIcon(maestro.especialidad)} teacher-icon"></i>
-                        <div class="teacher-info">
-                            <div class="teacher-name">${maestro.maestro}</div>
-                            <small class="teacher-specialty">${maestro.especialidad}</small>
+            ${maestros.map(maestro => {
+                const ingresosActivos = parseFloat(maestro.ingresos_activos) || 0;
+                const ingresosBajas = parseFloat(maestro.ingresos_bajas) || 0;
+                
+                return `
+                    <div class="teacher-card mb-3 p-3" style="background: rgba(255,255,255,0.1); border-radius: 8px; border-left: 4px solid #007bff;">
+                        <!-- Header del maestro -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                <h6 class="text-white mb-1 fw-bold">
+                                    <i class="${getClassIcon(maestro.especialidad)} me-2 text-primary"></i>
+                                    ${maestro.maestro}
+                                </h6>
+                                <small class="text-info fw-bold">${maestro.especialidad}</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Alumnos activos vs bajas -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <i class="fas fa-users me-1 text-info"></i>
+                                <strong class="text-white">${maestro.alumnos_activos || 0}</strong> 
+                                <span class="text-success">activos</span>
+                                ${(maestro.alumnos_bajas > 0) ? 
+                                    `<span class="text-muted ms-2">| ${maestro.alumnos_bajas} bajas</span>` : 
+                                    ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Ingresos separados -->
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <div class="text-center p-2" style="background: rgba(40,167,69,0.3); border-radius: 6px; border: 1px solid rgba(40,167,69,0.5);">
+                                    <div class="text-white fw-bold" style="font-size: 0.95em;">
+                                        ${formatCurrency(ingresosActivos)}
+                                    </div>
+                                    <small class="text-white fw-bold">Alumnos Activos</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-2" style="background: rgba(220,53,69,0.3); border-radius: 6px; border: 1px solid rgba(220,53,69,0.5);">
+                                    <div class="text-white fw-bold" style="font-size: 0.95em;">
+                                        ${formatCurrency(ingresosBajas)}
+                                    </div>
+                                    <small class="text-white fw-bold">Alumnos en Baja</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="teacher-stats">
-                        <div class="stat-item active">
-                            <div class="stat-number">${maestro.alumnos_activos || 0}</div>
-                            <small class="stat-label">Activos</small>
-                        </div>
-                        <div class="stat-item inactive">
-                            <div class="stat-number">${maestro.alumnos_bajas || 0}</div>
-                            <small class="stat-label">Bajas</small>
-                        </div>
-                    </div>
-                    <div class="teacher-income">
-                        <small>Ingresos: ${formatCurrency(maestro.ingresos_activos || 0)}</small>
-                    </div>
-                </div>
-            `).join('')}
+                `;
+            }).join('')}
         </div>
     `;
     
     container.innerHTML = html;
-    console.log('✅ Maestros actualizados con estructura semántica original');
+    console.log('✅ Maestros actualizados con diseño homologado (activos/bajas separados)');
 }
 
 /**
@@ -834,6 +874,47 @@ function showRockstarSkullIndicators() {
     
     if (currentStudentsIndicator) currentStudentsIndicator.style.display = 'block';
     if (pendingStudentsIndicator) pendingStudentsIndicator.style.display = 'block';
+}
+
+/**
+ * Cargar estadísticas del mes actual
+ */
+async function loadCurrentMonthData() {
+    try {
+        const currentDate = new Date();
+        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        
+        const fechaInicio = firstDay.toISOString().split('T')[0];
+        const fechaFin = lastDay.toISOString().split('T')[0];
+        
+        let queryParam = `?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`;
+        if (currentCompanyFilter) {
+            queryParam += `&empresa_id=${currentCompanyFilter}`;
+        }
+        
+        console.log(`Cargando balance del mes actual: ${fechaInicio} a ${fechaFin}`);
+        
+        const response = await fetch(`/gastos/api/transacciones/resumen${queryParam}`, {
+            cache: 'no-store'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            const resumen = data.data;
+            const balanceMes = (resumen.ingresos || 0) - (resumen.gastos || 0);
+            
+            const element = document.getElementById('esteMes');
+            if (element) {
+                element.textContent = formatCurrency(balanceMes);
+                element.className = balanceMes >= 0 ? 'text-success mb-0' : 'text-danger mb-0';
+                console.log(`Balance del mes actualizado: ${formatCurrency(balanceMes)}`);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error cargando balance del mes:', error);
+    }
 }
 
 /**

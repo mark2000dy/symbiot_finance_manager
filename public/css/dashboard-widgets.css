@@ -611,3 +611,147 @@ small.text-muted,
     background: rgba(255,255,255,0.1) !important;
     transform: translateY(-1px);
 }
+
+/* ============================================
+   HOMOLOGACIÓN DE WIDGETS - ESTILOS ADICIONALES
+   ============================================ */
+
+/* Widget Alumnos Inscritos - Números grandes */
+#activeStudents,
+#inactiveStudents {
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Labels de alumnos */
+.student-stat small {
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Badge total alumnos */
+#totalStudents {
+    font-size: 1.1rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-weight: 600;
+}
+
+/* Distribución por clase */
+#classDistribution .class-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+#classDistribution .class-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+/* Iconos de instrumentos */
+.card-body .fa-guitar,
+.card-body .fa-drum,
+.card-body .fa-music,
+.card-body .fa-microphone {
+    font-size: 1.5rem;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.card-body .fa-guitar:hover,
+.card-body .fa-drum:hover,
+.card-body .fa-music:hover,
+.card-body .fa-microphone:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+/* Widget Maestros - Homologado */
+.teacher-card {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    border-left: 4px solid #007bff !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+    transition: all 0.3s ease;
+}
+
+.teacher-card:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+.teacher-card h6 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.teacher-card .text-info {
+    font-weight: 600;
+}
+
+.teacher-card .text-white {
+    font-weight: 600;
+}
+
+.teacher-card .text-success {
+    font-weight: 700;
+}
+
+/* Alertas de pagos - Columnas */
+.payment-section {
+    padding: 1rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.payment-section.upcoming {
+    border-left: 3px solid #ffc107;
+}
+
+.payment-section.overdue {
+    border-left: 3px solid #dc3545;
+}
+
+.alerts-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.alerts-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.alerts-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.alerts-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.alerts-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.alert-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.alert-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(3px);
+}

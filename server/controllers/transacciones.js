@@ -526,55 +526,92 @@ export const transaccionesController = {
     getHistorialPagosAlumno: async (req, res) => {
         try {
             const { alumnoNombre } = req.params;
-            const { meses = 12 } = req.query;
+            const { meses } = req.query; // Sin valor por defecto para obtener TODO
             
-            console.log(`📊 Obteniendo historial de pagos para: ${alumnoNombre}`);
-            
-            // Buscar transacciones que sean ingresos (pagos) y contengan el nombre del alumno
-            const transacciones = await executeQuery(`
+            // Extraer primeros dos nombres para búsqueda más flexible
+            const nombreCompleto = alumnoNombre.trim();
+            const primerosNombres = nombreCompleto.split(' ').slice(0, 2).join(' ');
+
+            console.log(`📊 Obteniendo historial de pagos para: ${nombreCompleto}${meses ? ` (últimos ${meses} meses)` : ' (completo)'}`);
+            console.log(`🔍 Buscando también por: "${primerosNombres}"`);
+
+            // Construir query buscando por nombre completo O primeros dos nombres
+            let query = `
                 SELECT fecha, total, concepto
                 FROM transacciones 
                 WHERE tipo = 'I' 
                     AND empresa_id = 1 
-                    AND concepto LIKE ?
-                    AND fecha >= DATE_SUB(NOW(), INTERVAL ? MONTH)
-                ORDER BY fecha DESC
-            `, [`%${alumnoNombre}%`, meses]);
+                    AND (concepto LIKE ? OR concepto LIKE ?)
+            `;
+
+            let params = [`%${nombreCompleto}%`, `%${primerosNombres}%`];
+            
+            // Solo agregar límite si se especifica meses
+            if (meses && !isNaN(parseInt(meses))) {
+                query += ` AND fecha >= DATE_SUB(NOW(), INTERVAL ? MONTH)`;
+                params.push(parseInt(meses));
+            }
+            
+            query += ` ORDER BY fecha DESC`;
+            
+            console.log('🔍 Query:', query);
+            console.log('📋 Params:', params);
+            
+            // Ejecutar query
+            const transacciones = await executeQuery(query, params);
+            
+            console.log(`📦 ${transacciones.length} transacciones encontradas`);
             
             // Procesar datos por mes
             const pagosPorMes = {};
-            const fechaInicio = new Date();
-            fechaInicio.setMonth(fechaInicio.getMonth() - meses);
             
-            // Inicializar todos los meses con 0
-            for (let i = 0; i < meses; i++) {
-                const fecha = new Date();
-                fecha.setMonth(fecha.getMonth() - i);
-                const clave = `${fecha.getFullYear()}-${fecha.getMonth() + 1}`;
-                pagosPorMes[clave] = 0;
+            // Determinar rango de meses a inicializar
+            if (meses && !isNaN(parseInt(meses))) {
+                // Inicializar últimos N meses
+                for (let i = 0; i < parseInt(meses); i++) {
+                    const fecha = new Date();
+                    fecha.setMonth(fecha.getMonth() - i);
+                    const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+                    pagosPorMes[clave] = 0;
+                }
+            } else if (transacciones.length > 0) {
+                // Sin límite: inicializar desde la primera transacción hasta hoy
+                const primeraFecha = new Date(transacciones[transacciones.length - 1].fecha);
+                const hoy = new Date();
+                
+                let fecha = new Date(primeraFecha.getFullYear(), primeraFecha.getMonth(), 1);
+                while (fecha <= hoy) {
+                    const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+                    pagosPorMes[clave] = 0;
+                    fecha.setMonth(fecha.getMonth() + 1);
+                }
             }
             
             // Sumar pagos por mes
             transacciones.forEach(transaccion => {
                 const fecha = new Date(transaccion.fecha);
-                const clave = `${fecha.getFullYear()}-${fecha.getMonth() + 1}`;
-                if (pagosPorMes.hasOwnProperty(clave)) {
-                    pagosPorMes[clave] += transaccion.total;
+                const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+                if (!pagosPorMes[clave]) {
+                    pagosPorMes[clave] = 0;
                 }
+                pagosPorMes[clave] += parseFloat(transaccion.total);
             });
             
-            // Calcular estadísticas
+            // Calcular total pagado usando reduce (SUMA CORRECTA)
+            const totalPagado = transacciones.reduce((sum, t) => sum + parseFloat(t.total), 0);
             const ultimoPago = transacciones.length > 0 ? transacciones[0].fecha : null;
-            const totalPagado = transacciones.reduce((sum, t) => sum + t.total, 0);
+            
+            console.log(`✅ Total pagado: $${totalPagado.toFixed(2)} en ${transacciones.length} transacciones`);
             
             res.json({
                 success: true,
                 data: {
                     pagosPorMes,
                     ultimoPago,
-                    totalPagado,
+                    totalPagado: parseFloat(totalPagado.toFixed(2)),
                     totalTransacciones: transacciones.length,
-                    alumno: alumnoNombre
+                    alumno: alumnoNombre,
+                    rango: meses ? `Últimos ${meses} meses` : 'Historial completo'
                 }
             });
             
@@ -582,7 +619,8 @@ export const transaccionesController = {
             console.error('Error obteniendo historial de pagos:', error);
             res.status(500).json({
                 success: false,
-                message: 'Error interno del servidor'
+                message: 'Error interno del servidor',
+                error: error.message
             });
         }
     },
