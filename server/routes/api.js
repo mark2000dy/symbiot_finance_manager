@@ -992,4 +992,357 @@ router.get('/instrumentos', async (req, res) => {
     }
 });
 
+// ============================================================
+// 📊 ENDPOINTS PARA REPORTES
+// ============================================================
+
+/**
+ * GET /api/transacciones/rango-fechas
+ * Obtener rango de fechas (primera y última transacción)
+ */
+router.get('/transacciones/rango-fechas', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                MIN(fecha) as fecha_minima,
+                MAX(fecha) as fecha_maxima
+            FROM transacciones
+            WHERE fecha IS NOT NULL
+        `;
+        
+        const results = await executeQuery(query);
+        
+        res.json({
+            success: true,
+            data: results[0] || { fecha_minima: null, fecha_maxima: null }
+        });
+        
+    } catch (error) {
+        console.error('Error obteniendo rango de fechas:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error obteniendo rango de fechas'
+        });
+    }
+});
+
+/**
+ * GET /api/transacciones/count
+ * Obtener total de transacciones
+ */
+router.get('/transacciones/count', async (req, res) => {
+    try {
+        const query = `SELECT COUNT(*) as total FROM transacciones`;
+        
+        const results = await executeQuery(query);
+        
+        res.json({
+            success: true,
+            data: {
+                total: results[0].total
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error obteniendo total de transacciones:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error obteniendo total de transacciones'
+        });
+    }
+});
+
+// ============================================================
+// 📊 ENDPOINT: REPORTE GASTOS REALES
+// ============================================================
+
+/**
+ * GET /api/reportes/gastos-reales
+ * Obtener reporte detallado de gastos reales (flujo de efectivo mensual)
+ */
+router.get('/reportes/gastos-reales', async (req, res) => {
+    try {
+        const { empresa_id, ano, mes, tipo } = req.query;
+        
+        console.log('📊 Generando reporte Gastos Reales...', { empresa_id, ano, mes, tipo });
+        
+        // Construir WHERE clause
+        let whereClause = 'WHERE 1=1';
+        let params = [];
+        
+        if (empresa_id) {
+            whereClause += ' AND empresa_id = ?';
+            params.push(empresa_id);
+        }
+        
+        if (ano) {
+            whereClause += ' AND YEAR(fecha) = ?';
+            params.push(ano);
+        }
+        
+        if (mes) {
+            whereClause += ' AND MONTH(fecha) = ?';
+            params.push(mes);
+        }
+        
+        if (tipo) {
+            whereClause += ' AND tipo = ?';
+            params.push(tipo);
+        }
+        
+        // Query principal: Obtener flujo mensual
+        const queryDetalleMensual = `
+            SELECT 
+                DATE_FORMAT(fecha, '%Y-%m') as periodo,
+                DATE_FORMAT(fecha, '%M %Y') as mes_nombre,
+                YEAR(fecha) as ano,
+                MONTH(fecha) as mes_num,
+                SUM(CASE WHEN tipo = 'I' THEN total ELSE 0 END) as entradas,
+                SUM(CASE WHEN tipo = 'G' THEN total ELSE 0 END) as salidas,
+                SUM(CASE WHEN tipo = 'I' THEN total ELSE 0 END) - 
+                SUM(CASE WHEN tipo = 'G' THEN total ELSE 0 END) as flujo
+            FROM transacciones
+            ${whereClause}
+            GROUP BY DATE_FORMAT(fecha, '%Y-%m'), YEAR(fecha), MONTH(fecha)
+            ORDER BY YEAR(fecha), MONTH(fecha)
+        `;
+        
+        const detalleMensual = await executeQuery(queryDetalleMensual, params);
+        
+        // Query de totales
+        const queryTotales = `
+            SELECT 
+                SUM(CASE WHEN tipo = 'I' THEN total ELSE 0 END) as total_entradas,
+                SUM(CASE WHEN tipo = 'G' THEN total ELSE 0 END) as total_salidas,
+                SUM(CASE WHEN tipo = 'I' THEN total ELSE 0 END) - 
+                SUM(CASE WHEN tipo = 'G' THEN total ELSE 0 END) as flujo_neto,
+                COUNT(*) as total_transacciones
+            FROM transacciones
+            ${whereClause}
+        `;
+        
+        const totales = await executeQuery(queryTotales, params);
+        
+        // Formatear nombres de meses en español
+        const mesesES = {
+            'January': 'Enero',
+            'February': 'Febrero',
+            'March': 'Marzo',
+            'April': 'Abril',
+            'May': 'Mayo',
+            'June': 'Junio',
+            'July': 'Julio',
+            'August': 'Agosto',
+            'September': 'Septiembre',
+            'October': 'Octubre',
+            'November': 'Noviembre',
+            'December': 'Diciembre'
+        };
+        
+        // Formatear detalle mensual
+        const detalleMensualFormateado = detalleMensual.map(item => {
+            // Convertir nombre del mes a español
+            const mesNombreEN = item.mes_nombre.split(' ')[0];
+            const mesNombreES = mesesES[mesNombreEN] || mesNombreEN;
+            const ano = item.mes_nombre.split(' ')[1];
+            
+            return {
+                periodo: item.periodo,
+                mes: `${mesNombreES} ${ano}`,
+                ano: item.ano,
+                mes_num: item.mes_num,
+                entradas: parseFloat(item.entradas) || 0,
+                salidas: parseFloat(item.salidas) || 0,
+                flujo: parseFloat(item.flujo) || 0
+            };
+        });
+        
+        // Preparar respuesta
+        const response = {
+            success: true,
+            data: {
+                total_entradas: parseFloat(totales[0]?.total_entradas) || 0,
+                total_salidas: parseFloat(totales[0]?.total_salidas) || 0,
+                flujo_neto: parseFloat(totales[0]?.flujo_neto) || 0,
+                total_transacciones: parseInt(totales[0]?.total_transacciones) || 0,
+                detalle_mensual: detalleMensualFormateado,
+                filtros_aplicados: {
+                    empresa_id: empresa_id || 'Todas',
+                    ano: ano || 'Todos',
+                    mes: mes || 'Todos',
+                    tipo: tipo || 'Todos'
+                }
+            }
+        };
+        
+        console.log(`✅ Reporte generado: ${detalleMensualFormateado.length} meses, ${response.data.total_transacciones} transacciones`);
+        
+        res.json(response);
+        
+    } catch (error) {
+        console.error('❌ Error generando reporte Gastos Reales:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error generando reporte de Gastos Reales',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/reportes/balance-general
+ * Obtener balance general con inversión por socio, estado de cuentas y participación
+ */
+router.get('/reportes/balance-general', async (req, res) => {
+    try {
+        const { empresa_id, ano, mes } = req.query;
+        
+        console.log('📊 Generando Balance General...', { empresa_id, ano, mes });
+        
+        // Construir WHERE clause base para transacciones
+        let whereClause = 'WHERE 1=1';
+        let params = [];
+        
+        if (empresa_id) {
+            whereClause += ' AND empresa_id = ?';
+            params.push(empresa_id);
+        }
+        
+        if (ano) {
+            whereClause += ' AND YEAR(fecha) = ?';
+            params.push(ano);
+        }
+        
+        if (mes) {
+            whereClause += ' AND MONTH(fecha) = ?';
+            params.push(mes);
+        }
+        
+        // 1. Obtener inversión total por socio
+        const querySocios = `
+            SELECT 
+                socio,
+                SUM(CASE WHEN tipo = 'I' THEN total ELSE 0 END) as inversion,
+                MAX(fecha) as ultima_actualizacion
+            FROM transacciones
+            ${whereClause}
+            GROUP BY socio
+            HAVING SUM(CASE WHEN tipo = 'I' THEN total ELSE 0 END) > 0
+            ORDER BY inversion DESC
+        `;
+        
+        const socios = await executeQuery(querySocios, params);
+        
+        // Calcular total de inversión de socios
+        const totalInversionSocios = socios.reduce((sum, socio) => 
+            sum + parseFloat(socio.inversion || 0), 0);
+        
+        // Calcular porcentajes de participación
+        const sociosConPorcentaje = socios.map(socio => ({
+            socio: socio.socio,
+            inversion: parseFloat(socio.inversion) || 0,
+            porcentaje: totalInversionSocios > 0 
+                ? ((parseFloat(socio.inversion) / totalInversionSocios) * 100) 
+                : 0,
+            ultima_actualizacion: socio.ultima_actualizacion
+        }));
+        
+        // 2. Obtener gastos totales de la escuela
+        const queryGastosEscuela = `
+            SELECT 
+                SUM(total) as gastos_totales,
+                COUNT(*) as num_transacciones
+            FROM transacciones
+            ${whereClause} AND tipo = 'G'
+        `;
+        
+        const gastosEscuela = await executeQuery(queryGastosEscuela, params);
+        const gastosEscuelaMonto = parseFloat(gastosEscuela[0]?.gastos_totales) || 0;
+        
+        // 3. Total general (inversión socios + gastos escuela)
+        const totalGeneral = totalInversionSocios + gastosEscuelaMonto;
+        
+        // Porcentaje de gastos
+        const porcentajeGastos = totalGeneral > 0 
+            ? ((gastosEscuelaMonto / totalGeneral) * 100) 
+            : 0;
+        
+        // 4. Estado de cuentas (simulado - en producción vendría de tabla de cuentas bancarias)
+        // Por ahora, calcularemos el saldo como: Total Ingresos - Total Gastos
+        const queryEstadoCuenta = `
+            SELECT 
+                SUM(CASE WHEN tipo = 'I' THEN total ELSE 0 END) as total_ingresos,
+                SUM(CASE WHEN tipo = 'G' THEN total ELSE 0 END) as total_gastos
+            FROM transacciones
+            ${whereClause}
+        `;
+        
+        const estadoCuenta = await executeQuery(queryEstadoCuenta, params);
+        const totalIngresos = parseFloat(estadoCuenta[0]?.total_ingresos) || 0;
+        const totalGastos = parseFloat(estadoCuenta[0]?.total_gastos) || 0;
+        const saldoDisponible = totalIngresos - totalGastos;
+        
+        // Simular distribución de saldos en cuentas (70% Inbursa, 30% Mercado Pago)
+        const cuentasBancarias = [
+            {
+                nombre: 'Cuenta Inbursa',
+                banco: 'Inbursa',
+                tipo: 'Cuenta Corriente',
+                saldo: saldoDisponible * 0.70,
+                ultima_actualizacion: new Date().toISOString()
+            },
+            {
+                nombre: 'Mercado Pago',
+                banco: 'Mercado Pago',
+                tipo: 'Cuenta Digital',
+                saldo: saldoDisponible * 0.30,
+                ultima_actualizacion: new Date().toISOString()
+            }
+        ];
+        
+        // 5. Preparar respuesta
+        const response = {
+            success: true,
+            data: {
+                resumen: {
+                    inversion_total: totalInversionSocios,
+                    gastos_escuela: gastosEscuelaMonto,
+                    total_general: totalGeneral,
+                    saldo_disponible: saldoDisponible,
+                    numero_socios: socios.length
+                },
+                socios: sociosConPorcentaje,
+                gastos_escuela: {
+                    monto: gastosEscuelaMonto,
+                    porcentaje: porcentajeGastos,
+                    num_transacciones: parseInt(gastosEscuela[0]?.num_transacciones) || 0
+                },
+                cuentas_bancarias: cuentasBancarias,
+                participacion: sociosConPorcentaje.map(s => ({
+                    socio: s.socio,
+                    porcentaje: s.porcentaje
+                })),
+                filtros_aplicados: {
+                    empresa_id: empresa_id || 'Todas',
+                    ano: ano || 'Todos',
+                    mes: mes || 'Todos'
+                },
+                fecha_generacion: new Date().toISOString()
+            }
+        };
+        
+        console.log(`✅ Balance General generado: ${socios.length} socios, ${cuentasBancarias.length} cuentas`);
+        
+        res.json(response);
+        
+    } catch (error) {
+        console.error('❌ Error generando Balance General:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error generando Balance General',
+            error: error.message
+        });
+    }
+});
+
 export default router;

@@ -19,16 +19,29 @@ async function initializeDashboard() {
         // CORRECCIÓN: Usar variable global del stats module
 let     currentCompanyFilter = window.currentCompanyFilter || '';
 
-        // CORRECCIÓN: Asegurar que el selector inicie en "Todas las empresas"
-        function initializeCompanySelector() {
-            const companySelect = document.getElementById('companyFilter');
-            if (companySelect) {
-                companySelect.value = ''; // Forzar "Todas las empresas"
-                window.currentCompanyFilter = '';
-                currentCompanyFilter = '';
-                console.log('✅ Selector inicializado: Todas las empresas');
+        // ✅ NUEVO: Restaurar filtro desde localStorage
+        function restoreCompanyFilter() {
+            try {
+                const savedFilter = localStorage.getItem('dashboardCompanyFilter');
+                if (savedFilter !== null) {
+                    window.currentCompanyFilter = savedFilter;
+                    currentCompanyFilter = savedFilter;
+                    
+                    const companySelect = document.getElementById('companyFilter');
+                    if (companySelect) {
+                        companySelect.value = savedFilter;
+                        console.log(`📂 Filtro restaurado desde localStorage: ${savedFilter || 'Todas'}`);
+                        return savedFilter;
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ No se pudo leer localStorage:', e);
             }
+            return '';
         }
+
+        // Restaurar filtro guardado
+        const restoredFilter = restoreCompanyFilter();
         
         // Verificar que los módulos están cargados
         if (!verifyModulesLoaded()) {
@@ -63,8 +76,8 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
         }
 
         // FASE 3: Inicializar selector de empresa
-        console.log('📋 FASE 3: Inicializando selector de empresa...');
-        initializeCompanySelector();
+        //console.log('📋 FASE 3: Inicializando selector de empresa...');
+        //initializeCompanySelector();
         
         // FASE 4: Configurar filtros desde URL (con verificación)
         if (typeof window.loadCompanyFilterFromURL === 'function') {
@@ -119,6 +132,25 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
        // FASE 6: Cargar datos principales
         console.log('📋 FASE 5: Cargando datos del dashboard...');
         await loadDashboardData();
+
+        // ✅ NUEVO: Si es RockstarSkull, cargar sus datos específicos
+        if (window.currentCompanyFilter === '1') {
+            console.log('🎸 Detectado filtro RockstarSkull, cargando datos específicos...');
+            
+            if (typeof window.loadRockstarSkullDataReal === 'function') {
+                await window.loadRockstarSkullDataReal();
+            }
+            
+            if (typeof window.refreshPaymentAlerts === 'function') {
+                await window.refreshPaymentAlerts();
+            }
+            
+            if (typeof loadStudentsList === 'function') {
+                await loadStudentsList(1);
+            }
+            
+            console.log('✅ Datos de RockstarSkull cargados tras navegación');
+        }
 
         // CORRECCIÓN NAVEGACIÓN: Verificar si los datos se cargaron correctamente
         setTimeout(async () => {

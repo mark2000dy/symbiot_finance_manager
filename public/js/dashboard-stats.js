@@ -493,6 +493,14 @@ async function handleCompanyChange() {
         const selectedCompany = companySelect.value;
         currentCompanyFilter = selectedCompany;
         window.currentCompanyFilter = selectedCompany; // Sincronizar globalmente
+
+        // ✅ NUEVO: Guardar en localStorage para persistencia entre navegaciones
+        try {
+            localStorage.setItem('dashboardCompanyFilter', selectedCompany);
+            console.log(`💾 Filtro guardado en localStorage: ${selectedCompany || 'Todas'}`);
+        } catch (e) {
+            console.warn('⚠️ No se pudo guardar en localStorage:', e);
+        }
         
         console.log(`🏢 Empresa seleccionada: ${selectedCompany || 'Todas las empresas'}`);
         
