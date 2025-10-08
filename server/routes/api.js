@@ -162,8 +162,6 @@ router.get('/dashboard', async (req, res) => {
 
 // GET /api/dashboard/alumnos - Estadísticas de alumnos para dashboard
 router.get('/dashboard/alumnos', transaccionesController.getDashboardAlumnos);
-router.get('/dashboard/alertas-pagos', transaccionesController.getAlertasPagos);
-
 
 // ============================================================
 // RUTAS ESPECÍFICAS DE GASTOS
@@ -730,53 +728,12 @@ router.get('/balance', async (req, res) => {
 
 // ==================== RUTAS DE ALERTAS DE PAGOS (ROCKSTARSKULL) ====================
 
-// GET /api/alertas-pagos - Obtener alertas de pagos próximos y vencidos
-router.get('/alertas-pagos', async (req, res) => {
+// GET /api/alertas-pagos - Obtener alertas de pagos próximos y vencidos HOMOLOGADO
+router.get('/dashboard/alertas-pagos', async (req, res) => {
     try {
-        console.log('📅 Calculando alertas de pagos...');
-        console.log('🔍 Verificando pagos recientes para filtrar alertas...');
-        console.log('📊 Configuración de alertas:');
-        console.log('  - Próximos a vencer: 0-3 días antes de fecha de corte');
-        console.log('  - Vencidos: más de 5 días después de fecha de corte');
-        console.log('  - Se excluyen alumnos con pagos recientes');
-        // OBTENER ALUMNOS REALES DE LA BASE DE DATOS
-        console.log('🔍 Verificando datos de alumnos...');
-
-        // Verificar si hay alumnos activos primero
-        const [countResult] = await executeQuery(`
-            SELECT COUNT(*) as total 
-            FROM alumnos 
-            WHERE empresa_id = 1 AND estatus = 'Activo' AND nombre NOT LIKE '[ELIMINADO]%'
-        `);
-
-        console.log(`📊 Total alumnos activos: ${countResult.total}`);
-
-        if (countResult.total === 0) {
-            console.log('⚠️ No hay alumnos activos, generando alertas de ejemplo');
-            // Simular algunas alertas si no hay datos reales
-            const alertasEjemplo = {
-                proximos_vencer: [
-                    {
-                        id: 1, nombre: 'Ejemplo - Juan Pérez', clase: 'Guitarra', 
-                        dias_restantes: 3, fecha_proximo_pago: '2025-08-30'
-                    }
-                ],
-                vencidos: []
-            };
-            
-            return res.json({
-                success: true,
-                data: {
-                    proximos_vencer: alertasEjemplo.proximos_vencer,
-                    vencidos: alertasEjemplo.vencidos,
-                    total_alertas: alertasEjemplo.proximos_vencer.length,
-                    fecha_calculo: new Date().toISOString(),
-                    mensaje: 'Datos de ejemplo - No hay alumnos reales'
-                }
-            });
-        }
-
-        // Obtener alumnos reales con lógica de fechas simplificada
+        console.log('📅 Calculando alertas HOMOLOGADAS...');
+        
+        // Obtener alumnos activos
         const alumnos = await executeQuery(`
             SELECT 
                 id,
@@ -787,88 +744,110 @@ router.get('/alertas-pagos', async (req, res) => {
                 fecha_ultimo_pago,
                 estatus
             FROM alumnos 
-            WHERE empresa_id = 1 AND estatus = 'Activo' AND nombre NOT LIKE '[ELIMINADO]%'
+            WHERE empresa_id = 1 
+                AND estatus = 'Activo' 
+                AND nombre NOT LIKE '[ELIMINADO]%'
             ORDER BY nombre
         `);
 
-        console.log(`📊 Procesando alertas para ${alumnos.length} alumnos activos`);
+        console.log(`📊 Procesando ${alumnos.length} alumnos activos`);
         
-        // Definir variables necesarias
         const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
         const alertas = {
             proximos_vencer: [],
             vencidos: []
         };
 
-        // Procesar cada alumno y verificar pagos recientes
+        // Procesar cada alumno con lógica homologada
         for (const alumno of alumnos) {
             const fechaInscripcion = new Date(alumno.fecha_inscripcion);
             const diaCorte = fechaInscripcion.getDate();
             
-            // Calcular próxima fecha de corte basada en el día de inscripción
-            const hoy = new Date();
-            const mesActual = hoy.getMonth();
-            const anoActual = hoy.getFullYear();
+            // Calcular fecha de corte del mes ACTUAL
+            let fechaCorteActual = new Date(hoy.getFullYear(), hoy.getMonth(), diaCorte);
+            fechaCorteActual.setHours(0, 0, 0, 0);
             
-            // Calcular fecha de corte del mes ACTUAL (no próximo)
-            const fechaCorteActual = new Date(anoActual, mesActual, diaCorte);
-            let proximaFechaCorte = new Date(fechaCorteActual);
+            // Si el día no existe en el mes (ej: 31 en febrero), usar último día del mes
+            if (fechaCorteActual.getDate() !== diaCorte) {
+                fechaCorteActual = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+                fechaCorteActual.setHours(0, 0, 0, 0);
+            }
+            
+            // Calcular inicio y fin del periodo de pago
+            const inicioPeriodoPago = new Date(fechaCorteActual);
+            inicioPeriodoPago.setDate(inicioPeriodoPago.getDate() - 3); // 3 días antes
+            
+            const finPeriodoGracia = new Date(fechaCorteActual);
+            finPeriodoGracia.setDate(finPeriodoGracia.getDate() + 5); // 5 días después
+            
+            const enPeriodoPago = hoy >= inicioPeriodoPago && hoy <= finPeriodoGracia;
+            
+            // Verificar pagos usando fecha_ultimo_pago de la tabla alumnos
+            const fechaUltimoPago = alumno.fecha_ultimo_pago ? new Date(alumno.fecha_ultimo_pago) : null;
+            
+            const pagoEsteMes = fechaUltimoPago && 
+                fechaUltimoPago.getMonth() === hoy.getMonth() &&
+                fechaUltimoPago.getFullYear() === hoy.getFullYear();
+            
+            const pagoMesAnterior = fechaUltimoPago &&
+                fechaUltimoPago.getMonth() === (hoy.getMonth() - 1 + 12) % 12 &&
+                (fechaUltimoPago.getFullYear() === hoy.getFullYear() ||
+                 (hoy.getMonth() === 0 && fechaUltimoPago.getFullYear() === hoy.getFullYear() - 1));
 
-            // Calcular días transcurridos desde la fecha de corte actual
-            const diasDesdeFechaCorte = Math.ceil((hoy - fechaCorteActual) / (1000 * 60 * 60 * 24));
-
-            // Si la fecha de corte ya pasó, próxima fecha será el próximo mes
-            if (fechaCorteActual < hoy) {
-                proximaFechaCorte.setMonth(proximaFechaCorte.getMonth() + 1);
+            // Si pagó este mes, no aparece en alertas
+            if (pagoEsteMes) {
+                continue;
             }
 
-            const diasHastaCorte = Math.ceil((proximaFechaCorte - hoy) / (1000 * 60 * 60 * 24));
-            
-            // NUEVO: Buscar el último pago del alumno y comparar vs fecha de corte
-            const ultimoPago = await executeQuery(`
-                SELECT fecha, concepto
-                FROM transacciones 
-                WHERE tipo = 'I' 
-                    AND empresa_id = 1 
-                    AND concepto LIKE ?
-                ORDER BY fecha DESC
-                LIMIT 1
-            `, [`%${alumno.nombre}%`]);
-
-            let debeAparecerEnAlertas = false;
-
-            if (ultimoPago.length === 0) {
-                // No tiene pagos registrados, verificar según fecha de corte
-                debeAparecerEnAlertas = true;
-            } else {
-               // Tiene pagos, verificar si el último pago fue antes de la fecha de corte actual
-                const fechaUltimoPago = new Date(ultimoPago[0].fecha);
-
-                // LÓGICA CORREGIDA: Si han pasado más de 5 días desde la fecha de corte actual
-                // y el último pago fue antes de esa fecha de corte
-                if (diasDesdeFechaCorte > 5 && fechaUltimoPago < fechaCorteActual) {
-                    debeAparecerEnAlertas = true;
+            // Calcular próxima fecha de pago para mostrar
+            let proximaFechaCorte = fechaCorteActual;
+            if (hoy > fechaCorteActual) {
+                proximaFechaCorte = new Date(hoy.getFullYear(), hoy.getMonth() + 1, diaCorte);
+                if (proximaFechaCorte.getDate() !== diaCorte) {
+                    proximaFechaCorte = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0);
                 }
             }
 
-            // Solo incluir en alertas si debe aparecer según la lógica de pagos
-            // PRÓXIMOS A VENCER: 3 días o menos antes de fecha de corte
-            if (diasHastaCorte >= 0 && diasHastaCorte <= 3) {
-                alertas.proximos_vencer.push({
+            // ✅ REGLA 1: VENCIDO - NO pagó mes anterior (sin importar periodo actual)
+            if (!pagoMesAnterior) {
+                // Calcular días vencidos desde el fin del periodo de gracia del MES ANTERIOR
+                const fechaCorteAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, diaCorte);
+                const finGraciaAnterior = new Date(fechaCorteAnterior);
+                finGraciaAnterior.setDate(finGraciaAnterior.getDate() + 5);
+                
+                const diasVencido = Math.max(0, Math.floor((hoy.getTime() - finGraciaAnterior.getTime()) / (1000 * 60 * 60 * 24)));
+                
+                alertas.vencidos.push({
                     ...alumno,
-                    dias_restantes: diasHastaCorte,
+                    dias_vencido: diasVencido,
                     fecha_proximo_pago: proximaFechaCorte.toISOString().split('T')[0]
                 });
             }
-            // VENCIDOS: Más de 5 días después de la fecha de corte actual
-            else if (diasDesdeFechaCorte > 5) {
+            // ✅ REGLA 2: PRÓXIMO A VENCER - Pagó mes anterior Y en periodo de pago actual
+            else if (pagoMesAnterior && enPeriodoPago) {
+                const diasRestantes = Math.max(0, Math.floor((finPeriodoGracia.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)));
+                
+                alertas.proximos_vencer.push({
+                    ...alumno,
+                    dias_restantes: diasRestantes,
+                    fecha_proximo_pago: proximaFechaCorte.toISOString().split('T')[0]
+                });
+            }
+            // ✅ REGLA 3: VENCIDO - Pagó mes anterior pero ya pasó periodo de gracia del mes actual
+            else if (pagoMesAnterior && hoy > finPeriodoGracia) {
+                const diasVencido = Math.floor((hoy.getTime() - finPeriodoGracia.getTime()) / (1000 * 60 * 60 * 24));
+                
                 alertas.vencidos.push({
                     ...alumno,
-                    dias_vencido: diasDesdeFechaCorte,
+                    dias_vencido: diasVencido,
                     fecha_proximo_pago: proximaFechaCorte.toISOString().split('T')[0]
                 });
             }
         }
+        
+        console.log(`✅ Alertas calculadas: ${alertas.proximos_vencer.length} próximos, ${alertas.vencidos.length} vencidos`);
         
         res.json({
             success: true,
@@ -880,15 +859,14 @@ router.get('/alertas-pagos', async (req, res) => {
             }
         });
         
-        } catch (error) {
-        console.error('❌ ERROR DETALLADO en alertas-pagos:', error);
+    } catch (error) {
+        console.error('❌ ERROR en alertas-pagos:', error);
         console.error('📍 Stack trace:', error.stack);
         
         res.status(500).json({
             success: false,
-            error: 'Error interno del servidor procesando alertas',
-            details: error.message,
-            timestamp: new Date().toISOString()
+            error: 'Error procesando alertas',
+            details: error.message
         });
     }
 });
@@ -954,7 +932,6 @@ router.put('/alumnos/:id/estatus', async (req, res) => {
 // ==================== RUTAS DASHBOARD ====================
 router.get('/dashboard', transaccionesController.getResumen);
 router.get('/dashboard/alumnos', transaccionesController.getDashboardAlumnos);
-router.get('/dashboard/alertas-pagos', transaccionesController.getAlertasPagos);
 router.get('/alumnos', transaccionesController.getAlumnos);
 
 // ✅ NUEVO: CRUD completo de alumnos

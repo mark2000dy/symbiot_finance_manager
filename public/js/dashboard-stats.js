@@ -392,40 +392,79 @@ async function updatePaymentMetrics() {
 }
 
 /**
- * ✅ NUEVA FUNCIÓN: Estado de pago homologado
+ * ✅ FUNCIÓN FINAL CORREGIDA: Estado de pago homologado
+ * Lógica: El periodo de gracia SOLO aplica si pagó el mes anterior
  */
 function getPaymentStatusHomologado(student) {
     try {
+        // Alumnos dados de baja no generan alertas
         if (student.estatus === 'Baja') return 'inactive';
 
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalizar a medianoche
+        
         const fechaInscripcion = new Date(student.fecha_inscripcion);
         const diaCorte = fechaInscripcion.getDate();
         
-        let fechaCorte = new Date(today.getFullYear(), today.getMonth(), diaCorte);
-        if (fechaCorte.getDate() !== diaCorte) {
-            fechaCorte = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        // Calcular fecha de corte del mes ACTUAL
+        let fechaCorteActual = new Date(today.getFullYear(), today.getMonth(), diaCorte);
+        fechaCorteActual.setHours(0, 0, 0, 0);
+        
+        // Si el día no existe en el mes (ej: 31 en febrero), usar último día del mes
+        if (fechaCorteActual.getDate() !== diaCorte) {
+            fechaCorteActual = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            fechaCorteActual.setHours(0, 0, 0, 0);
         }
         
-        const diasHastaCorte = Math.floor((fechaCorte.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        // Calcular inicio y fin del periodo de pago del mes ACTUAL
+        const inicioPeriodoPago = new Date(fechaCorteActual);
+        inicioPeriodoPago.setDate(inicioPeriodoPago.getDate() - 3); // 3 días antes
         
+        const finPeriodoGracia = new Date(fechaCorteActual);
+        finPeriodoGracia.setDate(finPeriodoGracia.getDate() + 5); // 5 días después
+        
+        // Verificar si estamos en el periodo de pago del mes actual
+        const enPeriodoPago = today >= inicioPeriodoPago && today <= finPeriodoGracia;
+        
+        // Verificar pagos
         const fechaUltimoPago = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
+        
         const pagoEsteMes = fechaUltimoPago && 
             fechaUltimoPago.getMonth() === today.getMonth() && 
             fechaUltimoPago.getFullYear() === today.getFullYear();
+        
+        const pagoMesAnterior = fechaUltimoPago && 
+            fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12 && 
+            (fechaUltimoPago.getFullYear() === today.getFullYear() || 
+             (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
 
-        // ✅ CORREGIDO: Próximos a vencer incluye período de gracia DESPUÉS del corte
-        // Desde 3 días antes hasta 5 días después del corte (8 días de advertencia)
-        if (diasHastaCorte >= -5 && diasHastaCorte <= 3 && !pagoEsteMes) {
+        // ✅ REGLA 1: Si pagó ESTE MES → Al corriente (siempre)
+        if (pagoEsteMes) {
+            return 'current';
+        }
+
+        // ✅ REGLA 2: Si NO pagó mes anterior → VENCIDO (sin importar el periodo actual)
+        // Ya debió haber pagado en el periodo del mes anterior
+        if (!pagoMesAnterior) {
+            return 'overdue';
+        }
+        
+        // ✅ REGLA 3: Pagó mes anterior Y estamos en periodo de pago → PRÓXIMO A VENCER
+        if (pagoMesAnterior && enPeriodoPago) {
             return 'upcoming';
         }
         
-        // Vencido: Más de 5 días después del corte sin pago
-        if (diasHastaCorte < -5 && !pagoEsteMes) {
-            return 'overdue';  
+        // ✅ REGLA 4: Pagó mes anterior Y ya pasó periodo de gracia → VENCIDO
+        if (pagoMesAnterior && today > finPeriodoGracia) {
+            return 'overdue';
         }
         
-        // Al corriente: Pagó este mes O falta más de 3 días para el corte
+        // ✅ REGLA 5: Pagó mes anterior Y aún no inicia periodo → AL CORRIENTE
+        if (pagoMesAnterior && today < inicioPeriodoPago) {
+            return 'current';
+        }
+        
+        // Por defecto: Al corriente
         return 'current';
         
     } catch (error) {
