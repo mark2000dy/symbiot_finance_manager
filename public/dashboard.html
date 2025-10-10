@@ -509,7 +509,7 @@
         </div>
 
         <!-- Transaction Modal -->
-        <div class="modal fade" id="addTransactionModal" tabindex="-1">
+        <div class="modal fade" id="addTransactionModal" tabindex="-1" data-bs-backdrop="static">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content" style="background: rgba(25, 28, 36, 0.95); border: 1px solid rgba(255, 255, 255, 0.1);">
                     <div class="modal-header">
@@ -617,6 +617,9 @@
                         </form>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" id="deleteTransactionBtn" class="btn btn-danger me-auto" style="display: none;">
+                            <i class="fas fa-trash me-1"></i>Eliminar
+                        </button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="fas fa-times me-1"></i>Cancelar
                         </button>

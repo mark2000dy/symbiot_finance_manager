@@ -406,60 +406,111 @@ function showAddTransactionModal() {
 }
 
 /**
- * Guardar transacción desde modal
+ * Guardar transacción (crear o actualizar)
  */
 async function submitTransaction() {
+    console.log('💾 Guardando transacción...');
+    
     try {
-        console.log('💾 Enviando nueva transacción');
+        const form = document.getElementById('transactionForm');
         
-        const form = document.getElementById('addTransactionForm');
+        // Validar formulario
         if (!form || !form.checkValidity()) {
-            form.reportValidity();
+            if (form) form.reportValidity();
             return;
         }
         
-        // Recopilar datos
-        const transactionData = {
+        // Recopilar datos del formulario
+        const formData = {
             fecha: document.getElementById('transactionDate').value,
+            tipo: document.getElementById('transactionType').value,
             concepto: document.getElementById('transactionConcept').value.trim(),
-            socio: document.getElementById('transactionPartner').value.trim(),
+            socio: document.getElementById('transactionPartner').value,
             empresa_id: parseInt(document.getElementById('transactionCompany').value),
-            forma_pago: document.getElementById('transactionPayment').value,
-            cantidad: parseFloat(document.getElementById('transactionQuantity').value),
-            precio_unitario: parseFloat(document.getElementById('transactionUnitPrice').value),
-            tipo: document.getElementById('transactionType').value
+            forma_pago: document.getElementById('transactionPaymentMethod').value,
+            cantidad: parseFloat(document.getElementById('transactionQuantity').value) || 1,
+            precio_unitario: parseFloat(document.getElementById('transactionUnitPrice').value) || 0
         };
         
-        console.log('📤 Datos de transacción:', transactionData);
+        // Validaciones básicas
+        if (!formData.fecha || !formData.concepto || !formData.empresa_id) {
+            showAlert('warning', 'Por favor completa todos los campos obligatorios');
+            return;
+        }
         
-        // Enviar a API
-        const response = await fetch('/gastos/api/transacciones', {
-            method: 'POST',
+        console.log('📋 Datos a enviar:', formData);
+        
+        // Deshabilitar botón de guardar
+        const saveBtn = document.querySelector('#transactionModal .btn-primary');
+        const originalBtnText = saveBtn ? saveBtn.innerHTML : '';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+        }
+        
+        // ⭐ DETERMINAR SI ES CREAR O ACTUALIZAR
+        const isEditing = window.editingTransactionId !== null && window.editingTransactionId !== undefined;
+        const url = isEditing 
+            ? `/gastos/api/transacciones/${window.editingTransactionId}`
+            : '/gastos/api/transacciones';
+        const method = isEditing ? 'PUT' : 'POST';
+        
+        console.log(`🔄 Operación: ${isEditing ? 'ACTUALIZAR' : 'CREAR'}`);
+        console.log(`🌐 URL: ${url}`);
+        console.log(`📤 Método: ${method}`);
+        
+        // Enviar al servidor
+        const response = await fetch(url, {
+            method: method,
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(transactionData)
+            body: JSON.stringify(formData)
         });
         
         const result = await response.json();
         
         if (result.success) {
-            showAlert('success', 'Transacción creada exitosamente');
+            const mensaje = isEditing 
+                ? 'Transacción actualizada exitosamente'
+                : 'Transacción creada exitosamente';
+            
+            console.log('✅', mensaje);
+            showAlert('success', mensaje);
             
             // Cerrar modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addTransactionModal'));
+            const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
             if (modal) modal.hide();
             
-            // Recargar datos
-            await loadDashboardData();
-            await loadRecentTransactions();
+            // Limpiar formulario y estado
+            if (form) form.reset();
+            window.editingTransactionId = null;
+            
+            // Recargar transacciones
+            if (typeof loadRecentTransactions === 'function') {
+                await loadRecentTransactions();
+            }
+            
+            // Recargar alertas de pago (por si afecta a algún alumno)
+            if (typeof refreshPaymentAlerts === 'function') {
+                setTimeout(() => refreshPaymentAlerts(), 1000);
+            }
+            
         } else {
-            throw new Error(result.message || 'Error creando transacción');
+            throw new Error(result.message || 'Error al guardar transacción');
         }
         
     } catch (error) {
-        console.error('❌ Error enviando transacción:', error);
-        showAlert('danger', 'Error creando transacción: ' + error.message);
+        console.error('❌ Error guardando transacción:', error);
+        showAlert('danger', `Error: ${error.message}`);
+    } finally {
+        // Restaurar botón
+        const saveBtn = document.querySelector('#transactionModal .btn-primary');
+        if (saveBtn && originalBtnText) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalBtnText;
+        }
     }
 }
 
@@ -819,6 +870,47 @@ function loadTransactionInModal(transaction) {
     window.editingTransactionId = transaction.id;
 }
 
+/**
+ * Resetear modal de transacción a modo creación
+ */
+function resetTransactionModal() {
+    console.log('🔄 Reseteando modal a modo creación...');
+    
+    // Limpiar variable global
+    window.editingTransactionId = null;
+    
+    // Limpiar formulario
+    const form = document.getElementById('transactionForm');
+    if (form) form.reset();
+    
+    // Restaurar título
+    const modalTitle = document.querySelector('#transactionModal .modal-title');
+    if (modalTitle) {
+        modalTitle.innerHTML = '<i class="fas fa-plus-circle me-2"></i>Nueva Transacción';
+    }
+    
+    // Restaurar texto del botón
+    const saveBtn = document.querySelector('#transactionModal .btn-primary');
+    if (saveBtn) {
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Guardar Transacción';
+    }
+    
+    // Ocultar botón de eliminar
+    const deleteBtn = document.getElementById('deleteTransactionBtn');
+    if (deleteBtn) {
+        deleteBtn.style.display = 'none';
+    }
+    
+    // Establecer fecha actual
+    const dateInput = document.getElementById('transactionDate');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+    
+    console.log('✅ Modal reseteado');
+}
+
 // Exponer función globalmente
 window.editTransactionFromDashboard = editTransactionFromDashboard;
 
@@ -835,6 +927,7 @@ window.createStudentDetailModalHTML = createStudentDetailModalHTML;
 window.initializeModals = initializeModals;
 window.showAddTransactionModal = showAddTransactionModal;
 window.submitTransaction = submitTransaction;
+window.resetTransactionModal = resetTransactionModal;
 window.showModal = showModal;
 window.hideModal = hideModal;
 window.isModalOpen = isModalOpen;

@@ -370,6 +370,25 @@ async function createTransaction(transactionData) {
         
         if (response.success) {
             console.log('✅ Transacción creada exitosamente');
+            
+            // 🔥 CRÍTICO: Si es un ingreso (pago), actualizar alertas
+            if (transactionData.tipo === 'I') {
+                console.log('🔄 Refrescando alertas de pagos...');
+                
+                // Esperar 500ms para que la base de datos se actualice
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Refrescar alertas de pagos
+                if (typeof window.refreshPaymentAlerts === 'function') {
+                    await window.refreshPaymentAlerts();
+                }
+                
+                // Refrescar estadísticas del dashboard
+                if (typeof window.loadDashboardData === 'function') {
+                    await window.loadDashboardData();
+                }
+            }
+            
             return response;
         } else {
             throw new Error(response.message || 'Error creando transacción');

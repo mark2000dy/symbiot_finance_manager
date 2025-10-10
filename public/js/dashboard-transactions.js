@@ -311,58 +311,105 @@ function showTransactionsError(message = 'Error cargando datos') {
  * Editar transacción existente
  */
 async function editTransaction(transactionId) {
+    console.log('✏️ Editando transacción:', transactionId);
+    
     try {
-        console.log(`📝 Editando transacción ID: ${transactionId}`);
-        
-        // Buscar transacción en cache
-        const transaction = window.recentTransactionsCache.find(t => t.id == transactionId);
+        // Buscar la transacción en el caché
+        let transaction = window.recentTransactionsCache.find(t => t.id == transactionId);
         
         if (!transaction) {
-            // Si no está en cache, cargar desde API
-            const response = await apiGet(`/gastos/api/transacciones/${transactionId}`);
-            if (!response.success) {
-                throw new Error('Transacción no encontrada');
+            console.warn('⚠️ Transacción no encontrada en caché, consultando API...');
+            
+            const response = await fetch(`/gastos/api/transacciones/${transactionId}`, {
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+                throw new Error('No se pudo obtener la transacción');
             }
-            transaction = response.data;
+            
+            const result = await response.json();
+            transaction = result.data;
         }
         
-        // Establecer modo de edición
+        if (!transaction) {
+            showAlert('warning', 'Transacción no encontrada');
+            return;
+        }
+        
+        console.log('📄 Datos de la transacción:', transaction);
+        
+        // Establecer modo de edición GLOBAL
         window.editingTransactionId = transactionId;
         
-        // Llenar formulario con datos de la transacción
-        document.getElementById('transactionDate').value = transaction.fecha || '';
-        document.getElementById('transactionConcept').value = transaction.concepto || '';
-        document.getElementById('transactionSocio').value = transaction.socio || '';
-        document.getElementById('transactionCompany').value = transaction.empresa_id || '';
-        document.getElementById('transactionPaymentMethod').value = transaction.forma_pago || '';
-        document.getElementById('transactionQuantity').value = transaction.cantidad || 1;
-        document.getElementById('transactionPrice').value = transaction.precio_unitario || 0;
+        // Obtener el modal
+        const modal = document.getElementById('transactionModal');
+        if (!modal) {
+            console.error('❌ Modal de transacción no encontrado');
+            return;
+        }
+        
+        // ⭐ CARGAR FECHA CORRECTAMENTE
+        const fechaInput = document.getElementById('transactionDate');
+        if (fechaInput && transaction.fecha) {
+            // Convertir fecha del formato "YYYY-MM-DD HH:mm:ss" a "YYYY-MM-DD"
+            const fechaSolo = transaction.fecha.split(' ')[0].split('T')[0];
+            fechaInput.value = fechaSolo;
+            console.log('📅 Fecha cargada:', fechaSolo);
+        }
+        
+        // Llenar resto de campos
+        const camposMap = {
+            'transactionType': transaction.tipo,
+            'transactionConcept': transaction.concepto,
+            'transactionPartner': transaction.socio,
+            'transactionCompany': transaction.empresa_id,
+            'transactionPaymentMethod': transaction.forma_pago,
+            'transactionQuantity': transaction.cantidad || 1,
+            'transactionUnitPrice': transaction.precio_unitario || 0
+        };
+        
+        Object.entries(camposMap).forEach(([fieldId, value]) => {
+            const field = document.getElementById(fieldId);
+            if (field && value !== null && value !== undefined) {
+                field.value = value;
+                console.log(`✅ Campo ${fieldId}: ${value}`);
+            }
+        });
         
         // Calcular y mostrar total
-        const total = (transaction.cantidad || 1) * (transaction.precio_unitario || 0);
-        document.getElementById('transactionTotal').value = formatCurrency(total);
+        if (typeof calculateTotal === 'function') {
+            calculateTotal();
+        }
         
-        // Cambiar título y botón del modal
-        const modalTitle = document.querySelector('#addTransactionModal .modal-title');
+        // Cambiar título del modal
+        const modalTitle = document.querySelector('#transactionModal .modal-title');
         if (modalTitle) {
             modalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Editar Transacción';
         }
         
-        const saveBtn = document.querySelector('#addTransactionModal .modal-footer .btn-primary');
+        // Cambiar texto del botón
+        const saveBtn = document.querySelector('#transactionModal .btn-primary');
         if (saveBtn) {
             saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Actualizar Transacción';
         }
         
-        // Mostrar modal
-        if (addTransactionModalInstance) {
-            addTransactionModalInstance.show();
+        // Mostrar botón de eliminar
+        const deleteBtn = document.getElementById('deleteTransactionBtn');
+        if (deleteBtn) {
+            deleteBtn.style.display = 'inline-block';
+            deleteBtn.onclick = () => deleteTransactionFromModal(transactionId);
         }
         
-        console.log('✅ Modal de edición abierto para transacción:', transaction.concepto);
+        // Mostrar modal
+        const modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
+        
+        console.log('✅ Modal de edición abierto');
         
     } catch (error) {
         console.error('❌ Error editando transacción:', error);
-        showAlert('danger', 'Error cargando datos de la transacción');
+        showAlert('danger', 'Error al abrir editor de transacciones');
     }
 }
 
@@ -563,6 +610,82 @@ async function deleteTransactionFromList(transactionId) {
     }
 }
 
+/**
+ * Eliminar transacción desde el modal con confirmación
+ */
+async function deleteTransactionFromModal(transactionId) {
+    try {
+        // Buscar información de la transacción
+        const transaction = window.recentTransactionsCache.find(t => t.id == transactionId);
+        
+        if (!transaction) {
+            showAlert('warning', 'Transacción no encontrada');
+            return;
+        }
+        
+        // ⭐ CONFIRMACIÓN CON DIÁLOGO NATIVO
+        const confirmMessage = `¿Estás seguro de que deseas eliminar esta transacción?\n\n` +
+                              `Concepto: ${transaction.concepto}\n` +
+                              `Total: $${(transaction.cantidad * transaction.precio_unitario).toFixed(2)}\n` +
+                              `Fecha: ${transaction.fecha.split('T')[0]}\n\n` +
+                              `Esta acción no se puede deshacer.`;
+        
+        if (!confirm(confirmMessage)) {
+            console.log('❌ Usuario canceló la eliminación');
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        const deleteBtn = document.getElementById('deleteTransactionBtn');
+        const originalText = deleteBtn ? deleteBtn.innerHTML : '';
+        if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Eliminando...';
+        }
+        
+        // Llamar al API para eliminar
+        const response = await fetch(`/gastos/api/transacciones/${transactionId}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('✅ Transacción eliminada exitosamente');
+            showAlert('success', 'Transacción eliminada correctamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
+            if (modal) modal.hide();
+            
+            // Limpiar ID de edición
+            window.editingTransactionId = null;
+            
+            // Recargar transacciones
+            if (typeof loadRecentTransactions === 'function') {
+                await loadRecentTransactions();
+            }
+        } else {
+            throw new Error(result.message || 'Error al eliminar transacción');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error eliminando transacción:', error);
+        showAlert('danger', `Error: ${error.message}`);
+    } finally {
+        // Restaurar botón
+        const deleteBtn = document.getElementById('deleteTransactionBtn');
+        if (deleteBtn && originalText) {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+        }
+    }
+}
+
 // ============================================================
 // 🔧 FUNCIONES DE UTILIDAD
 // ============================================================
@@ -757,6 +880,7 @@ window.loadRecentTransactions = loadRecentTransactions;
 window.editTransaction = editTransaction;
 window.viewTransactionDetails = viewTransactionDetails;
 window.deleteTransactionFromList = deleteTransactionFromList;
+window.deleteTransactionFromModal = deleteTransactionFromModal;
 
 // Funciones de UI
 window.showTransactionsLoadingState = showTransactionsLoadingState;

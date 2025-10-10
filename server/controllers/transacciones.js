@@ -228,49 +228,70 @@ export const transaccionesController = {
             // ✅ ACTUALIZAR fecha_ultimo_pago si es un pago de alumno
             if (tipo === 'I' && concepto && empresa_id == 1) {
                 try {
-                    // Extraer nombre: buscar después de "G " o "I "
-                    const match = concepto.match(/[GI]\s+(.+?)(?:\s*,|$)/i);
+                    console.log('💰 Intentando actualizar fecha_ultimo_pago...');
+                    console.log('📝 Concepto:', concepto);
+                    
+                    // Extraer nombre del alumno del formato:
+                    // "Mensualidad clase de [INSTRUMENTO] [I/G] [Nombre Alumno]"
+                    const match = concepto.match(/(?:Mensualidad\s+clase\s+de\s+\w+\s+)?[GI]\s+(.+?)(?:\s*,|$)/i);
                     
                     if (match && match[1]) {
                         let nombreExtraido = match[1].trim();
+                        console.log('👤 Nombre extraído:', nombreExtraido);
                         
-                        // Buscar alumno con coincidencia exacta o parcial
-                        const alumnoQuery = `
+                        // Buscar alumno - Primero intentar coincidencia exacta
+                        let alumnos = await executeQuery(`
                             SELECT id, nombre 
                             FROM alumnos 
                             WHERE empresa_id = 1 
-                                AND estatus = 'Activo'
                                 AND (
-                                    nombre = ? 
-                                    OR nombre LIKE CONCAT(?, '%')
+                                    nombre = ?
                                     OR REPLACE(nombre, '  ', ' ') = ?
                                 )
                             LIMIT 1
-                        `;
+                        `, [nombreExtraido, nombreExtraido]);
                         
-                        const alumnos = await executeQuery(alumnoQuery, [
-                            nombreExtraido, 
-                            nombreExtraido.split(' ').slice(0, 2).join(' '),
-                            nombreExtraido
-                        ]);
+                        // Si no encuentra coincidencia exacta, buscar por LIKE
+                        if (alumnos.length === 0) {
+                            console.log('🔍 Buscando con LIKE...');
+                            alumnos = await executeQuery(`
+                                SELECT id, nombre 
+                                FROM alumnos 
+                                WHERE empresa_id = 1 
+                                    AND nombre LIKE ?
+                                ORDER BY 
+                                    CASE 
+                                        WHEN nombre = ? THEN 1
+                                        WHEN nombre LIKE CONCAT(?, '%') THEN 2
+                                        ELSE 3
+                                    END
+                                LIMIT 1
+                            `, [`%${nombreExtraido}%`, nombreExtraido, nombreExtraido]);
+                        }
                         
                         if (alumnos.length > 0) {
                             const alumnoId = alumnos[0].id;
                             const alumnoNombre = alumnos[0].nombre;
                             
+                            // Actualizar fecha_ultimo_pago
                             await executeQuery(`
                                 UPDATE alumnos 
                                 SET fecha_ultimo_pago = ?
                                 WHERE id = ?
                             `, [fecha, alumnoId]);
                             
-                            console.log(`✅ fecha_ultimo_pago actualizada: ${alumnoNombre} -> ${fecha}`);
+                            console.log(`✅ fecha_ultimo_pago actualizada para: ${alumnoNombre} -> ${fecha}`);
                         } else {
-                            console.log(`⚠️ No se encontró alumno: "${nombreExtraido}"`);
+                            console.log(`⚠️ No se encontró alumno con nombre: "${nombreExtraido}"`);
+                            console.log('💡 Tip: Verifica que el nombre en el concepto coincida exactamente con el nombre en la tabla alumnos');
                         }
+                    } else {
+                        console.log(`⚠️ No se pudo extraer nombre del concepto: "${concepto}"`);
+                        console.log('💡 Formato esperado: "Mensualidad clase de [INSTRUMENTO] [I/G] [Nombre Alumno]"');
                     }
                 } catch (error) {
                     console.error('❌ Error actualizando fecha_ultimo_pago:', error);
+                    console.error('📍 Stack:', error.stack);
                 }
             }
 
@@ -348,8 +369,67 @@ export const transaccionesController = {
 
             await executeQuery(query, queryParams);
 
-
             console.log(`✅ Transacción ${id} actualizada por ${req.session.user.nombre}`);
+
+            // ============================================================
+            // ⭐ ACTUALIZAR fecha_ultimo_pago si es un pago de alumno
+            // ============================================================
+            if (tipo === 'I' && concepto && empresa_id == 1) {
+                try {
+                    console.log('🔍 Intentando actualizar fecha_ultimo_pago después de editar transacción...');
+                    
+                    // Extraer nombre del alumno del concepto
+                    // Formato esperado: "G Juan Pérez" o "I Juan Pérez" o "Juan Pérez, Guitarra"
+                    const match = concepto.match(/[GI]\s+(.+?)(?:\s*,|$)/i);
+                    
+                    if (match && match[1]) {
+                        let nombreExtraido = match[1].trim();
+                        
+                        console.log(`🔍 Nombre extraído del concepto: "${nombreExtraido}"`);
+                        
+                        // Buscar alumno con coincidencia exacta o parcial
+                        const alumnoQuery = `
+                            SELECT id, nombre 
+                            FROM alumnos 
+                            WHERE empresa_id = 1 
+                                AND estatus = 'Activo'
+                                AND (
+                                    nombre = ? 
+                                    OR nombre LIKE CONCAT(?, '%')
+                                    OR REPLACE(nombre, '  ', ' ') = ?
+                                )
+                            LIMIT 1
+                        `;
+                        
+                        const alumnos = await executeQuery(alumnoQuery, [
+                            nombreExtraido, 
+                            nombreExtraido.split(' ').slice(0, 2).join(' '),
+                            nombreExtraido
+                        ]);
+                        
+                        if (alumnos.length > 0) {
+                            const alumnoId = alumnos[0].id;
+                            const alumnoNombre = alumnos[0].nombre;
+                            
+                            // Actualizar fecha_ultimo_pago con la fecha de la transacción editada
+                            await executeQuery(`
+                                UPDATE alumnos 
+                                SET fecha_ultimo_pago = ?
+                                WHERE id = ?
+                            `, [fecha, alumnoId]);
+                            
+                            console.log(`✅ fecha_ultimo_pago actualizada: ${alumnoNombre} -> ${fecha}`);
+                        } else {
+                            console.log(`⚠️ No se encontró alumno activo: "${nombreExtraido}"`);
+                        }
+                    } else {
+                        console.log(`⚠️ No se pudo extraer nombre del concepto: "${concepto}"`);
+                    }
+                } catch (error) {
+                    console.error('❌ Error actualizando fecha_ultimo_pago:', error);
+                    // No fallar la transacción principal si falla la actualización del alumno
+                }
+            }
 
             res.json({ 
                 success: true, 
@@ -741,6 +821,7 @@ export const transaccionesController = {
                 edad,
                 telefono,
                 email,
+                fecha_inscripcion,  // ⭐ AGREGADO
                 clase,
                 tipo_clase,
                 maestro_id,
@@ -749,7 +830,7 @@ export const transaccionesController = {
                 precio_mensual,
                 forma_pago,
                 domiciliado,
-                nombre_domiciliado, // Usar nombre_domiciliado como en frontend
+                nombre_domiciliado,
                 estatus
             } = req.body;
 
@@ -774,6 +855,7 @@ export const transaccionesController = {
                 edad: edad || null,
                 telefono: telefono || null,
                 email: email || null,
+                fecha_inscripcion: fecha_inscripcion || null,  // ⭐ AGREGADO
                 clase: clase || null,
                 tipo_clase: tipo_clase || 'Individual',
                 maestro_id: maestro_id || null,
@@ -787,20 +869,23 @@ export const transaccionesController = {
             };
 
             console.log('🔍 Datos sanitizados para actualizar:', datosLimpios);
+            console.log('📅 Fecha de inscripción recibida:', fecha_inscripcion);  // ⭐ AGREGADO
 
             await executeQuery(`
                 UPDATE alumnos SET 
-                    nombre = ?, edad = ?, telefono = ?, email = ?, clase = ?, 
-                    tipo_clase = ?, maestro_id = ?, horario = ?, promocion = ?, 
+                    nombre = ?, edad = ?, telefono = ?, email = ?, fecha_inscripcion = ?,
+                    clase = ?, tipo_clase = ?, maestro_id = ?, horario = ?, promocion = ?, 
                     precio_mensual = ?, forma_pago = ?, domiciliado = ?, 
                     titular_domicilado = ?, estatus = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
             `, [
-                datosLimpios.nombre, datosLimpios.edad, datosLimpios.telefono, datosLimpios.email, 
-                datosLimpios.clase, datosLimpios.tipo_clase, datosLimpios.maestro_id, datosLimpios.horario, 
-                datosLimpios.promocion, datosLimpios.precio_mensual, datosLimpios.forma_pago, 
-                datosLimpios.domiciliado, datosLimpios.titular_domicilado, datosLimpios.estatus, id
+                datosLimpios.nombre, datosLimpios.edad, datosLimpios.telefono, datosLimpios.email,
+                datosLimpios.fecha_inscripcion,  // ⭐ AGREGADO
+                datosLimpios.clase, datosLimpios.tipo_clase, datosLimpios.maestro_id, datosLimpios.horario,
+                datosLimpios.promocion, datosLimpios.precio_mensual, datosLimpios.forma_pago,
+                datosLimpios.domiciliado, datosLimpios.titular_domicilado, datosLimpios.estatus,
+                id
             ]);
 
             console.log(`✅ Alumno actualizado: ${nombre}`);
@@ -1213,66 +1298,165 @@ export const transaccionesController = {
             
             console.log(`🔔 Calculando alertas para empresa: ${empresa_id}`);
             
+            // Obtener todos los alumnos activos con su información de pago
             const alumnos = await executeQuery(`
                 SELECT 
-                    id, nombre, clase, estatus, precio_mensual, 
-                    fecha_ultimo_pago, fecha_inscripcion,
+                    id, 
+                    nombre, 
+                    clase, 
+                    estatus, 
+                    precio_mensual, 
+                    fecha_ultimo_pago, 
+                    fecha_inscripcion,
                     DAY(fecha_inscripcion) as dia_corte
                 FROM alumnos
-                WHERE empresa_id = ? AND estatus = 'Activo' 
+                WHERE empresa_id = ? 
+                    AND estatus = 'Activo' 
                     AND nombre NOT LIKE '[ELIMINADO]%'
             `, [empresa_id]);
             
             const proximos_vencer = [];
             const vencidos = [];
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalizar a medianoche
+            
+            console.log(`📊 Evaluando ${alumnos.length} alumnos activos...`);
             
             alumnos.forEach(alumno => {
+                // ========================================
+                // CALCULAR FECHA DE CORTE DEL MES ACTUAL
+                // ========================================
                 const diaCorte = alumno.dia_corte;
-                let fechaCorte = new Date(today.getFullYear(), today.getMonth(), diaCorte);
+                let fechaCorteActual = new Date(today.getFullYear(), today.getMonth(), diaCorte);
                 
-                if (fechaCorte.getDate() !== diaCorte) {
-                    fechaCorte = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                // Si el día no existe en el mes (ej: 31 en febrero), usar último día del mes
+                if (fechaCorteActual.getDate() !== diaCorte) {
+                    fechaCorteActual = new Date(today.getFullYear(), today.getMonth() + 1, 0);
                 }
                 
-                const diasHastaCorte = Math.floor((fechaCorte.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                // ========================================
+                // CALCULAR PRÓXIMA FECHA DE CORTE
+                // ========================================
+                let proximaFechaCorte = new Date(fechaCorteActual);
+                if (today > fechaCorteActual) {
+                    // Si ya pasó la fecha de corte, la próxima es el mes siguiente
+                    proximaFechaCorte = new Date(today.getFullYear(), today.getMonth() + 1, diaCorte);
+                    if (proximaFechaCorte.getDate() !== diaCorte) {
+                        proximaFechaCorte = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+                    }
+                }
                 
-                // Verificar pagos
+                // ========================================
+                // VERIFICAR PAGOS REALIZADOS
+                // ========================================
                 const fechaUltimoPago = alumno.fecha_ultimo_pago ? new Date(alumno.fecha_ultimo_pago) : null;
+                
+                // Verificar si pagó este mes
                 const pagoEsteMes = fechaUltimoPago && 
                     fechaUltimoPago.getMonth() === today.getMonth() &&
                     fechaUltimoPago.getFullYear() === today.getFullYear();
                 
-                // ✅ HOMOLOGADO: Próximos a vencer incluye período de gracia (3 días antes hasta 5 después)
-                if (diasHastaCorte >= -5 && diasHastaCorte <= 3 && !pagoEsteMes) {
+                // Verificar si pagó el mes anterior
+                const mesAnterior = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const pagoMesAnterior = fechaUltimoPago &&
+                    fechaUltimoPago.getMonth() === mesAnterior.getMonth() &&
+                    fechaUltimoPago.getFullYear() === mesAnterior.getFullYear();
+                
+                // ========================================
+                // REGLA #8: AL CORRIENTE
+                // ========================================
+                // Si pagó este mes O pagó mes anterior Y aún no llega periodo de alerta
+                const diasHastaCorte = Math.floor((fechaCorteActual.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                
+                if (pagoEsteMes) {
+                    // Pagó este mes = AL CORRIENTE (no aparece en alertas)
+                    console.log(`✅ ${alumno.nombre}: AL CORRIENTE (pagó este mes)`);
+                    return; // No agregar a ninguna alerta
+                }
+                
+                if (pagoMesAnterior && diasHastaCorte > 3) {
+                    // Pagó mes anterior y aún faltan más de 3 días = AL CORRIENTE
+                    console.log(`✅ ${alumno.nombre}: AL CORRIENTE (pagó mes anterior, faltan ${diasHastaCorte} días)`);
+                    return; // No agregar a ninguna alerta
+                }
+                
+                // ========================================
+                // REGLA #5: PRÓXIMO A VENCER
+                // ========================================
+                // Desde 3 días ANTES hasta el día de corte (día 0)
+                if (diasHastaCorte >= 0 && diasHastaCorte <= 3) {
+                    console.log(`⚠️ ${alumno.nombre}: PRÓXIMO A VENCER (${diasHastaCorte} días para corte)`);
                     proximos_vencer.push({
                         id: alumno.id,
                         nombre: alumno.nombre,
                         clase: alumno.clase,
                         dias_restantes: diasHastaCorte,
-                        estatus: alumno.estatus
+                        estatus: alumno.estatus,
+                        fecha_corte: fechaCorteActual.toISOString().split('T')[0]
                     });
-                    } else if (diasHastaCorte < -5 && !pagoEsteMes) {
+                    return;
+                }
+                
+                // ========================================
+                // REGLA #6: VENCIDO
+                // ========================================
+                // Pasaron MÁS de 5 días desde fecha de corte sin pago
+                const diasDesdeCorte = Math.floor((today.getTime() - fechaCorteActual.getTime()) / (1000 * 60 * 60 * 24));
+                
+                if (diasDesdeCorte > 5 && !pagoEsteMes) {
+                    console.log(`🚨 ${alumno.nombre}: VENCIDO (${diasDesdeCorte} días desde corte)`);
                     vencidos.push({
                         id: alumno.id,
                         nombre: alumno.nombre,
                         clase: alumno.clase,
-                        dias_vencido: Math.abs(diasHastaCorte),
-                        estatus: alumno.estatus
+                        dias_vencido: diasDesdeCorte - 5, // Días vencidos después del periodo de gracia
+                        estatus: alumno.estatus,
+                        fecha_corte: fechaCorteActual.toISOString().split('T')[0]
                     });
+                    return;
                 }
+                
+                // ========================================
+                // PERIODO DE GRACIA (días 1-5 después de corte)
+                // ========================================
+                // Entre el día de corte y 5 días después
+                if (diasDesdeCorte >= 1 && diasDesdeCorte <= 5 && !pagoEsteMes) {
+                    console.log(`⏳ ${alumno.nombre}: PRÓXIMO A VENCER (periodo gracia día ${diasDesdeCorte})`);
+                    proximos_vencer.push({
+                        id: alumno.id,
+                        nombre: alumno.nombre,
+                        clase: alumno.clase,
+                        dias_restantes: 5 - diasDesdeCorte, // Días restantes de gracia
+                        estatus: alumno.estatus,
+                        fecha_corte: fechaCorteActual.toISOString().split('T')[0]
+                    });
+                    return;
+                }
+                
+                // Si no cumple ninguna condición anterior, está AL CORRIENTE
+                console.log(`✅ ${alumno.nombre}: AL CORRIENTE (sin alertas)`);
             });
             
-            console.log(`✅ BACKEND: ${proximos_vencer.length} próximos, ${vencidos.length} vencidos`);
+            console.log(`✅ RESULTADO: ${proximos_vencer.length} próximos a vencer, ${vencidos.length} vencidos`);
             
             res.json({
                 success: true,
-                data: { proximos_vencer, vencidos, total_alertas: proximos_vencer.length + vencidos.length }
+                data: {
+                    proximos_vencer,
+                    vencidos,
+                    total_alertas: proximos_vencer.length + vencidos.length,
+                    fecha_calculo: today.toISOString()
+                }
             });
             
         } catch (error) {
-            console.error('❌ Error alertas:', error);
-            res.status(500).json({ success: false, error: 'Error interno' });
+            console.error('❌ Error en alertas de pagos:', error);
+            console.error('📍 Stack:', error.stack);
+            res.status(500).json({
+                success: false,
+                error: 'Error procesando alertas de pagos',
+                details: error.message
+            });
         }
     },
 
