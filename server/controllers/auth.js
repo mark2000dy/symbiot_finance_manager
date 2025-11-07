@@ -1,4 +1,8 @@
 ﻿// ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este archivo ha sido reemplazado por: api/controllers/AuthController.php
+// Migración completada: Node.js → PHP
+// ====================================================
 // CONTROLADOR DE AUTENTICACIÓN
 // Archivo: server/controllers/auth.js
 // ====================================================
