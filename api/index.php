@@ -31,11 +31,25 @@ $requestMethod = $_SERVER['REQUEST_METHOD'];
 // Remover query string
 $requestUri = strtok($requestUri, '?');
 
-// Remover /gastos/api del path para normalizar
-$requestUri = str_replace('/gastos/api', '', $requestUri);
+// Detectar la ruta base automáticamente
+$scriptName = dirname($_SERVER['SCRIPT_NAME']);
+$basePath = str_replace('\\', '/', $scriptName);
+
+// Remover la ruta base para obtener solo la ruta relativa
+if (strpos($requestUri, $basePath) === 0) {
+    $requestUri = substr($requestUri, strlen($basePath));
+}
+
+// Remover /gastos/api o /api del path para normalizar
+$requestUri = preg_replace('#^/(gastos/)?api#', '', $requestUri);
+
+// Asegurar que empiece con /
+if (empty($requestUri) || $requestUri[0] !== '/') {
+    $requestUri = '/' . $requestUri;
+}
 
 // Log de request
-error_log("$requestMethod $requestUri");
+error_log("$requestMethod $requestUri (original: {$_SERVER['REQUEST_URI']})");
 
 try {
     // ============================================================
