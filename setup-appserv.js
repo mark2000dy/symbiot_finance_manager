@@ -1,4 +1,9 @@
 // ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este archivo ya no es necesario con PHP
+// La aplicación PHP no requiere setup de Node.js
+// Migración completada: Node.js → PHP
+// ====================================================
 // CONFIGURACIÓN RÁPIDA APPSERV
 // Archivo: setup-appserv.js
 // ====================================================

@@ -1,4 +1,8 @@
 // ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este archivo ya no es necesario con PHP
+// Migración completada: Node.js → PHP
+// ====================================================
 // VERIFICADOR DE ESTADO APPSERV
 // Archivo: check-appserv.js
 // ====================================================

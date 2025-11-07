@@ -1,4 +1,8 @@
 // ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este script de Node.js ya no es necesario
+// Migración completada: Node.js → PHP
+// ====================================================
 // FIX PAYMENT DATES - EJECUTAR MANUALMENTE
 // Archivo: database/fix-payment-dates.js
 // ====================================================
