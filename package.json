@@ -1,7 +1,7 @@
 {
   "name": "gastos-symbiot-app",
-  "version": "1.0.0",
-  "description": "PWA para control de gastos e ingresos - Symbiot Technologies",
+  "version": "2.0.0-php",
+  "description": "⚠️ OBSOLETO - Migrado a PHP. PWA para control de gastos e ingresos - Symbiot Technologies",
   "main": "server/app.js",
   "type": "module",
   "engines": {

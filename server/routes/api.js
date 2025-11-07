@@ -1,4 +1,8 @@
 // ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este archivo ha sido reemplazado por: api/index.php
+// Migración completada: Node.js → PHP
+// ====================================================
 // RUTAS API - TRANSACCIONES, GASTOS E INGRESOS
 // Archivo: server/routes/api.js
 // ====================================================

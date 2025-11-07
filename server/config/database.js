@@ -1,4 +1,8 @@
 ﻿// ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este archivo ha sido reemplazado por: api/config/database.php
+// Migración completada: Node.js → PHP
+// ====================================================
 // CONFIGURACIÓN DE BASE DE DATOS MYSQL (CORREGIDA)
 // Archivo: server/config/database.js
 // ====================================================
