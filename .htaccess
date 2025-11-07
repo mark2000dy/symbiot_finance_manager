@@ -5,19 +5,24 @@
 
 # Habilitar rewrite engine
 RewriteEngine On
+RewriteBase /
+
+# Debug: Log de reglas (descomentar si necesitas debug)
+# RewriteLog "/tmp/rewrite.log"
+# RewriteLogLevel 3
 
 # Redireccionar /gastos/api/* a api/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^gastos/api/(.*)$ api/index.php [L,QSA]
+RewriteRule ^gastos/api/(.*)$ /api/index.php [L,QSA]
 
 # Servir archivos estáticos desde /gastos
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^gastos/(.+\.(html|css|js|png|jpg|jpeg|gif|ico|json|svg|woff|woff2|ttf|eot))$ public/$1 [L]
+RewriteRule ^gastos/(.+\.(html|css|js|png|jpg|jpeg|gif|ico|json|svg|woff|woff2|ttf|eot))$ /public/$1 [L]
 
 # Redirección principal /gastos a login o dashboard
-RewriteRule ^gastos/?$ public/login.html [L]
+RewriteRule ^gastos/?$ /public/login.html [L]
 
 # Configuración de seguridad
 <IfModule mod_headers.c>
