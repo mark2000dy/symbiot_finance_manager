@@ -1,4 +1,8 @@
 // ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este script de Node.js ya no es necesario
+// Migración completada: Node.js → PHP
+// ====================================================
 // DATOS DE MUESTRA SIMPLES - SIN EXCEL
 // Archivo: database/sample-data.js
 // Para probar rápidamente sin archivos Excel

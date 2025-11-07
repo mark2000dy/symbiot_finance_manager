@@ -1,6 +1,11 @@
 {
+  "_comment": "⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️",
+  "_comment2": "Este archivo y todas las dependencias Node.js ya no son necesarios",
+  "_comment3": "La aplicación ahora funciona 100% con PHP",
+  "_comment4": "Se puede eliminar este archivo junto con node_modules/ y package-lock.json",
+  "_comment5": "Migración completada: Node.js → PHP v2.0.0",
   "name": "gastos-symbiot-app",
-  "version": "2.0.0-php",
+  "version": "2.0.0-php-obsolete",
   "description": "⚠️ OBSOLETO - Migrado a PHP. PWA para control de gastos e ingresos - Symbiot Technologies",
   "main": "server/app.js",
   "type": "module",

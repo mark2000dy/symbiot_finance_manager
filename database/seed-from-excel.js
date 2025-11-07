@@ -1,6 +1,10 @@
 // ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este script de Node.js ya no es necesario
+// Migración completada: Node.js → PHP
+// ====================================================
 // SCRIPT COMPLETO DE POBLACIÓN DESDE EXCEL - VERSIÓN CORREGIDA
-// Archivo: database/seed-from-excel.js  
+// Archivo: database/seed-from-excel.js
 // Basado en diagnóstico exitoso - Headers reales del Excel
 // ====================================================
 

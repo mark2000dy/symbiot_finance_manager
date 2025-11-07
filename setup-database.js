@@ -1,4 +1,9 @@
 // ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este archivo ya no es necesario con PHP
+// Usar SQL directo o PHPMyAdmin para setup de base de datos
+// Migración completada: Node.js → PHP
+// ====================================================
 // SETUP AUTOMÁTICO DE BASE DE DATOS
 // Archivo: setup-database.js
 // Crear tablas automáticamente si no existen

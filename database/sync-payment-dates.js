@@ -1,4 +1,8 @@
 // ====================================================
+// ⚠️ ARCHIVO OBSOLETO - MARCAR PARA ELIMINACIÓN ⚠️
+// Este script de Node.js ya no es necesario
+// Migración completada: Node.js → PHP
+// ====================================================
 // SCRIPT DE SINCRONIZACIÓN DE FECHAS DE ÚLTIMO PAGO
 // Archivo: database/sync-payment-dates.js
 // Versión mejorada con búsqueda más flexible
