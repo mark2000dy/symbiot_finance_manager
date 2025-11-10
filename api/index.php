@@ -43,6 +43,9 @@ if (strpos($requestUri, $basePath) === 0) {
 // Remover /gastos/api o /api del path para normalizar
 $requestUri = preg_replace('#^/(gastos/)?api#', '', $requestUri);
 
+// 🔧 Remover /index.php si está presente (cuando se accede vía proxy gastos/api/index.php)
+$requestUri = preg_replace('#^/index\.php#', '', $requestUri);
+
 // Asegurar que empiece con /
 if (empty($requestUri) || $requestUri[0] !== '/') {
     $requestUri = '/' . $requestUri;
