@@ -1,7 +1,9 @@
 <?php
 // ====================================================
 // CONFIGURACIÓN DE BASE DE DATOS MYSQL (PHP VERSION)
+// Version: 3.1 - PDO Singleton Pattern
 // Archivo: api/config/database.php
+// Última modificación: 2024-11-10
 // ====================================================
 
 class Database {

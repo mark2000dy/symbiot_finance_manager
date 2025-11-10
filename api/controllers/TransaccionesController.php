@@ -1,7 +1,9 @@
 <?php
 // ====================================================
 // CONTROLADOR DE TRANSACCIONES (PHP VERSION)
+// Version: 3.1 - CRUD Operations with PDO
 // Archivo: api/controllers/TransaccionesController.php
+// Última modificación: 2024-11-10
 // ====================================================
 
 require_once __DIR__ . '/../config/database.php';
