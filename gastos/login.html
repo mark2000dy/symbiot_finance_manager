@@ -237,8 +237,14 @@
                     setTimeout(() => {
                         // Construir URL del dashboard usando la base path detectada
                         const dashboardUrl = (window.APP_BASE_PATH || '') + '/gastos/dashboard.html';
-                        window.location.href = data.redirectUrl || dashboardUrl;
-                        console.log('🔄 Redirigiendo a:', dashboardUrl);
+                        const finalUrl = data.redirectUrl || dashboardUrl;
+
+                        console.log('🔄 Redirección configurada:');
+                        console.log('   data.redirectUrl:', data.redirectUrl || '(no definido)');
+                        console.log('   dashboardUrl construido:', dashboardUrl);
+                        console.log('   ➡️ URL FINAL:', finalUrl);
+
+                        window.location.href = finalUrl;
                     }, 1000);
                     
                 } else {

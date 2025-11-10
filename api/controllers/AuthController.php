@@ -90,8 +90,8 @@ class AuthController {
                     'email' => $user['email'],
                     'rol' => $user['rol'],
                     'empresa' => $user['empresa']
-                ],
-                'redirectUrl' => '/gastos/dashboard.html'
+                ]
+                // redirectUrl eliminado - el frontend maneja la redirección con rutas dinámicas
             ]);
 
         } catch (Exception $e) {
