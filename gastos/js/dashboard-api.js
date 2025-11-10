@@ -1,84 +1,26 @@
 /* ====================================================
-   DASHBOARD API MODULE - SYMBIOT FINANCIAL MANAGER
-   Archivo: public/js/dashboard-api.js
+   DASHBOARD API MODULE - SYMBIOT FINANCIAL MANAGER v3.1
+   Archivo: gastos/js/dashboard-api.js
    Funciones de comunicación con backend centralizadas
+   Version: 3.1 - Using global API Client module
    ==================================================== */
 
 // ============================================================
 // 🌐 FUNCIONES BASE DE API
 // ============================================================
+// NOTA: Este módulo ahora usa las funciones globales del API Client (api-client.js)
+// Las funciones window.apiGet(), window.apiPost(), window.apiPut(), window.apiDelete()
+// están disponibles globalmente y manejan automáticamente las rutas dinámicas.
+//
+// Ya NO es necesario usar rutas completas como '/gastos/api/transacciones'.
+// Simplemente usa el endpoint: 'transacciones', 'login', 'user', etc.
+// ============================================================
 
-/**
- * Función base para realizar peticiones HTTP
- */
-async function apiRequest(url, options = {}) {
-    try {
-        const defaultOptions = {
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            credentials: 'same-origin'
-        };
-        
-        const finalOptions = { ...defaultOptions, ...options };
-        
-        console.log(`📡 API Request: ${options.method || 'GET'} ${url}`);
-        
-        const response = await fetch(url, finalOptions);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        console.log(`✅ API Response: ${url}`, data);
-        
-        return data;
-        
-    } catch (error) {
-        console.error(`❌ API Error: ${url}`, error);
-        throw error;
-    }
-}
-
-/**
- * Realizar petición GET
- */
-async function apiGet(url, params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    const fullUrl = queryString ? `${url}?${queryString}` : url;
-    
-    return await apiRequest(fullUrl, { method: 'GET' });
-}
-
-/**
- * Realizar petición POST
- */
-async function apiPost(url, data = {}) {
-    return await apiRequest(url, {
-        method: 'POST',
-        body: JSON.stringify(data)
-    });
-}
-
-/**
- * Realizar petición PUT
- */
-async function apiPut(url, data = {}) {
-    return await apiRequest(url, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-    });
-}
-
-/**
- * Realizar petición DELETE
- */
-async function apiDelete(url) {
-    return await apiRequest(url, { method: 'DELETE' });
-}
+// Alias locales para compatibilidad con código existente
+const apiGet = window.apiGet;
+const apiPost = window.apiPost;
+const apiPut = window.apiPut;
+const apiDelete = window.apiDelete;
 
 // ============================================================
 // 👤 FUNCIONES DE AUTENTICACIÓN Y USUARIO
@@ -91,7 +33,7 @@ async function loadCurrentUser() {
     try {
         console.log('👤 Cargando información del usuario...');
         
-        const response = await apiGet('/gastos/api/me');
+        const response = await apiGet('user');
         
         if (response.success && response.user) {
             currentUser = response.user;
@@ -133,12 +75,12 @@ function isUserAdmin() {
  */
 async function logout() {
     try {
-        await apiPost('/gastos/api/logout');
-        window.location.href = '/gastos/login.html';
+        await apiPost('logout');
+        window.location.href = window.buildPageUrl('login.html');
     } catch (error) {
         console.error('❌ Error cerrando sesión:', error);
         // Forzar redirección al login aunque falle la API
-        window.location.href = '/gastos/login.html';
+        window.location.href = window.buildPageUrl('login.html');
     }
 }
 
@@ -158,7 +100,7 @@ async function loadDashboardStats(empresaId = null) {
             params.empresa_id = empresaId;
         }
         
-        const response = await apiGet('/gastos/api/dashboard', params);
+        const response = await apiGet('dashboard', params);
         
         if (response.success) {
             // Actualizar elementos del DOM
@@ -225,7 +167,7 @@ async function loadCompanyStats(companyId) {
         
         console.log(`🏢 Cargando estadísticas de empresa ${companyId}...`);
         
-        const response = await apiGet('/gastos/api/dashboard', { empresa_id: companyId });
+        const response = await apiGet('dashboard', { empresa_id: companyId });
         
         if (response.success) {
             // Actualizar stats de empresa en el selector
@@ -273,7 +215,7 @@ async function loadCompanies() {
     try {
         console.log('🏢 Cargando empresas...');
         
-        const response = await apiGet('/gastos/api/empresas');
+        const response = await apiGet('empresas');
         
         if (response.success) {
             console.log(`✅ ${response.data.length} empresas cargadas`);
@@ -334,7 +276,7 @@ async function loadRecentTransactions(page = 1) {
             params.empresa_id = currentCompanyFilter;
         }
         
-        const response = await apiGet('/gastos/api/transacciones', params);
+        const response = await apiGet('transacciones', params);
         
         if (response.success) {
             // Actualizar cache de transacciones
@@ -366,7 +308,7 @@ async function createTransaction(transactionData) {
     try {
         console.log('💰 Creando nueva transacción...', transactionData);
         
-        const response = await apiPost('/gastos/api/transacciones', transactionData);
+        const response = await apiPost('transacciones', transactionData);
         
         if (response.success) {
             console.log('✅ Transacción creada exitosamente');
@@ -480,7 +422,7 @@ async function loadStudentsData(page = 1, filters = {}) {
             }
         });
         
-        const response = await apiGet('/gastos/api/alumnos', params);
+        const response = await apiGet('alumnos', params);
         
         if (response.success) {
             console.log(`✅ ${response.data.length} alumnos cargados vía API`);
@@ -502,7 +444,7 @@ async function createStudent(studentData) {
     try {
         console.log('🎓 Creando nuevo alumno vía API...', studentData);
         
-        const response = await apiPost('/gastos/api/alumnos', studentData);
+        const response = await apiPost('alumnos', studentData);
         
         if (response.success) {
             console.log('✅ Alumno creado exitosamente vía API');
@@ -577,7 +519,7 @@ async function loadPaymentAlerts(empresaId = null) {
             params.empresa_id = empresaId;
         }
         
-        const response = await apiGet('/gastos/api/alertas-pagos', params);
+        const response = await apiGet('alertas-pagos', params);
         
         if (response.success) {
             console.log('✅ Alertas de pagos cargadas vía API');
