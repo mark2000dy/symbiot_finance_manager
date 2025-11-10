@@ -160,6 +160,19 @@
         console.log('%c🚀 LOGIN PAGE v3.1', 'background: #222; color: #00ff00; font-size: 16px; font-weight: bold; padding: 10px;');
         console.log('📦 Using API Client module for all API calls');
         console.log('📍 Current page path:', window.location.pathname);
+
+        // FALLBACK: Si api-client.js no cargó, detectar base path aquí
+        if (!window.APP_BASE_PATH) {
+            const currentPath = window.location.pathname;
+            const gastosIndex = currentPath.indexOf('/gastos/');
+            if (gastosIndex !== -1) {
+                window.APP_BASE_PATH = currentPath.substring(0, gastosIndex);
+            } else {
+                window.APP_BASE_PATH = '';
+            }
+            console.warn('⚠️ APP_BASE_PATH no estaba definido - usando fallback detection');
+        }
+
         console.log('📂 Base Path:', window.APP_BASE_PATH || '(root)');
         console.log('🌐 API Base URL:', window.API_BASE_URL);
 
