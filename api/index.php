@@ -1,7 +1,9 @@
 <?php
 // ====================================================
 // SERVIDOR API PRINCIPAL - GASTOS SYMBIOT APP (PHP VERSION)
+// Version: 3.1 - Fixed Proxy Routing
 // Archivo: api/index.php
+// Última modificación: 2024-11-10
 // ====================================================
 
 // Iniciar sesión
@@ -51,8 +53,14 @@ if (empty($requestUri) || $requestUri[0] !== '/') {
     $requestUri = '/' . $requestUri;
 }
 
-// Log de request
-error_log("$requestMethod $requestUri (original: {$_SERVER['REQUEST_URI']})");
+// Log de request con debugging detallado
+error_log("========== API REQUEST v3.1 ==========");
+error_log("SCRIPT_NAME: " . $_SERVER['SCRIPT_NAME']);
+error_log("REQUEST_URI original: " . $_SERVER['REQUEST_URI']);
+error_log("Base Path detectado: $basePath");
+error_log("URI parseada final: $requestUri");
+error_log("Método: $requestMethod");
+error_log("=====================================");
 
 try {
     // ============================================================

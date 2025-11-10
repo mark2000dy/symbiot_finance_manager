@@ -1,7 +1,9 @@
 <?php
 // ====================================================
 // PROXY/ROUTER - Redirige a api/index.php principal
+// Version: 3.1 - Simple Proxy to Main API
 // Archivo: gastos/api/index.php
+// Última modificación: 2024-11-10
 // ====================================================
 
 // Deshabilitar output buffering para ver errores inmediatamente
