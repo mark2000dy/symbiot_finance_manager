@@ -227,10 +227,70 @@ http://localhost/symbiot/symbiot_finance_manager/gastos/api/direct-test.php?acti
 
 ---
 
+## 🔄 VERSION 3.0 - INLINE PATH DETECTION
+
+### ¿Qué cambió en v3.0?
+
+**Problema de v2.0:** El archivo `api-config.js` a veces no se cargaba correctamente debido a:
+- Cache del navegador
+- Rutas relativas incorrectas
+- Dependencia de archivo externo
+
+**Solución v3.0:** Todo el código de detección de rutas ahora está **INLINE** (embebido directamente en el HTML)
+
+### Cómo Verificar que Tienes v3.0:
+
+1. **Abre** `http://localhost/symbiot/symbiot_finance_manager/gastos/login.html`
+
+2. **Deberías ver** debajo del logo:
+   ```
+   ✅ VERSION 3.0 - INLINE PATH DETECTION
+   ```
+
+3. **En la consola del navegador (F12)** deberías ver:
+   ```
+   🚀 LOGIN PAGE v3.0 - INLINE PATH DETECTION
+   📍 Current page path: /symbiot/symbiot_finance_manager/gastos/login.html
+   ✅ Base path detected: /symbiot/symbiot_finance_manager
+   📡 API Configuration:
+      APP_BASE_PATH: /symbiot/symbiot_finance_manager
+      API_BASE_URL: /symbiot/symbiot_finance_manager/gastos/api/index.php
+   ```
+
+4. **En la página** deberías ver un mensaje azul mostrando:
+   ```
+   🔧 Configuración Detectada:
+   Ruta Base: /symbiot/symbiot_finance_manager
+   API URL: /symbiot/symbiot_finance_manager/gastos/api/index.php
+   Health Check: /symbiot/symbiot_finance_manager/gastos/api/index.php/health
+   ```
+
+### Si NO ves estos indicadores:
+
+1. **Hacer git pull:**
+   ```bash
+   cd C:\AppServ\www\symbiot\symbiot_finance_manager
+   git pull origin claude/nodejs-to-php-conversion-011CUu6AGjXpGytKixX9goTW
+   ```
+
+2. **Limpiar cache del navegador:**
+   - Presiona `Ctrl + Shift + Del`
+   - Selecciona "Imágenes y archivos en caché"
+   - Haz clic en "Borrar datos"
+   - O simplemente presiona `Ctrl + F5` para recarga forzada
+
+3. **Verificar el archivo:**
+   ```bash
+   type gastos\login.html | findstr "VERSION 3.0"
+   ```
+   Debería mostrar: `✅ VERSION 3.0 - INLINE PATH DETECTION`
+
+---
+
 ## 📝 Checklist de Verificación
 
-- [x] ✅ login.html corregido (usa `window.apiFetch`)
-- [x] ✅ api-config.js creado
+- [x] ✅ login.html corregido v3.0 (INLINE path detection)
+- [x] ✅ api-config.js creado (v2.0 - deprecado pero mantenido por compatibilidad)
 - [ ] ⏳ dashboard.html pendiente de corrección
 - [ ] ⏳ gastos.html pendiente de corrección
 - [ ] ⏳ ingresos.html pendiente de corrección
