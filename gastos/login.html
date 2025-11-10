@@ -162,6 +162,18 @@
         console.log('📍 Current page path:', window.location.pathname);
         console.log('📂 Base Path:', window.APP_BASE_PATH || '(root)');
         console.log('🌐 API Base URL:', window.API_BASE_URL);
+
+        // Verificación de funciones disponibles
+        if (typeof window.buildPageUrl === 'function') {
+            console.log('✅ buildPageUrl disponible');
+        } else {
+            console.warn('⚠️ buildPageUrl NO disponible - usando fallback');
+        }
+        if (typeof window.apiFetch === 'function') {
+            console.log('✅ apiFetch disponible');
+        } else {
+            console.error('❌ apiFetch NO disponible - revisar carga de api-client.js');
+        }
     </script>
 
     <script>
@@ -210,7 +222,10 @@
                     
                     // Redirigir después de 1 segundo
                     setTimeout(() => {
-                        window.location.href = data.redirectUrl || window.buildPageUrl('dashboard.html');
+                        // Construir URL del dashboard usando la base path detectada
+                        const dashboardUrl = (window.APP_BASE_PATH || '') + '/gastos/dashboard.html';
+                        window.location.href = data.redirectUrl || dashboardUrl;
+                        console.log('🔄 Redirigiendo a:', dashboardUrl);
                     }, 1000);
                     
                 } else {
