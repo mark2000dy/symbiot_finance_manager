@@ -17,6 +17,7 @@
 // ============================================================
 
 // Alias locales para compatibilidad con código existente
+const apiRequest = window.apiFetch; // Función principal de API (soporta todos los métodos HTTP)
 const apiGet = window.apiGet;
 const apiPost = window.apiPost;
 const apiPut = window.apiPut;
