@@ -258,10 +258,9 @@ async function updateCompanyStatsReal(resumen) {
 async function loadRockstarSkullDataReal() {
     try {
         console.log('🎸 Cargando datos REALES de RockstarSkull...');
-        
-        const response = await fetch('/gastos/api/dashboard/alumnos?empresa_id=1');
-        const result = await response.json();
-        
+
+        const result = await window.apiGet('dashboard/alumnos', { empresa_id: 1 });
+
         if (result.success && result.data) {
             const stats = result.data.estadisticas;
             const clases = result.data.distribucion_clases;
@@ -351,17 +350,13 @@ async function loadRockstarSkullDataReal() {
 async function updatePaymentMetrics() {
     try {
         console.log('💰 Calculando métricas HOMOLOGADAS de pagos de alumnos...');
-        
-        const response = await fetch('/gastos/api/alumnos?empresa_id=1&estatus=Activo&limit=1000', {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
+
+        const result = await window.apiGet('alumnos', {
+            empresa_id: 1,
+            estatus: 'Activo',
+            limit: 1000
         });
-        
-        const result = await response.json();
-        
+
         if (result.success && result.data) {
             const alumnos = result.data;
             let alCorriente = 0;
