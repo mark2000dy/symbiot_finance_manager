@@ -31,8 +31,9 @@ async function loadRecentTransactions(page = 1) {
         }
         
         console.log('📡 Parámetros de solicitud:', params);
-        
-        const response = await apiGet('/gastos/api/transacciones', params);
+
+        // v3.1.2: Solo pasar el endpoint, el API Client construye la URL completa
+        const response = await apiGet('transacciones', params);
         
         if (response.success && response.data) {
             // ✅ LIMPIAR Y ACTUALIZAR cache global
