@@ -315,19 +315,9 @@ async function saveNewStudent() {
         console.log('📤 Enviando datos:', studentData);
 
         // Enviar al backend
-        const response = await fetch('/gastos/api/alumnos', {
-            method: 'POST',
-            credentials: 'same-origin',  // ⭐ AGREGAR ESTA LÍNEA
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(studentData)
-        });
+        const result = await window.apiPost('alumnos', studentData);
 
-        const result = await response.json();
-
-        if (response.ok && result.success) {
+        if (result.success) {
             console.log('✅ Alumno creado exitosamente');
             showAlert('success', `Alumno "${studentData.nombre}" registrado exitosamente`);
             
@@ -394,32 +384,10 @@ async function saveStudentChanges() {
         };
         
         console.log('📤 Datos a actualizar:', studentData);
-        
-        // CORRECCIÓN: Manejo correcto de la respuesta asíncrona
-        const response = await fetch('/gastos/api/alumnos/' + studentData.id, {
-            method: 'PUT',
-            credentials: 'same-origin',  // ⭐ AGREGAR ESTA LÍNEA
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(studentData)
-        });
 
-        // CORRECCIÓN: Manejo correcto de errores HTTP
-        if (!response.ok) {
-            let errorMessage = `Error ${response.status}`;
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-                errorMessage = 'Error de comunicación con el servidor';
-            }
-            throw new Error(errorMessage);
-        }
+        // Actualizar alumno usando API Client
+        const result = await window.apiPut('alumnos/' + studentData.id, studentData);
 
-        const result = await response.json();
-        
         if (result.success) {
             showAlert('success', `Información de ${studentData.nombre} actualizada exitosamente`);
         } else {

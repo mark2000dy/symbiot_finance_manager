@@ -14,30 +14,20 @@
 async function checkAuthentication() {
     try {
         console.log('🔐 Verificando autenticación del usuario...');
-        
-        // Intentar cargar información del usuario actual
-        const response = await fetch('/gastos/api/user', {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success && data.user) {
-                currentUser = data.user;
-                console.log(`✅ Usuario autenticado: ${currentUser.nombre} (${currentUser.rol})`);
-                return true;
-            }
+
+        // Intentar cargar información del usuario actual usando API Client
+        const data = await window.apiGet('user');
+
+        if (data.success && data.user) {
+            currentUser = data.user;
+            console.log(`✅ Usuario autenticado: ${currentUser.nombre} (${currentUser.rol})`);
+            return true;
         }
-        
+
         // Si llegamos aquí, no hay sesión válida
         console.log('❌ Usuario no autenticado');
         return false;
-        
+
     } catch (error) {
         console.error('❌ Error verificando autenticación:', error);
         return false;
@@ -330,27 +320,17 @@ function requirePermission(action, callback, ...args) {
 async function validateAndRefreshSession() {
     try {
         console.log('🔄 Validando sesión activa...');
-        
-        const response = await fetch('/gastos/api/user', {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
 
-        if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success) {
-                console.log('✅ Sesión válida');
-                return true;
-            }
+        const data = await window.apiGet('user');
+
+        if (data.success) {
+            console.log('✅ Sesión válida');
+            return true;
         }
 
         console.log('❌ Sesión inválida');
         return false;
-        
+
     } catch (error) {
         console.error('❌ Error validando sesión:', error);
         return false;
@@ -363,27 +343,17 @@ async function validateAndRefreshSession() {
 async function refreshSession() {
     try {
         console.log('🔄 Verificando sesión...');
-        
-        const response = await fetch('/gastos/api/user', {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success) {
-                console.log('✅ Sesión válida');
-                return true;
-            }
+
+        const data = await window.apiGet('user');
+
+        if (data.success) {
+            console.log('✅ Sesión válida');
+            return true;
         }
-        
+
         console.log('❌ Sesión inválida');
         return false;
-        
+
     } catch (error) {
         console.error('❌ Error verificando sesión:', error);
         return false;
@@ -410,16 +380,10 @@ async function logout() {
         
         // Mostrar loading
         showAlert('info', 'Cerrando sesión...', 2000);
-        
+
         // Llamar API de logout
-        const response = await fetch('/gastos/api/logout', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
+        await window.apiPost('logout');
+
         // Limpiar datos locales independientemente de la respuesta
         currentUser = null;
         window.recentTransactionsCache = [];
