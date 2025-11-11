@@ -10,13 +10,18 @@ let isCheckingAuth = false;
 // Verificar autenticación al cargar página
 async function checkAuthentication() {
     if (isCheckingAuth) return;
-    
+
     isCheckingAuth = true;
-    
+
     try {
         console.log('🔐 Verificando autenticación...');
-        
-        const response = await fetch('/gastos/api/user', {
+
+        // Usar buildApiUrl si está disponible, sino usar ruta relativa
+        const userUrl = (typeof window.buildApiUrl === 'function')
+            ? window.buildApiUrl('user')
+            : 'api/user';
+
+        const response = await fetch(userUrl, {
             method: 'GET',
             credentials: 'same-origin',
             headers: {
@@ -67,15 +72,20 @@ async function checkAuthentication() {
 // Redirigir al login
 function redirectToLogin() {
     console.log('🔄 Redirigiendo al login...');
-    
+
     // Limpiar cualquier dato de usuario
     currentUser = null;
-    
+
     // Redirigir preservando la URL actual para volver después del login
     const currentPath = window.location.pathname + window.location.search;
     const redirectUrl = encodeURIComponent(currentPath);
-    
-    window.location.href = `/gastos/login.html?redirect=${redirectUrl}`;
+
+    // Usar buildPageUrl si está disponible, sino usar ruta relativa
+    const loginUrl = (typeof window.buildPageUrl === 'function')
+        ? window.buildPageUrl('login.html')
+        : 'login.html';
+
+    window.location.href = `${loginUrl}?redirect=${redirectUrl}`;
 }
 
 // Actualizar UI con información del usuario
@@ -148,7 +158,7 @@ function setupAuthInterceptor() {
             const response = await originalFetch(url, options);
             
             // Si es 401 y es una request a API, verificar auth
-            if (response.status === 401 && url.includes('/gastos/api/')) {
+            if (response.status === 401 && (url.includes('/gastos/api/') || url.includes('/api/'))) {
                 console.log('🔒 Request rechazada por falta de autenticación');
                 
                 // Intentar re-autenticar
@@ -174,26 +184,39 @@ function setupAuthInterceptor() {
 // Función de logout
 async function logout() {
     try {
-        const response = await fetch('/gastos/api/logout', {
+        // Usar buildApiUrl si está disponible, sino usar ruta relativa
+        const logoutUrl = (typeof window.buildApiUrl === 'function')
+            ? window.buildApiUrl('logout')
+            : 'api/logout';
+
+        const response = await fetch(logoutUrl, {
             method: 'POST',
             credentials: 'same-origin'
         });
-        
+
         const data = await response.json();
-        
+
+        // Usar buildPageUrl si está disponible, sino usar ruta relativa
+        const loginUrl = (typeof window.buildPageUrl === 'function')
+            ? window.buildPageUrl('login.html')
+            : 'login.html';
+
         if (data.success) {
             console.log('✅ Logout exitoso');
-            window.location.href = '/gastos/login.html';
+            window.location.href = loginUrl;
         } else {
             console.error('❌ Error en logout:', data.error);
             // Forzar redirección de todos modos
-            window.location.href = '/gastos/login.html';
+            window.location.href = loginUrl;
         }
-        
+
     } catch (error) {
         console.error('🔥 Error en logout:', error);
         // Forzar redirección de todos modos
-        window.location.href = '/gastos/login.html';
+        const loginUrl = (typeof window.buildPageUrl === 'function')
+            ? window.buildPageUrl('login.html')
+            : 'login.html';
+        window.location.href = loginUrl;
     }
 }
 
