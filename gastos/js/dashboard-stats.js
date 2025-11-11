@@ -896,9 +896,9 @@ function startStatsAutoRefresh() {
  */
 function showRockstarSkullIndicators() {
     console.log('🎸 Mostrando indicadores de RockstarSkull');
-    
-    // Cambiar título del dashboard
-    const dashboardTitle = document.querySelector('.main-content h2');
+
+    // Cambiar título del dashboard (usar h4 en welcome-banner, NO h2 que es el contador de alumnos)
+    const dashboardTitle = document.querySelector('.welcome-banner h4');
     if (dashboardTitle) {
         dashboardTitle.innerHTML = '<i class="fas fa-guitar me-2"></i>Dashboard RockstarSkull';
     }
@@ -959,9 +959,9 @@ async function loadCurrentMonthData() {
  */
 function hideRockstarSkullIndicators() {
     console.log('🏢 Ocultando indicadores específicos de RockstarSkull');
-    
-    // Restaurar título del dashboard
-    const dashboardTitle = document.querySelector('.main-content h2');
+
+    // Restaurar título del dashboard (usar h4 en welcome-banner, NO h2 que es el contador de alumnos)
+    const dashboardTitle = document.querySelector('.welcome-banner h4');
     if (dashboardTitle) {
         dashboardTitle.innerHTML = '<i class="fas fa-chart-pie me-2"></i>Dashboard Financiero';
     }
