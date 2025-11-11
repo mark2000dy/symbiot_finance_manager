@@ -163,35 +163,32 @@ async function loadStudentsList(page = 1) {
     try {
         console.log(`🎓 Cargando alumnos - Página ${page}...`);
         console.log('🔍 Filtros actuales:', currentStudentFilters);
-        
+
         showStudentsLoadingState(true);
-        
-        // Construir URL SIN filtro de pagos (se hace en frontend)
+
+        // v3.1.3: Construir params object para apiGet en lugar de URL con query string
         const empresaIdParam = currentCompanyFilter || 1;
-        let url = `/gastos/api/alumnos?empresa_id=${empresaIdParam}&limit=1000`; // Cargar todos
-        
+        const params = {
+            empresa_id: empresaIdParam,
+            limit: 1000 // Cargar todos
+        };
+
         // Agregar solo filtros que el backend soporta
         if (currentStudentFilters.statusFilter) {
-            url += `&estatus=${currentStudentFilters.statusFilter}`;
+            params.estatus = currentStudentFilters.statusFilter;
         }
         if (currentStudentFilters.instrumentFilter) {
-            url += `&clase=${currentStudentFilters.instrumentFilter}`;
+            params.clase = currentStudentFilters.instrumentFilter;
         }
         if (currentStudentFilters.teacherFilter) {
-            url += `&maestro_id=${currentStudentFilters.teacherFilter}`;
+            params.maestro_id = currentStudentFilters.teacherFilter;
         }
-        
-        console.log('📡 URL de solicitud:', url);
 
-        const response = await fetch(url, {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-        const result = await response.json();
-        
+        console.log('📡 Parámetros de solicitud:', params);
+
+        // v3.1.3: Usar API Client en lugar de fetch directo
+        const result = await window.apiGet('alumnos', params);
+
         console.log('📥 Respuesta del servidor:', result);
 
         if (result.success && result.data) {

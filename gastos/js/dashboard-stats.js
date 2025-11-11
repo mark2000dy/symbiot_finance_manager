@@ -188,12 +188,9 @@ async function updateCompanyStatsReal(resumen) {
         const studentsElement = document.getElementById('companyStudents');
         if (studentsElement && currentCompanyFilter === '1') {
             try {
-                const alumnosResponse = await fetch(`/gastos/api/dashboard/alumnos?empresa_id=1`, {
-                    cache: 'no-store',
-                    credentials: 'same-origin'
-                });
-                const alumnosData = await alumnosResponse.json();
-                
+                // v3.1.3: Usar API Client en lugar de fetch directo
+                const alumnosData = await window.apiGet('dashboard/alumnos', { empresa_id: 1 });
+
                 if (alumnosData.success) {
                     const totalActivos = alumnosData.data.total_alumnos || 0;
                     studentsElement.textContent = totalActivos;
@@ -211,33 +208,30 @@ async function updateCompanyStatsReal(resumen) {
 
         if (currentCompanyFilter === '1' && (currentStudents || pendingStudents)) {
             try {
-                const alertsResponse = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=1`, {
-                    cache: 'no-store',
-                    credentials: 'same-origin'
-                });
-                const alertsData = await alertsResponse.json();
-                
+                // v3.1.3: Usar API Client en lugar de fetch directo
+                const alertsData = await window.apiGet('dashboard/alertas-pagos', { empresa_id: 1 });
+
                 if (alertsData.success) {
-                    const proximos = Array.isArray(alertsData.data.proximos_vencer) ? 
+                    const proximos = Array.isArray(alertsData.data.proximos_vencer) ?
                         alertsData.data.proximos_vencer.filter(a => String(a.estatus || '').toLowerCase() !== 'baja') : [];
                     const vencidos = Array.isArray(alertsData.data.vencidos) ?
                         alertsData.data.vencidos.filter(a => String(a.estatus || '').toLowerCase() !== 'baja') : [];
-                    
+
                     const totalPendientes = proximos.length + vencidos.length;
-                    
-                    const alumnosResp = await fetch(`/gastos/api/dashboard/alumnos?empresa_id=1`, { cache: 'no-store' });
-                    const alumnosData = await alumnosResp.json();
+
+                    // v3.1.3: Usar API Client en lugar de fetch directo
+                    const alumnosData = await window.apiGet('dashboard/alumnos', { empresa_id: 1 });
                     const totalActivos = alumnosData.success ? (alumnosData.data.total_alumnos || 0) : 0;
-                    
+
                     const alCorriente = totalActivos - totalPendientes;
-                    
+
                     if (currentStudents) {
                         currentStudents.textContent = alCorriente;
                     }
                     if (pendingStudents) {
                         pendingStudents.textContent = totalPendientes;
                     }
-                    
+
                     console.log(`Selector: ${alCorriente} al corriente, ${totalPendientes} pendientes`);
                 }
             } catch (error) {
