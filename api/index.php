@@ -201,6 +201,19 @@ try {
     }
 
     // ============================================================
+    // RUTAS DE DASHBOARD ESPECÍFICAS PARA ALUMNOS
+    // ============================================================
+    if ($requestUri === '/dashboard/alumnos' && $requestMethod === 'GET') {
+        TransaccionesController::getDashboardAlumnos();
+        exit;
+    }
+
+    if ($requestUri === '/dashboard/alertas-pagos' && $requestMethod === 'GET') {
+        TransaccionesController::getDashboardAlertasPagos();
+        exit;
+    }
+
+    // ============================================================
     // RUTAS DE DASHBOARD
     // ============================================================
     if ($requestUri === '/dashboard' && $requestMethod === 'GET') {
