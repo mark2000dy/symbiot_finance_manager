@@ -605,4 +605,332 @@ class TransaccionesController {
         file_put_contents('php://input', json_encode($input));
         self::createTransaccion();
     }
+
+    // ============================================================
+    // DASHBOARD ESPECÍFICO - ENDPOINTS PARA ALUMNOS
+    // ============================================================
+
+    /**
+     * Obtener estadísticas completas de alumnos para el dashboard
+     * Incluye: total, activos, bajas, distribución por clase y maestro, métricas
+     */
+    public static function getDashboardAlumnos() {
+        AuthController::requireAuth();
+
+        try {
+            error_log("📊 Obteniendo estadísticas de dashboard alumnos...");
+
+            $empresa_id = $_GET['empresa_id'] ?? 1;
+
+            // 1. ESTADÍSTICAS GENERALES
+            $statsQuery = "
+                SELECT
+                    COUNT(*) as total_alumnos,
+                    SUM(CASE WHEN estatus = 'Activo' THEN 1 ELSE 0 END) as alumnos_activos,
+                    SUM(CASE WHEN estatus = 'Baja' THEN 1 ELSE 0 END) as alumnos_bajas
+                FROM alumnos
+                WHERE empresa_id = ?
+                    AND nombre NOT LIKE '[ELIMINADO]%'
+            ";
+            $stats = executeQuery($statsQuery, [$empresa_id]);
+            $estadisticas = [
+                'total_alumnos' => (int)($stats[0]['total_alumnos'] ?? 0),
+                'alumnos_activos' => (int)($stats[0]['alumnos_activos'] ?? 0),
+                'alumnos_bajas' => (int)($stats[0]['alumnos_bajas'] ?? 0)
+            ];
+
+            // 2. DISTRIBUCIÓN POR CLASE
+            $clasesQuery = "
+                SELECT
+                    clase,
+                    COUNT(*) as total_alumnos,
+                    SUM(CASE WHEN estatus = 'Activo' THEN 1 ELSE 0 END) as activos,
+                    SUM(CASE WHEN estatus = 'Baja' THEN 1 ELSE 0 END) as inactivos
+                FROM alumnos
+                WHERE empresa_id = ?
+                    AND nombre NOT LIKE '[ELIMINADO]%'
+                    AND clase IS NOT NULL
+                    AND clase != ''
+                GROUP BY clase
+                ORDER BY total_alumnos DESC
+            ";
+            $distribucion_clases = executeQuery($clasesQuery, [$empresa_id]);
+
+            // 3. DISTRIBUCIÓN POR MAESTRO
+            $maestrosQuery = "
+                SELECT
+                    COALESCE(m.nombre, 'Sin asignar') as maestro,
+                    COALESCE(a.clase, 'Sin clase') as especialidad,
+                    SUM(CASE WHEN a.estatus = 'Activo' THEN 1 ELSE 0 END) as alumnos_activos,
+                    SUM(CASE WHEN a.estatus = 'Baja' THEN 1 ELSE 0 END) as alumnos_bajas,
+                    SUM(CASE WHEN a.estatus = 'Activo' THEN COALESCE(a.precio_mensual, 0) ELSE 0 END) as ingresos_activos,
+                    SUM(CASE WHEN a.estatus = 'Baja' THEN COALESCE(a.precio_mensual, 0) ELSE 0 END) as ingresos_bajas
+                FROM alumnos a
+                LEFT JOIN maestros m ON a.maestro_id = m.id
+                WHERE a.empresa_id = ?
+                    AND a.nombre NOT LIKE '[ELIMINADO]%'
+                GROUP BY m.nombre, a.clase
+                HAVING alumnos_activos > 0 OR alumnos_bajas > 0
+                ORDER BY alumnos_activos DESC, maestro
+            ";
+            $distribucion_maestros = executeQuery($maestrosQuery, [$empresa_id]);
+
+            // 4. MÉTRICAS ESPECÍFICAS DE ROCKSTARSKULL
+            $metricasQuery = "
+                SELECT
+                    SUM(CASE WHEN tipo_clase = 'Grupal' AND estatus = 'Activo' THEN 1 ELSE 0 END) as clases_grupales,
+                    SUM(CASE WHEN tipo_clase = 'Individual' AND estatus = 'Activo' THEN 1 ELSE 0 END) as clases_individuales,
+                    -- Al corriente: pagó este mes o pagó mes anterior y aún no vence periodo actual
+                    SUM(CASE
+                        WHEN estatus = 'Activo' AND (
+                            DATE_FORMAT(fecha_ultimo_pago, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+                            OR (
+                                DATE_FORMAT(fecha_ultimo_pago, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')
+                                AND CURDATE() <= DATE_ADD(
+                                    LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)),
+                                    INTERVAL 5 DAY
+                                )
+                            )
+                        ) THEN 1 ELSE 0 END
+                    ) as alumnos_corriente,
+                    -- Pendientes: todos los activos que NO están al corriente
+                    SUM(CASE
+                        WHEN estatus = 'Activo' AND NOT (
+                            DATE_FORMAT(fecha_ultimo_pago, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+                            OR (
+                                DATE_FORMAT(fecha_ultimo_pago, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')
+                                AND CURDATE() <= DATE_ADD(
+                                    LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)),
+                                    INTERVAL 5 DAY
+                                )
+                            )
+                        ) THEN 1 ELSE 0 END
+                    ) as alumnos_pendientes
+                FROM alumnos
+                WHERE empresa_id = ?
+                    AND nombre NOT LIKE '[ELIMINADO]%'
+            ";
+            $metricas = executeQuery($metricasQuery, [$empresa_id]);
+            $metricas_rockstar = [
+                'clases_grupales' => (int)($metricas[0]['clases_grupales'] ?? 0),
+                'clases_individuales' => (int)($metricas[0]['clases_individuales'] ?? 0),
+                'alumnos_corriente' => (int)($metricas[0]['alumnos_corriente'] ?? 0),
+                'alumnos_pendientes' => (int)($metricas[0]['alumnos_pendientes'] ?? 0)
+            ];
+
+            error_log("✅ Estadísticas calculadas: " . json_encode($estadisticas));
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'total_alumnos' => $estadisticas['alumnos_activos'], // Solo activos en el contador principal
+                    'estadisticas' => $estadisticas,
+                    'distribucion_clases' => $distribucion_clases,
+                    'distribucion_maestros' => $distribucion_maestros,
+                    'metricas_rockstar' => $metricas_rockstar
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("❌ Error obteniendo estadísticas de alumnos: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno del servidor',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener alertas de pagos (próximos a vencer y vencidos)
+     * Basado en la lógica homologada de periodo de gracia
+     */
+    public static function getDashboardAlertasPagos() {
+        AuthController::requireAuth();
+
+        try {
+            error_log("🔔 Obteniendo alertas de pagos...");
+
+            $empresa_id = $_GET['empresa_id'] ?? 1;
+
+            // Obtener todos los alumnos activos con información de pagos
+            $alumnosQuery = "
+                SELECT
+                    id,
+                    nombre,
+                    clase,
+                    estatus,
+                    fecha_inscripcion,
+                    fecha_ultimo_pago,
+                    precio_mensual
+                FROM alumnos
+                WHERE empresa_id = ?
+                    AND nombre NOT LIKE '[ELIMINADO]%'
+                ORDER BY nombre
+            ";
+            $alumnos = executeQuery($alumnosQuery, [$empresa_id]);
+
+            $proximos_vencer = [];
+            $vencidos = [];
+
+            // Calcular estado de pago para cada alumno usando lógica homologada
+            foreach ($alumnos as $alumno) {
+                // Saltar alumnos dados de baja
+                if ($alumno['estatus'] === 'Baja') {
+                    continue;
+                }
+
+                $estado = self::calcularEstadoPagoHomologado($alumno);
+
+                if ($estado['status'] === 'upcoming') {
+                    $proximos_vencer[] = [
+                        'id' => $alumno['id'],
+                        'nombre' => $alumno['nombre'],
+                        'clase' => $alumno['clase'] ?? 'Sin clase',
+                        'estatus' => $alumno['estatus'],
+                        'dias_restantes' => $estado['dias'],
+                        'fecha_vencimiento' => $estado['fecha_corte']
+                    ];
+                } elseif ($estado['status'] === 'overdue') {
+                    $vencidos[] = [
+                        'id' => $alumno['id'],
+                        'nombre' => $alumno['nombre'],
+                        'clase' => $alumno['clase'] ?? 'Sin clase',
+                        'estatus' => $alumno['estatus'],
+                        'dias_vencido' => abs($estado['dias']),
+                        'fecha_vencimiento' => $estado['fecha_corte']
+                    ];
+                }
+            }
+
+            error_log("✅ Alertas calculadas: " . count($proximos_vencer) . " próximos, " . count($vencidos) . " vencidos");
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'proximos_vencer' => $proximos_vencer,
+                    'vencidos' => $vencidos,
+                    'total_alertas' => count($proximos_vencer) + count($vencidos)
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("❌ Error obteniendo alertas de pagos: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno del servidor',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Calcular estado de pago homologado (lógica idéntica al frontend)
+     * Retorna: ['status' => 'current|upcoming|overdue', 'dias' => int, 'fecha_corte' => string]
+     */
+    private static function calcularEstadoPagoHomologado($alumno) {
+        try {
+            $hoy = new DateTime();
+            $hoy->setTime(0, 0, 0);
+
+            // Obtener fecha de inscripción
+            $fechaInscripcion = new DateTime($alumno['fecha_inscripcion']);
+            $diaCorte = (int)$fechaInscripcion->format('d');
+
+            // Calcular fecha de corte del mes ACTUAL
+            $fechaCorteActual = new DateTime($hoy->format('Y-m-') . str_pad($diaCorte, 2, '0', STR_PAD_LEFT));
+            $fechaCorteActual->setTime(0, 0, 0);
+
+            // Si el día no existe en el mes (ej: 31 en febrero), usar último día del mes
+            if ((int)$fechaCorteActual->format('d') !== $diaCorte) {
+                $fechaCorteActual = new DateTime($hoy->format('Y-m-t'));
+                $fechaCorteActual->setTime(0, 0, 0);
+            }
+
+            // Calcular periodo de pago: 3 días antes hasta 5 días después
+            $inicioPeriodoPago = clone $fechaCorteActual;
+            $inicioPeriodoPago->modify('-3 days');
+
+            $finPeriodoGracia = clone $fechaCorteActual;
+            $finPeriodoGracia->modify('+5 days');
+
+            // Verificar si estamos en el periodo de pago
+            $enPeriodoPago = ($hoy >= $inicioPeriodoPago && $hoy <= $finPeriodoGracia);
+
+            // Verificar pagos
+            $fechaUltimoPago = $alumno['fecha_ultimo_pago'] ? new DateTime($alumno['fecha_ultimo_pago']) : null;
+
+            $pagoEsteMes = $fechaUltimoPago &&
+                $fechaUltimoPago->format('Y-m') === $hoy->format('Y-m');
+
+            $mesAnterior = clone $hoy;
+            $mesAnterior->modify('-1 month');
+            $pagoMesAnterior = $fechaUltimoPago &&
+                $fechaUltimoPago->format('Y-m') === $mesAnterior->format('Y-m');
+
+            // REGLA 1: Si pagó ESTE MES → Al corriente
+            if ($pagoEsteMes) {
+                return [
+                    'status' => 'current',
+                    'dias' => $hoy->diff($finPeriodoGracia)->days,
+                    'fecha_corte' => $fechaCorteActual->format('Y-m-d')
+                ];
+            }
+
+            // REGLA 2: Si NO pagó mes anterior → VENCIDO
+            if (!$pagoMesAnterior) {
+                $diasDiff = $hoy->diff($finPeriodoGracia)->days;
+                $diasVencido = $hoy > $finPeriodoGracia ? $diasDiff : -$diasDiff;
+                return [
+                    'status' => 'overdue',
+                    'dias' => $diasVencido,
+                    'fecha_corte' => $fechaCorteActual->format('Y-m-d')
+                ];
+            }
+
+            // REGLA 3: Pagó mes anterior Y estamos en periodo → PRÓXIMO A VENCER
+            if ($pagoMesAnterior && $enPeriodoPago) {
+                return [
+                    'status' => 'upcoming',
+                    'dias' => $hoy->diff($finPeriodoGracia)->days,
+                    'fecha_corte' => $fechaCorteActual->format('Y-m-d')
+                ];
+            }
+
+            // REGLA 4: Pagó mes anterior Y ya pasó periodo → VENCIDO
+            if ($pagoMesAnterior && $hoy > $finPeriodoGracia) {
+                return [
+                    'status' => 'overdue',
+                    'dias' => $hoy->diff($finPeriodoGracia)->days,
+                    'fecha_corte' => $fechaCorteActual->format('Y-m-d')
+                ];
+            }
+
+            // REGLA 5: Pagó mes anterior Y aún no inicia periodo → AL CORRIENTE
+            if ($pagoMesAnterior && $hoy < $inicioPeriodoPago) {
+                return [
+                    'status' => 'current',
+                    'dias' => $hoy->diff($inicioPeriodoPago)->days,
+                    'fecha_corte' => $fechaCorteActual->format('Y-m-d')
+                ];
+            }
+
+            // Por defecto: Al corriente
+            return [
+                'status' => 'current',
+                'dias' => 0,
+                'fecha_corte' => $fechaCorteActual->format('Y-m-d')
+            ];
+
+        } catch (Exception $e) {
+            error_log("❌ Error calculando estado de pago para " . $alumno['nombre'] . ": " . $e->getMessage());
+            return [
+                'status' => 'current',
+                'dias' => 0,
+                'fecha_corte' => null
+            ];
+        }
+    }
 }
