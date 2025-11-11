@@ -23,15 +23,9 @@ async function refreshPaymentAlerts() {
         }
         
         const empresaParam = currentCompanyFilter || 1;
-        const response = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=${empresaParam}`, { 
-            cache: 'no-store',
-            credentials: 'same-origin',  // ⭐ CAMBIAR DE 'include' A 'same-origin'
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await response.json();
+
+        // v3.1.3: Usar API Client en lugar de fetch directo
+        const data = await window.apiGet('dashboard/alertas-pagos', { empresa_id: empresaParam });
         
         if (data.success) {
             console.log('🔔 DEBUG alertas recibidas:', data.data);
