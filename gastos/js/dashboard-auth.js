@@ -14,30 +14,20 @@
 async function checkAuthentication() {
     try {
         console.log('🔐 Verificando autenticación del usuario...');
-        
-        // Intentar cargar información del usuario actual
-        const response = await fetch('/gastos/api/user', {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success && data.user) {
-                currentUser = data.user;
-                console.log(`✅ Usuario autenticado: ${currentUser.nombre} (${currentUser.rol})`);
-                return true;
-            }
+
+        // Intentar cargar información del usuario actual usando API Client
+        const data = await window.apiGet('user');
+
+        if (data.success && data.user) {
+            currentUser = data.user;
+            console.log(`✅ Usuario autenticado: ${currentUser.nombre} (${currentUser.rol})`);
+            return true;
         }
-        
+
         // Si llegamos aquí, no hay sesión válida
         console.log('❌ Usuario no autenticado');
         return false;
-        
+
     } catch (error) {
         console.error('❌ Error verificando autenticación:', error);
         return false;
