@@ -47,17 +47,17 @@ async function loadDashboardData() {
     
     try {
         console.log('📊 Cargando estadísticas con filtro de empresa...');
-        
-        // Construir query con filtro
-        let queryParam = '';
+
+        // v3.1.2: Construir params object para apiGet en lugar de query string
+        const params = {};
         if (currentCompanyFilter) {
-            queryParam = `?empresa_id=${currentCompanyFilter}`;
+            params.empresa_id = currentCompanyFilter;
         }
-        
-        console.log('📡 Solicitando resumen:', `/gastos/api/transacciones/resumen${queryParam}`);
-        
-        const response = await fetch(`/gastos/api/transacciones/resumen${queryParam}`);
-        const data = await response.json();
+
+        console.log('📡 Solicitando resumen de transacciones...');
+
+        // v3.1.2: Usar API Client en lugar de fetch directo
+        const data = await window.apiGet('transacciones/resumen', params);
         
         console.log('📥 Respuesta completa del API:', data);
         
@@ -928,18 +928,20 @@ async function loadCurrentMonthData() {
         
         const fechaInicio = firstDay.toISOString().split('T')[0];
         const fechaFin = lastDay.toISOString().split('T')[0];
-        
-        let queryParam = `?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`;
+
+        // v3.1.2: Construir params object para apiGet en lugar de query string
+        const params = {
+            fechaInicio: fechaInicio,
+            fechaFin: fechaFin
+        };
         if (currentCompanyFilter) {
-            queryParam += `&empresa_id=${currentCompanyFilter}`;
+            params.empresa_id = currentCompanyFilter;
         }
-        
+
         console.log(`Cargando balance del mes actual: ${fechaInicio} a ${fechaFin}`);
-        
-        const response = await fetch(`/gastos/api/transacciones/resumen${queryParam}`, {
-            cache: 'no-store'
-        });
-        const data = await response.json();
+
+        // v3.1.2: Usar API Client en lugar de fetch directo
+        const data = await window.apiGet('transacciones/resumen', params);
         
         if (data.success) {
             const resumen = data.data;

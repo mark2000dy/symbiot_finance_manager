@@ -769,7 +769,10 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
+    <!-- API Client v3.1 - Universal API Handler (DEBE CARGARSE PRIMERO) -->
+    <script src="assets/js/api-client.js?v=3.1.2"></script>
+
     <script>
         // ============================================================
         // VARIABLES GLOBALES
@@ -807,30 +810,30 @@
         async function loadTransactions() {
             try {
                 showLoadingState(true);
-                
-                // Construir parámetros de filtro
-                const params = new URLSearchParams();
-                
+
+                // v3.1.2: Construir parámetros de filtro como objeto para apiGet
+                const params = {};
+
                 const empresa = document.getElementById('filterEmpresa').value;
                 const ano = document.getElementById('filterAno').value;
                 const mes = document.getElementById('filterMes').value;
                 const tipo = document.getElementById('filterTipo').value || 'G'; // Solo Gastos por defecto
-                
-                if (empresa) params.append('empresa_id', empresa);
-                if (tipo) params.append('tipo', tipo);
+
+                if (empresa) params.empresa_id = empresa;
+                if (tipo) params.tipo = tipo;
 
                 // Construir rango de fechas (IGUAL que en ingresos.html)
                 if (ano) {
                     const fechaInicio = mes ? `${ano}-${mes}-01` : `${ano}-01-01`;
                     const fechaFin = mes ? `${ano}-${mes}-31` : `${ano}-12-31`;
-                    params.append('fechaInicio', fechaInicio);
-                    params.append('fechaFin', fechaFin);
+                    params.fechaInicio = fechaInicio;
+                    params.fechaFin = fechaFin;
                 }
 
-                console.log('📥 Cargando ingresos con filtros:', params.toString());
+                console.log('📥 Cargando Gastos con filtros:', params);
 
-                const response = await fetch(`/gastos/api/transacciones?${params.toString()}`);
-                const result = await response.json();
+                // v3.1.2: Usar API Client en lugar de fetch directo
+                const result = await window.apiGet('transacciones', params);
                 
                 if (!result.success) {
                     throw new Error(result.message || 'Error cargando datos');
@@ -1115,18 +1118,13 @@
                     return;
                 }
                 
-                const url = editingTransactionId 
-                    ? `/gastos/api/transacciones/${editingTransactionId}`
-                    : '/gastos/api/transacciones';
-                const method = editingTransactionId ? 'PUT' : 'POST';
-                
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
+                // v3.1.2: Usar API Client en lugar de fetch directo
+                let result;
+                if (editingTransactionId) {
+                    result = await window.apiPut(`transacciones/${editingTransactionId}`, formData);
+                } else {
+                    result = await window.apiPost('transacciones', formData);
+                }
                 
                 if (result.success) {
                     showAlert('success', editingTransactionId ? 'Gasto actualizado exitosamente' : 'Gasto creado exitosamente');
@@ -1161,11 +1159,8 @@
             if (!transactionId) return;
             
             try {
-                const response = await fetch(`/gastos/api/transacciones/${transactionId}`, {
-                    method: 'DELETE'
-                });
-                
-                const result = await response.json();
+                // v3.1.2: Usar API Client en lugar de fetch directo
+                const result = await window.apiDelete(`transacciones/${transactionId}`);
                 
                 if (result.success) {
                     showAlert('success', 'asto eliminado exitosamente');
@@ -1210,9 +1205,8 @@
                 exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
                 exportBtn.disabled = true;
                 
-                // Obtener todos los Gastos (filtrado por tipo = 'G')
-                const response = await fetch('/gastos/api/transacciones?tipo=G');
-                const result = await response.json();
+                // v3.1.2: Obtener todos los Gastos (filtrado por tipo = 'G')
+                const result = await window.apiGet('transacciones', { tipo: 'G' });
                 
                 if (!result.success) {
                     throw new Error('Error obteniendo datos para exportar');
@@ -1297,31 +1291,31 @@
             try {
                 showChartLoading(true);
                 
-                // Construir parámetros basados en TODOS los filtros actuales
-                const params = new URLSearchParams();
-                
+                // v3.1.2: Construir parámetros basados en TODOS los filtros actuales
+                const params = {};
+
                 const empresa = document.getElementById('filterEmpresa').value;
                 const ano = document.getElementById('filterAno').value;
                 const mes = document.getElementById('filterMes').value;
                 const tipo = document.getElementById('filterTipo').value || 'G'; // Forzar gastos
 
-                if (empresa) params.append('empresa_id', empresa);
-                if (ano) params.append('año', ano);
-                if (mes) params.append('mes', mes);
-                params.append('tipo', tipo); // Asegurar solo gastos
+                if (empresa) params.empresa_id = empresa;
+                if (ano) params.año = ano;
+                if (mes) params.mes = mes;
+                params.tipo = tipo; // Asegurar solo gastos
 
                 // Construir fechas como en loadTransactions()
                 if (ano) {
                     const fechaInicio = mes ? `${ano}-${mes}-01` : `${ano}-01-01`;
                     const fechaFin = mes ? `${ano}-${mes}-31` : `${ano}-12-31`;
-                    params.append('fechaInicio', fechaInicio);
-                    params.append('fechaFin', fechaFin);
+                    params.fechaInicio = fechaInicio;
+                    params.fechaFin = fechaFin;
                 }
-                
-                console.log('📊 Cargando datos de gráfica con filtros:', params.toString());
-                
-                const response = await fetch(`/gastos/api/transacciones?${params.toString()}`);
-                const result = await response.json();
+
+                console.log('📊 Cargando datos de gráfica con filtros:', params);
+
+                // v3.1.2: Usar API Client en lugar de fetch directo
+                const result = await window.apiGet('transacciones', params);
                 
                 if (!result.success) {
                     throw new Error('Error cargando datos para gráfica');
@@ -1571,9 +1565,9 @@
         async function loadCurrentUser() {
             try {
                 console.log('👤 Cargando usuario actual...');
-                
-                const response = await fetch('/gastos/api/user');
-                const data = await response.json();
+
+                // v3.1.2: Usar API Client en lugar de fetch directo
+                const data = await window.apiGet('user');
                 
                 if (data.success) {
                     currentUser = data.user;
@@ -1601,32 +1595,13 @@
             if (confirm('¿Está seguro que desea cerrar sesión?')) {
                 try {
                     console.log('🚪 Cerrando sesión...');
-                    
-                    const response = await fetch('/gastos/api/logout', { 
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    console.log('📤 Respuesta logout:', response.status);
-                    
-                    // Intentar obtener respuesta JSON
-                    let data = null;
-                    try {
-                        data = await response.json();
-                    } catch (parseError) {
-                        console.log('⚠️ No se pudo parsear respuesta JSON');
-                    }
-                    
-                    if (response.ok || response.status === 200) {
-                        console.log('✅ Logout exitoso');
-                        localStorage.removeItem('rememberedEmail');
-                        window.location.href = 'login.html';
-                    } else {
-                        throw new Error('Error en logout del servidor');
-                    }
+
+                    // v3.1.2: Usar API Client en lugar de fetch directo
+                    const data = await window.apiPost('logout');
+
+                    console.log('✅ Logout exitoso');
+                    localStorage.removeItem('rememberedEmail');
+                    window.location.href = 'login.html';
                     
                 } catch (error) {
                     console.error('❌ Error en logout:', error);
