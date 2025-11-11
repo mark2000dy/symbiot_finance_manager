@@ -663,15 +663,15 @@
     <script src="assets/js/api-client.js?v=3.1.1"></script>
 
     <!-- JAVASCRIPT MODULAR - ORDEN DE CARGA CRÍTICO -->
-    <script src="js/dashboard-core.js"></script>
-    <script src="js/dashboard-auth.js"></script>
-    <script src="js/dashboard-api.js"></script>
-    <script src="js/dashboard-stats.js"></script>
-    <script src="js/dashboard-payments.js"></script>
-    <script src="js/dashboard-transactions.js"></script>
-    <script src="js/dashboard-modals.js"></script>
-    <script src="js/dashboard-students.js"></script>
-    <script src="js/dashboard-init.js"></script>
+    <script src="js/dashboard-core.js?v=3.1.1"></script>           <!-- v3.1.1: Cache busting -->
+    <script src="js/dashboard-auth.js?v=3.1.1"></script>           <!-- v3.1.1: Fix fetch to apiGet -->
+    <script src="js/dashboard-api.js?v=3.1.1"></script>            <!-- v3.1.1: Add apiRequest alias -->
+    <script src="js/dashboard-stats.js?v=3.1.1"></script>          <!-- v3.1.1: Fix fetch to apiGet -->
+    <script src="js/dashboard-payments.js?v=3.1.1"></script>       <!-- v3.1.1: Cache busting -->
+    <script src="js/dashboard-transactions.js?v=3.1.1"></script>   <!-- v3.1.1: Cache busting -->
+    <script src="js/dashboard-modals.js?v=3.1.1"></script>         <!-- v3.1.1: Cache busting -->
+    <script src="js/dashboard-students.js?v=3.1.1"></script>       <!-- v3.1.1: Fix fetch to apiPost/apiPut -->
+    <script src="js/dashboard-init.js?v=3.1.1"></script>           <!-- v3.1.1: Cache busting -->
 
 </body>
 </html>
