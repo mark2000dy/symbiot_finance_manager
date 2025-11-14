@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Symbiot Technologies - IoT, IA & Automatización</title>
+  <meta name="description" content="Soluciones de IoT, Inteligencia Artificial, Automatización con n8n, Desarrollo de Hardware y Software. Agentes de IA con OpenAI, Claude, Gemini y modelos Open Source.">
+  <meta name="keywords" content="IoT, Inteligencia Artificial, n8n, Automatización, PCB Design, Raspberry Pi, Visión Artificial, Smart HVAC, ESP32">
+
+  <!-- Favicons -->
+  <link href="logo/favicon.ico" rel="icon">
+  <link href="logo/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900&family=Poppins:wght@0,100;0,300;0,400;0,500;0,700;0,900&family=Raleway:wght@0,100;0,300;0,400;0,500;0,700;0,900&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="assets/css/main.css" rel="stylesheet">
+  
+  <!-- Custom Symbiot Styles -->
+  <style>
+    :root {
+      --symbiot-yellow: #dec329;
+      --symbiot-gray: #999999;
+      --symbiot-white: #ffffff;
+      --symbiot-black: #000000;
+      --accent-color: #dec329;
+      --heading-color: #000000;
+      --nav-color: rgba(255, 255, 255, 0.9);
+      --nav-hover-color: #dec329;
+    }
+    
+    .btn-login {
+      background: var(--symbiot-yellow);
+      color: var(--symbiot-black);
+      padding: 8px 25px;
+      border-radius: 50px;
+      font-weight: 600;
+      transition: all 0.3s;
+      border: 2px solid var(--symbiot-yellow);
+    }
+    
+    .btn-login:hover {
+      background: transparent;
+      color: var(--symbiot-yellow);
+      border-color: var(--symbiot-yellow);
+    }
+    
+    .hero {
+      background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%), 
+                  url('assets/img/hero-bg.jpg') center center;
+      background-size: cover;
+    }
+    
+    .service-card {
+      border-top: 4px solid var(--symbiot-yellow);
+      transition: all 0.3s ease;
+    }
+    
+    .service-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 10px 30px rgba(222, 195, 41, 0.3);
+    }
+    
+    .service-card i {
+      color: var(--symbiot-yellow);
+      background: rgba(222, 195, 41, 0.1);
+      padding: 20px;
+      border-radius: 50%;
+    }
+    
+    .portfolio-card {
+      border-left: 4px solid var(--symbiot-yellow);
+      background: var(--symbiot-white);
+      transition: all 0.3s;
+    }
+    
+    .portfolio-card:hover {
+      box-shadow: 0 5px 20px rgba(222, 195, 41, 0.4);
+    }
+    
+    .client-logo {
+      filter: grayscale(100%);
+      opacity: 0.6;
+      transition: all 0.3s;
+    }
+    
+    .client-logo:hover {
+      filter: grayscale(0%);
+      opacity: 1;
+    }
+    
+    .tech-badge {
+      background: rgba(222, 195, 41, 0.1);
+      color: var(--symbiot-black);
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 5px;
+      display: inline-block;
+    }
+  </style>
+</head>
+
+<body class="index-page">
+
+  <!-- Header -->
+  <header id="header" class="header d-flex align-items-center fixed-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
+
+      <a href="index.html" class="logo d-flex align-items-center">
+        <img src="assets/img/symbiot_logo_dark_horizon.png" alt="Symbiot Technologies">
+      </a>
+
+      <nav id="navmenu" class="navmenu">
+        <ul>
+          <li><a href="#hero" class="active">Inicio</a></li>
+          <li><a href="#about">Nosotros</a></li>
+          <li><a href="#services">Servicios</a></li>
+          <li><a href="#portfolio">Portafolio</a></li>
+          <li><a href="#clients">Clientes</a></li>
+          <li><a href="#contact">Contacto</a></li>
+        </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+
+      <a class="btn-login" href="gastos/login.html">
+        <i class="bi bi-box-arrow-in-right"></i> Login
+      </a>
+
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero section dark-background">
+      <div class="container">
+        <div class="row justify-content-center text-center" data-aos="fade-up" data-aos-delay="100">
+          <div class="col-xl-8 col-lg-10">
+            <h2>Conectando el Futuro con <span style="color: var(--symbiot-yellow);">Inteligencia Artificial</span> & <span style="color: var(--symbiot-yellow);">IoT</span></h2>
+            <p>Soluciones innovadoras en automatización, hardware inteligente y análisis de datos para impulsar tu negocio</p>
+          </div>
+        </div>
+
+        <div class="row gy-4 mt-5 justify-content-center" data-aos="fade-up" data-aos-delay="200">
+          <div class="col-xl-2 col-md-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="icon-box">
+              <i class="bi bi-robot"></i>
+              <h3><a href="#services">Agentes de IA</a></h3>
+            </div>
+          </div>
+          <div class="col-xl-2 col-md-4" data-aos="fade-up" data-aos-delay="400">
+            <div class="icon-box">
+              <i class="bi bi-wifi"></i>
+              <h3><a href="#services">IoT Solutions</a></h3>
+            </div>
+          </div>
+          <div class="col-xl-2 col-md-4" data-aos="fade-up" data-aos-delay="500">
+            <div class="icon-box">
+              <i class="bi bi-cpu"></i>
+              <h3><a href="#services">Hardware Design</a></h3>
+            </div>
+          </div>
+          <div class="col-xl-2 col-md-4" data-aos="fade-up" data-aos-delay="600">
+            <div class="icon-box">
+              <i class="bi bi-eye"></i>
+              <h3><a href="#services">Visión Artificial</a></h3>
+            </div>
+          </div>
+          <div class="col-xl-2 col-md-4" data-aos="fade-up" data-aos-delay="700">
+            <div class="icon-box">
+              <i class="bi bi-graph-up-arrow"></i>
+              <h3><a href="#services">Big Data & Analytics</a></h3>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- /Hero Section -->
+
+    <!-- About Section -->
+    <section id="about" class="about section">
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row gy-4">
+          <div class="col-lg-6 order-1 order-lg-2">
+            <img src="assets/img/about.jpg" class="img-fluid rounded" alt="Symbiot Technologies">
+          </div>
+          <div class="col-lg-6 order-2 order-lg-1 content">
+            <h3>Innovación Tecnológica al Servicio de tu Empresa</h3>
+            <p class="fst-italic">
+              Symbiot Technologies es una empresa mexicana especializada en soluciones de Inteligencia Artificial, Internet de las Cosas (IoT) y automatización de procesos.
+            </p>
+            <ul>
+              <li><i class="bi bi-check2-all"></i> <span><strong>Experiencia comprobada</strong> en proyectos IoT y IA para industrias en México y Chile</span></li>
+              <li><i class="bi bi-check2-all"></i> <span><strong>Tecnología de punta</strong> con modelos de IA comerciales y open source</span></li>
+              <li><i class="bi bi-check2-all"></i> <span><strong>Desarrollo integral</strong> desde el diseño de hardware hasta aplicaciones móviles y dashboards</span></li>
+              <li><i class="bi bi-check2-all"></i> <span><strong>Automatización inteligente</strong> con n8n, reduciendo tiempos y costos operativos</span></li>
+            </ul>
+            <p>
+              Trabajamos bajo el principio de simbiosis: una relación colaborativa que genera beneficios mutuos. Nuestras soluciones operan de manera autónoma, eficiente y sin interrupciones, integrándose perfectamente con tus procesos existentes.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section><!-- /About Section -->
+
+    <!-- Services Section -->
+    <section id="services" class="services section light-background">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Nuestros Servicios</h2>
+        <p>Soluciones Tecnológicas Integrales</p>
+      </div>
+
+      <div class="container">
+        
+        <!-- AI Services -->
+        <div class="row mb-5">
+          <div class="col-12">
+            <h3 class="mb-4" data-aos="fade-up"><i class="bi bi-robot me-2" style="color: var(--symbiot-yellow);"></i>Inteligencia Artificial & Automatización</h3>
+          </div>
+          
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-diagram-3 display-4"></i>
+              </div>
+              <h4>Agentes de IA con n8n</h4>
+              <p>Automatización de flujos de trabajo complejos integrando múltiples plataformas y servicios. Workflows inteligentes que aprenden y se adaptan.</p>
+              <div class="mt-3">
+                <span class="tech-badge">n8n</span>
+                <span class="tech-badge">Workflows</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-stars display-4"></i>
+              </div>
+              <h4>Modelos de IA Comerciales</h4>
+              <p>Implementación de los mejores modelos del mercado: OpenAI GPT-4, Google Gemini Pro y Anthropic Claude para soluciones empresariales.</p>
+              <div class="mt-3">
+                <span class="tech-badge">OpenAI</span>
+                <span class="tech-badge">Gemini Pro</span>
+                <span class="tech-badge">Claude</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-code-square display-4"></i>
+              </div>
+              <h4>Modelos Open Source</h4>
+              <p>Soluciones cost-effective con modelos open source: Llama 3.2, GPS-OSS, Qwen-Coder y Qwen3-VL3B para visión y código.</p>
+              <div class="mt-3">
+                <span class="tech-badge">Llama 3.2</span>
+                <span class="tech-badge">Qwen</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-camera-video display-4"></i>
+              </div>
+              <h4>Visión Artificial</h4>
+              <p>Sistemas de análisis de imágenes en tiempo real con Python y OpenCV. Detección de objetos, reconocimiento facial y control de calidad automatizado.</p>
+              <div class="mt-3">
+                <span class="tech-badge">Python</span>
+                <span class="tech-badge">OpenCV</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-chat-dots display-4"></i>
+              </div>
+              <h4>Chatbots Inteligentes</h4>
+              <p>Asistentes virtuales automatizados con n8n e IA. Atención al cliente 24/7, integración con WhatsApp, Telegram y plataformas web.</p>
+              <div class="mt-3">
+                <span class="tech-badge">n8n</span>
+                <span class="tech-badge">NLP</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="600">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-cpu-fill display-4"></i>
+              </div>
+              <h4>Edge Computing</h4>
+              <p>IA en dispositivos edge con Raspberry Pi 5. Procesamiento local de datos para aplicaciones en tiempo real con baja latencia.</p>
+              <div class="mt-3">
+                <span class="tech-badge">Raspberry Pi</span>
+                <span class="tech-badge">Edge AI</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IoT Services -->
+        <div class="row">
+          <div class="col-12">
+            <h3 class="mb-4" data-aos="fade-up"><i class="bi bi-broadcast-pin me-2" style="color: var(--symbiot-yellow);"></i>Internet de las Cosas & Hardware</h3>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-motherboard display-4"></i>
+              </div>
+              <h4>Diseño de PCB</h4>
+              <p>Diseño de circuitos impresos personalizados y prototipado rápido. Soluciones optimizadas para producción y bajo consumo energético.</p>
+              <div class="mt-3">
+                <span class="tech-badge">PCB Design</span>
+                <span class="tech-badge">Prototyping</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-hdd-network display-4"></i>
+              </div>
+              <h4>Firmware & Embebidos</h4>
+              <p>Desarrollo de firmware para microcontroladores ESP32, ESP8266, Arduino. Conectividad WiFi, Bluetooth, 4G y Ethernet.</p>
+              <div class="mt-3">
+                <span class="tech-badge">ESP32</span>
+                <span class="tech-badge">IoT</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-phone display-4"></i>
+              </div>
+              <h4>Desarrollo de Apps</h4>
+              <p>Aplicaciones móviles nativas e híbridas para iOS y Android. Interfaces intuitivas para control y monitoreo de dispositivos IoT.</p>
+              <div class="mt-3">
+                <span class="tech-badge">iOS</span>
+                <span class="tech-badge">Android</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+                <div class="text-center mb-3">
+                <i class="bi bi-bar-chart-line display-4"></i>
+                </div>
+                <h4>Big Data & Analytics</h4>
+                <p>Análisis de datos en tiempo real con Azure y dashboards personalizados. Business Intelligence para toma de decisiones basada en datos.</p>
+                <div class="mt-3">
+                <span class="tech-badge">Azure</span>
+                <span class="tech-badge">Analytics</span>
+                <span class="tech-badge">BI</span>
+                </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-truck display-4"></i>
+              </div>
+              <h4>Fleet Management</h4>
+              <p>Sistemas de gestión de flotas vehiculares con GPS tracking en tiempo real. Optimización de rutas y monitoreo de consumo.</p>
+              <div class="mt-3">
+                <span class="tech-badge">GPS</span>
+                <span class="tech-badge">Tracking</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="600">
+            <div class="service-card p-4 h-100 bg-white rounded shadow-sm">
+              <div class="text-center mb-3">
+                <i class="bi bi-thermometer-half display-4"></i>
+              </div>
+              <h4>Sensores Inteligentes</h4>
+              <p>Desarrollo de sensores IoT personalizados: temperatura, humedad, vibración, aceleración. Conectividad inalámbrica y bajo consumo.</p>
+              <div class="mt-3">
+                <span class="tech-badge">Sensors</span>
+                <span class="tech-badge">Wireless</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section><!-- /Services Section -->
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="portfolio section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Portafolio</h2>
+        <p>Proyectos Destacados</p>
+      </div>
+
+      <div class="container">
+        
+        <!-- Proyectos IoT/Hardware -->
+        <div class="row mb-5">
+          <div class="col-12">
+            <h3 class="mb-4" data-aos="fade-up"><i class="bi bi-wifi me-2" style="color: var(--symbiot-yellow);"></i>Proyectos IoT & Hardware</h3>
+          </div>
+
+          <div class="col-lg-12 mb-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-activity text-warning me-2"></i>Wireless Accelerometer - Proyecto Integral</h4>
+              <p class="text-muted mb-2"><strong>Cliente:</strong> Huella Estructural (Chile)</p>
+              <p>Desarrollo completo end-to-end de acelerómetro inalámbrico para monitoreo estructural. Desde el diseño de hardware hasta la plataforma en la nube.</p>
+              
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <p><strong>Hardware & Firmware:</strong></p>
+                  <ul>
+                    <li><strong>Diseño PCB personalizado</strong> con tarjetas de expansión mini PCIe</li>
+                    <li><strong>Triple conectividad:</strong> 4G, WiFi (ESP32) y Ethernet</li>
+                    <li><strong>Actualización remota de firmware</strong> OTA (Over-The-Air)</li>
+                    <li>Sensores integrados: acelerómetro, temperatura, voltaje</li>
+                    <li>Diseño, producción y pruebas completas</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <p><strong>Software & Cloud:</strong></p>
+                  <ul>
+                    <li><strong>Aplicación móvil</strong> para iOS y Android</li>
+                    <li><strong>Plataforma en la nube</strong> con Azure</li>
+                    <li><strong>Monitoreo 24/7</strong> de vibraciones, temperatura y voltaje</li>
+                    <li>Dashboard web en tiempo real</li>
+                    <li>Alertas inteligentes y análisis predictivo</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="mt-3">
+                <span class="tech-badge">ESP32</span>
+                <span class="tech-badge">4G/LTE</span>
+                <span class="tech-badge">PCB Design</span>
+                <span class="tech-badge">Mini PCIe design</span>
+                <span class="tech-badge">iOS/Android</span>
+                <span class="tech-badge">Azure Cloud</span>
+                <span class="tech-badge">OTA Updates</span>
+                <span class="tech-badge">Real-time Monitoring</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="400">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+                <h4><i class="bi bi-droplet text-warning me-2"></i>Sistema de Control para Lavadora de Motores</h4>
+                <p class="text-muted mb-2"><strong>Cliente:</strong> [Industria Automotriz - México]</p>
+                <p>Desarrollo de software de control para máquina lavadora industrial de motores con doble sistema de limpieza.</p>
+                <p><strong>Sistemas Desarrollados:</strong></p>
+                <ul class="mb-3">
+                <li><strong>Sistema por Inyección:</strong> Control de ciclos de lavado con químicos especializados</li>
+                <li><strong>Sistema por Gas Hidrógeno:</strong> Limpieza mediante electrólisis, tecnología ecológica sin químicos</li>
+                <li>Interfaz HMI para operación y monitoreo</li>
+                <li>Control automatizado de temperaturas, tiempos y presiones</li>
+                </ul>
+                <div>
+                <span class="tech-badge">Industrial Control</span>
+                <span class="tech-badge">HMI</span>
+                <span class="tech-badge">Electrolysis</span>
+                <span class="tech-badge">Automation</span>
+                </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-thermometer text-warning me-2"></i>Smart HVAC System</h4>
+              <p class="text-muted mb-2"><strong>Cliente:</strong> Jumpin</p>
+              <p>Sistema inteligente de climatización con control automático y ahorro energético.</p>
+              <p><strong>Características:</strong></p>
+              <ul class="mb-3">
+                <li>Sensores IoT de temperatura y humedad</li>
+                <li>Control automático basado en ocupación</li>
+                <li>Dashboard web en tiempo real</li>
+                <li>30% de ahorro en consumo energético</li>
+              </ul>
+              <div>
+                <span class="tech-badge">IoT</span>
+                <span class="tech-badge">Energy Saving</span>
+                <span class="tech-badge">Automation</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-cast text-warning me-2"></i>Smart IR Temperature Sensor</h4>
+              <p class="text-muted mb-2"><strong>Cliente:</strong> Jumpin (México)</p>
+              <p>Sensor de temperatura infrarrojo inteligente con ESP01 para monitoreo sin contacto.</p>
+              <p><strong>Especificaciones:</strong></p>
+              <ul class="mb-3">
+                <li>Sensor IR de alta precisión</li>
+                <li>ESP01 para conectividad WiFi</li>
+                <li>Medición sin contacto</li>
+                <li>Alertas en tiempo real</li>
+              </ul>
+              <div>
+                <span class="tech-badge">ESP01</span>
+                <span class="tech-badge">IR Sensor</span>
+                <span class="tech-badge">WiFi</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="400">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-bullseye text-warning me-2"></i>IR Dock Station</h4>
+              <p class="text-muted mb-2"><strong>Tipo:</strong> Producto Comercial de Symbiot Technologies</p>
+              <p>Estación de acoplamiento con comunicación infrarroja para automatización industrial.</p>
+              <p><strong>Aplicaciones:</strong></p>
+              <ul class="mb-3">
+                <li>Comunicación infrarroja bidireccional</li>
+                <li>Automatización de procesos</li>
+                <li>Integración con sistemas legacy</li>
+                <li>Diseño robusto para entornos industriales</li>
+              </ul>
+              <div>
+                <span class="tech-badge">Infrared</span>
+                <span class="tech-badge">Industrial</span>
+                <span class="tech-badge">Automation</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Proyectos de IA -->
+        <div class="row mb-5">
+          <div class="col-12">
+            <h3 class="mb-4" data-aos="fade-up"><i class="bi bi-robot me-2" style="color: var(--symbiot-yellow);"></i>Proyectos de Inteligencia Artificial</h3>
+          </div>
+
+          <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-music-note text-warning me-2"></i>IA Chord Lessons</h4>
+              <p class="text-muted mb-2"><strong>Cliente:</strong> Rockstar Skull (México)</p>
+              <p>Sistema de enseñanza de acordes de guitarra potenciado por Inteligencia Artificial.</p>
+              <p><strong>Funcionalidades:</strong></p>
+              <ul class="mb-3">
+                <li>Reconocimiento de acordes con IA</li>
+                <li>Lecciones personalizadas adaptativas</li>
+                <li>Feedback en tiempo real</li>
+                <li>Progresión de aprendizaje automatizada</li>
+              </ul>
+              <div>
+                <span class="tech-badge">AI</span>
+                <span class="tech-badge">Audio Processing</span>
+                <span class="tech-badge">Education</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-chat-left-dots text-warning me-2"></i>Chatbot Automatizado</h4>
+              <p class="text-muted mb-2"><strong>Cliente:</strong> Rockstar Skull (México)</p>
+              <p>Asistente virtual inteligente con n8n para atención automatizada 24/7.</p>
+              <p><strong>Capacidades:</strong></p>
+              <ul class="mb-3">
+                <li>Integración con WhatsApp y web</li>
+                <li>Respuestas contextuales con IA</li>
+                <li>Automatización de consultas frecuentes</li>
+                <li>Escalamiento a agente humano cuando es necesario</li>
+              </ul>
+              <div>
+                <span class="tech-badge">n8n</span>
+                <span class="tech-badge">OpenAI</span>
+                <span class="tech-badge">WhatsApp</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="300">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-camera-video text-warning me-2"></i>CCTV con IA</h4>
+              <p class="text-muted mb-2"><strong>Cliente:</strong> Rockstar Skull (México)</p>
+              <p>Sistema de videovigilancia inteligente con detección y análisis automático.</p>
+              <p><strong>Características:</strong></p>
+              <ul class="mb-3">
+                <li>Detección de personas y objetos</li>
+                <li>Alertas inteligentes en tiempo real</li>
+                <li>Análisis de comportamiento</li>
+                <li>Grabación optimizada por eventos</li>
+              </ul>
+              <div>
+                <span class="tech-badge">Computer Vision</span>
+                <span class="tech-badge">Python</span>
+                <span class="tech-badge">OpenCV</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Proyectos de Software/Dashboards -->
+        <div class="row">
+          <div class="col-12">
+            <h3 class="mb-4" data-aos="fade-up"><i class="bi bi-bar-chart-line me-2" style="color: var(--symbiot-yellow);"></i>Sistemas de Gestión & Dashboards</h3>
+          </div>
+
+          <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-cash-coin text-warning me-2"></i>Financial Dashboard</h4>
+              <p class="text-muted mb-2"><strong>Cliente:</strong> Inclusiv by Marhnos (México)</p>
+              <p>Dashboard financiero completo para control de ingresos, gastos y análisis contable.</p>
+              <p><strong>Módulos:</strong></p>
+              <ul class="mb-3">
+                <li>Control de gastos e ingresos por categoría</li>
+                <li>Gestión de presupuestos y proyecciones</li>
+                <li>Reportes financieros automatizados</li>
+                <li>Multi-empresa y multi-usuario</li>
+              </ul>
+              <div>
+                <span class="tech-badge">PHP</span>
+                <span class="tech-badge">MySQL</span>
+                <span class="tech-badge">JavaScript</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4" data-aos="fade-up" data-aos-delay="200">
+            <div class="portfolio-card p-4 rounded shadow-sm">
+              <h4><i class="bi bi-people text-warning me-2"></i>Sistema de Gestión Rockstar Skull</h4>
+              <p class="text-muted mb-2"><strong>Cliente:</strong> Rockstar Skull (México)</p>
+              <p>Plataforma integral de gestión financiera y control de alumnos para escuela de música.</p>
+              <p><strong>Funcionalidades:</strong></p>
+              <ul class="mb-3">
+                <li>Gestión de alumnos y profesores</li>
+                <li>Control de pagos y cobranza</li>
+                <li>Calendario de clases</li>
+                <li>Reportes académicos y financieros</li>
+              </ul>
+              <div>
+                <span class="tech-badge">Full Stack</span>
+                <span class="tech-badge">Management</span>
+                <span class="tech-badge">School System</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section><!-- /Portfolio Section -->
+
+    <!-- Clients Section -->
+    <section id="clients" class="clients section light-background">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Clientes</h2>
+        <p>Empresas que Confían en Nosotros</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        
+        <div class="row gy-4">
+          
+          <div class="col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="100">
+            <div class="client-card text-center p-4 bg-white rounded shadow-sm h-100">
+              <h5 class="mb-3">Huella Estructural</h5>
+              <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill text-warning"></i> Chile</p>
+              <p class="small">Ingeniería estructural y monitoreo con IoT</p>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="200">
+            <div class="client-card text-center p-4 bg-white rounded shadow-sm h-100">
+              <h5 class="mb-3">Jumpin</h5>
+              <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill text-warning"></i> México</p>
+              <p class="small">Soluciones IoT para temperatura inteligente</p>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="300">
+            <div class="client-card text-center p-4 bg-white rounded shadow-sm h-100">
+              <h5 class="mb-3">Inclusiv by Marhnos</h5>
+              <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill text-warning"></i> México</p>
+              <p class="small">Dashboard financiero empresarial</p>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="400">
+            <div class="client-card text-center p-4 bg-white rounded shadow-sm h-100">
+              <h5 class="mb-3">Rockstar Skull</h5>
+              <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill text-warning"></i> México</p>
+              <p class="small">Educación musical + IA + Gestión + CCTV</p>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-4 col-6" data-aos="zoom-in" data-aos-delay="500">
+            <div class="client-card text-center p-4 bg-white rounded shadow-sm h-100">
+                <h5 class="mb-3">Industria Automotriz</h5>
+                <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill text-warning"></i> México</p>
+                <p class="small">Control industrial para lavado de motores</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Testimonial -->
+        <div class="row mt-5">
+          <div class="col-12" data-aos="fade-up">
+            <div class="alert alert-warning border-0 shadow-sm" role="alert">
+              <h5 class="alert-heading"><i class="bi bi-quote me-2"></i>Lo que dicen nuestros clientes</h5>
+              <p class="mb-0">"Symbiot Technologies nos ayudó a implementar un sistema de monitoreo estructural que superó nuestras expectativas. La triple conectividad del acelerómetro garantiza datos confiables en cualquier condición."</p>
+              <hr>
+              <p class="mb-0 small text-end"><strong>— Huella Estructural, Chile</strong></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- /Clients Section -->
+
+    <!-- Stats Section -->
+    <section id="stats" class="stats section dark-background">
+      <img src="assets/img/stats-bg.jpg" alt="" data-aos="fade-in">
+      <div class="container position-relative" data-aos="fade-up" data-aos-delay="100">
+        <div class="row gy-4">
+          <div class="col-lg-3 col-md-6">
+            <div class="stats-item text-center w-100 h-100">
+              <span data-purecounter-start="0" data-purecounter-end="28" data-purecounter-duration="1" class="purecounter"></span>
+              <p>Proyectos Completados</p>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="stats-item text-center w-100 h-100">
+              <span data-purecounter-start="0" data-purecounter-end="8" data-purecounter-duration="1" class="purecounter"></span>
+              <p>Clientes Satisfechos</p>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="stats-item text-center w-100 h-100">
+              <span data-purecounter-start="0" data-purecounter-end="8" data-purecounter-duration="1" class="purecounter"></span>
+              <p>Años de Experiencia</p>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <div class="stats-item text-center w-100 h-100">
+              <span data-purecounter-start="0" data-purecounter-end="2" data-purecounter-duration="1" class="purecounter"></span>
+              <p>Países Atendidos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section><!-- /Stats Section -->
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact section">
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Contacto</h2>
+        <p>Hablemos de tu Proyecto</p>
+      </div>
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+        <div class="row gy-4">
+          <div class="col-lg-6">
+            <div class="info-item d-flex flex-column justify-content-center align-items-center" data-aos="fade-up" data-aos-delay="200">
+              <i class="bi bi-geo-alt"></i>
+              <h3>Ubicación</h3>
+              <p>Ciudad de México, México</p>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6">
+            <div class="info-item d-flex flex-column justify-content-center align-items-center" data-aos="fade-up" data-aos-delay="300">
+              <i class="bi bi-telephone"></i>
+              <h3>Teléfono</h3>
+              <p>+52 55 5594 1597</p>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6">
+            <div class="info-item d-flex flex-column justify-content-center align-items-center" data-aos="fade-up" data-aos-delay="400">
+              <i class="bi bi-envelope"></i>
+              <h3>Email</h3>
+              <p>contacto@symbiot.com.mx</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row gy-4 mt-1">
+          <div class="col-lg-6" data-aos="fade-up" data-aos-delay="300">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d240825.8103150919!2d-99.37942834999999!3d19.390519!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x85ce0026db097507%3A0x54061076265ee841!2sCiudad%20de%20M%C3%A9xico%2C%20CDMX!5e0!3m2!1ses!2smx!4v1234567890" frameborder="0" style="border:0; width: 100%; height: 400px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+
+          <div class="col-lg-6">
+            <form action="forms/contact.php" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="400">
+              <div class="row gy-4">
+                <div class="col-md-6">
+                  <input type="text" name="name" class="form-control" placeholder="Tu Nombre" required="">
+                </div>
+                <div class="col-md-6 ">
+                  <input type="email" class="form-control" name="email" placeholder="Tu Email" required="">
+                </div>
+                <div class="col-md-12">
+                  <input type="text" class="form-control" name="subject" placeholder="Asunto" required="">
+                </div>
+                <div class="col-md-12">
+                  <textarea class="form-control" name="message" rows="6" placeholder="Mensaje" required=""></textarea>
+                </div>
+                <div class="col-md-12 text-center">
+                  <div class="loading">Enviando...</div>
+                  <div class="error-message"></div>
+                  <div class="sent-message">Tu mensaje ha sido enviado. ¡Gracias!</div>
+                  <button type="submit">Enviar Mensaje</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section><!-- /Contact Section -->
+
+  </main>
+
+  <!-- Footer -->
+  <footer id="footer" class="footer dark-background">
+    <div class="container footer-top">
+      <div class="row gy-4">
+        <div class="col-lg-4 col-md-6 footer-about">
+          <a href="index.html" class="logo d-flex align-items-center">
+            <span class="sitename">Symbiot Technologies</span>
+          </a>
+          <div class="footer-contact pt-3">
+            <p>Ciudad de México</p>
+            <p>México</p>
+            <p class="mt-3"><strong>Email:</strong> <span>contacto@symbiot.com.mx</span></p>
+          </div>
+          <div class="social-links d-flex mt-4">
+            <a href="https://twitter.com/SymbIoT_MX"><i class="bi bi-twitter-x"></i></a>
+            <a href="https://www.facebook.com/SymbiotTechnologies/"><i class="bi bi-facebook"></i></a>
+            <a href="https://www.youtube.com/channel/UCLsjhbsTtmlmKeAdySG6P7A"><i class="bi bi-youtube"></i></a>
+            <a href="https://www.linkedin.com/company/symbiot-technologies"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Enlaces Útiles</h4>
+          <ul>
+            <li><a href="#hero">Inicio</a></li>
+            <li><a href="#about">Nosotros</a></li>
+            <li><a href="#services">Servicios</a></li>
+            <li><a href="avisodeprivacidad.html">Aviso de Privacidad</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-2 col-md-3 footer-links">
+          <h4>Nuestros Servicios</h4>
+          <ul>
+            <li><a href="#services">Agentes de IA</a></li>
+            <li><a href="#services">IoT Solutions</a></li>
+            <li><a href="#services">Visión Artificial</a></li>
+            <li><a href="#services">Big Data & Analytics</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-4 col-md-12 footer-newsletter">
+          <h4>Newsletter</h4>
+          <p>Suscríbete para recibir noticias sobre IoT, IA y tecnología</p>
+          <form action="forms/newsletter.php" method="post" class="php-email-form">
+            <div class="newsletter-form">
+              <input type="email" name="email" placeholder="Tu email">
+              <input type="submit" value="Suscribir">
+            </div>
+            <div class="loading">Enviando</div>
+            <div class="error-message"></div>
+            <div class="sent-message">Tu solicitud ha sido enviada. ¡Gracias!</div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container copyright text-center mt-4">
+      <p>© <span>Copyright 2025</span> <strong class="px-1 sitename">Symbiot Technologies</strong> <span>Todos los derechos reservados</span></p>
+      <div class="credits">
+        Diseñado por <a href="https://symbiot.com.mx/">Symbiot Technologies</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/php-email-form/validate.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="assets/js/main.js"></script>
+
+</body>
+
+</html>
