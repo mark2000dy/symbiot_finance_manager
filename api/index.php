@@ -113,7 +113,12 @@ try {
                 'ingresos' => '/gastos/api/ingresos',
                 'transacciones' => '/gastos/api/transacciones',
                 'resumen' => '/gastos/api/transacciones/resumen',
-                'dashboard' => '/gastos/api/dashboard'
+                'dashboard' => '/gastos/api/dashboard',
+                'historial_pagos' => '/gastos/api/alumnos/{nombre}/historial-pagos',
+                'rango_fechas' => '/gastos/api/transacciones/rango-fechas',
+                'count' => '/gastos/api/transacciones/count',
+                'reportes_gastos' => '/gastos/api/reportes/gastos-reales',
+                'reportes_balance' => '/gastos/api/reportes/balance-general'
             ]
         ]);
         exit;
@@ -200,6 +205,13 @@ try {
         exit;
     }
 
+    // Actualizar alumno por ID
+    if (preg_match('#^/alumnos/(\d+)$#', $requestUri, $matches) && $requestMethod === 'PUT') {
+        $id = $matches[1];
+        TransaccionesController::updateAlumno($id);
+        exit;
+    }
+
     // ============================================================
     // RUTAS DE DASHBOARD ESPECÍFICAS PARA ALUMNOS
     // ============================================================
@@ -210,6 +222,41 @@ try {
 
     if ($requestUri === '/dashboard/alertas-pagos' && $requestMethod === 'GET') {
         TransaccionesController::getDashboardAlertasPagos();
+        exit;
+    }
+
+    // ============================================================
+    // RUTAS DE ALUMNOS - HISTORIAL
+    // ============================================================
+    if (preg_match('#^/alumnos/(.+)/historial-pagos$#', $requestUri, $matches)) {
+        $nombreAlumno = $matches[1];
+        TransaccionesController::getHistorialPagosAlumno($nombreAlumno);
+        exit;
+    }
+
+    // ============================================================
+    // RUTAS ADICIONALES DE TRANSACCIONES
+    // ============================================================
+    if ($requestUri === '/transacciones/rango-fechas' && $requestMethod === 'GET') {
+        TransaccionesController::getRangoFechas();
+        exit;
+    }
+
+    if ($requestUri === '/transacciones/count' && $requestMethod === 'GET') {
+        TransaccionesController::getCount();
+        exit;
+    }
+
+    // ============================================================
+    // RUTAS DE REPORTES
+    // ============================================================
+    if ($requestUri === '/reportes/gastos-reales' && $requestMethod === 'GET') {
+        TransaccionesController::getReporteGastosReales();
+        exit;
+    }
+
+    if ($requestUri === '/reportes/balance-general' && $requestMethod === 'GET') {
+        TransaccionesController::getReporteBalanceGeneral();
         exit;
     }
 

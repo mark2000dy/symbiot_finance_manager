@@ -1,274 +1,255 @@
-// ====================================================
-// API CLIENT - SYMBIOT FINANCE MANAGER v3.1
-// ====================================================
-// Cliente universal para llamadas API con detección
-// automática de rutas base (compatible con subdirectorios)
-// Version: 3.1 - Dynamic Path Detection
-// Última modificación: 2024-11-10
-// ====================================================
+/**
+ * API Client v3.1.1
+ * Cliente para comunicación con la API del Sistema de Gastos
+ * Compatible con Plesk PHP 8.1.33
+ */
 
 (function(window) {
     'use strict';
 
-    // ========================================
-    // DETECCIÓN AUTOMÁTICA DE RUTA BASE
-    // ========================================
+    // ==========================================
+    // CONFIGURACIÓN
+    // ==========================================
+    
+    // Base path fijo para producción
+    const APP_BASE_PATH = '/gastos';
+    const API_PATH = '/api/index.php';
+    
+    // URL completa de la API
+    const API_BASE_URL = APP_BASE_PATH + API_PATH;
+    
+    console.log('✅ API Client v3.1.1 initialized');
+    console.log('📂 Base Path:', APP_BASE_PATH);
+    console.log('🌐 API URL:', API_BASE_URL);
 
-    function detectBasePath() {
-        // Obtener la ruta actual de la página
-        const currentPath = window.location.pathname;
-
-        // Buscar el índice donde empieza /gastos/
-        const gastosIndex = currentPath.indexOf('/gastos/');
-
-        if (gastosIndex !== -1) {
-            // Extraer todo lo que está ANTES de /gastos/
-            return currentPath.substring(0, gastosIndex);
-        }
-
-        // Fallback: sin subdirectorios (raíz del servidor)
-        return '';
-    }
-
-    // Detectar base path al cargar el script
-    const APP_BASE_PATH = detectBasePath();
-    const API_BASE_URL = APP_BASE_PATH + '/gastos/api/index.php';
-
-    // Exponer globalmente para acceso desde otros scripts
-    window.APP_BASE_PATH = APP_BASE_PATH;
-    window.API_BASE_URL = API_BASE_URL;
-
-    // Log de configuración (solo en desarrollo)
-    if (window.DEBUG_MODE || localStorage.getItem('debug') === 'true') {
-        console.log('%c🔧 API CLIENT v3.1 - INITIALIZED', 'background: #222; color: #00ff00; font-size: 14px; font-weight: bold; padding: 8px;');
-        console.log('  📍 Current Path:', window.location.pathname);
-        console.log('  📂 Base Path:', APP_BASE_PATH || '(root)');
-        console.log('  🌐 API Base URL:', API_BASE_URL);
-    }
-
-    // ========================================
-    // FUNCIÓN PARA CONSTRUIR URLs DE LA API
-    // ========================================
+    // ==========================================
+    // FUNCIONES DE UTILIDAD
+    // ==========================================
 
     /**
-     * Construye una URL completa para un endpoint de la API
-     * @param {string} endpoint - El endpoint sin el prefijo /gastos/api (ej: 'login', 'transacciones', 'user')
-     * @returns {string} - URL completa
-     *
-     * Ejemplos:
-     *   buildApiUrl('login') → '/symbiot/symbiot_finance_manager/gastos/api/index.php/login'
-     *   buildApiUrl('transacciones') → '/symbiot/.../gastos/api/index.php/transacciones'
-     *   buildApiUrl('/login') → '/symbiot/.../gastos/api/index.php/login' (quita / inicial)
+     * Construir URL de página
      */
-    function buildApiUrl(endpoint) {
-        // Quitar / inicial si existe
-        endpoint = endpoint.replace(/^\/+/, '');
-
-        // Construir URL completa
-        return API_BASE_URL + '/' + endpoint;
+    function buildPageUrl(page) {
+        const cleanPage = page.replace(/^\/+/, '');
+        return `${APP_BASE_PATH}/${cleanPage}`;
     }
 
-    // ========================================
-    // FUNCIÓN PRINCIPAL: apiFetch
-    // ========================================
-
     /**
-     * Realiza una petición a la API con configuración automática
-     * @param {string} endpoint - El endpoint (ej: 'login', 'transacciones')
-     * @param {Object} options - Opciones de fetch (method, body, headers, etc.)
-     * @returns {Promise<{response: Response, data: Object}>}
+     * Realizar petición a la API
      */
     async function apiFetch(endpoint, options = {}) {
-        const url = buildApiUrl(endpoint);
-
-        // Configuración por defecto
         const defaultOptions = {
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
             },
-            credentials: 'same-origin' // Incluir cookies/sesiones
+            credentials: 'same-origin'
         };
 
         // Merge options
-        const mergedOptions = {
-            ...defaultOptions,
-            ...options,
-            headers: {
-                ...defaultOptions.headers,
-                ...(options.headers || {})
-            }
-        };
+        const fetchOptions = { ...defaultOptions, ...options };
 
-        // Log de debug (si está activo)
-        if (window.DEBUG_MODE || localStorage.getItem('debug') === 'true') {
-            console.log(`%c🌐 API REQUEST`, 'background: #00aa00; color: white; font-weight: bold; padding: 4px;');
-            console.log('   Method:', options.method || 'GET');
-            console.log('   Endpoint:', endpoint);
-            console.log('   Full URL:', url);
-            console.log('   Options:', mergedOptions);
+        // Si hay headers adicionales, hacer merge
+        if (options.headers) {
+            fetchOptions.headers = { ...defaultOptions.headers, ...options.headers };
         }
 
+        // Agregar token si existe
+        const token = sessionStorage.getItem('auth_token');
+        if (token) {
+            fetchOptions.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Construir URL completa
+        const cleanEndpoint = endpoint.replace(/^\/+/, '');
+        const url = `${API_BASE_URL}/${cleanEndpoint}`;
+
+        console.log(`🚀 API Request: ${fetchOptions.method} ${url}`);
+
         try {
-            const response = await fetch(url, mergedOptions);
+            const response = await fetch(url, fetchOptions);
+            
+            // Log de respuesta
+            console.log(`📥 API Response: ${response.status} ${response.statusText}`);
 
             // Intentar parsear JSON
-            let data;
             const contentType = response.headers.get('content-type');
+            let data;
 
             if (contentType && contentType.includes('application/json')) {
                 data = await response.json();
             } else {
-                // Si no es JSON, obtener texto
+                // Si no es JSON, obtener como texto
                 const text = await response.text();
-                console.warn('⚠️ Response is not JSON:', text);
-                data = { error: 'Invalid response format', rawText: text };
+                console.warn('⚠️ Respuesta no es JSON:', text.substring(0, 200));
+                
+                // Intentar parsear de todas formas
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = {
+                        success: false,
+                        error: 'Respuesta no válida del servidor',
+                        raw: text.substring(0, 500)
+                    };
+                }
             }
 
-            // Log de debug
-            if (window.DEBUG_MODE || localStorage.getItem('debug') === 'true') {
-                console.log(`%c📡 API RESPONSE`, 'background: #0066cc; color: white; font-weight: bold; padding: 4px;');
-                console.log('   Status:', response.status, response.statusText);
-                console.log('   Data:', data);
+            // Si la respuesta HTTP no es OK, marcar como error
+            if (!response.ok) {
+                data.success = false;
+                if (!data.error) {
+                    data.error = `Error ${response.status}: ${response.statusText}`;
+                }
             }
 
-            return { response, data };
+            return data;
 
         } catch (error) {
-            console.error(`%c❌ API ERROR`, 'background: #cc0000; color: white; font-weight: bold; padding: 4px;');
-            console.error('   Endpoint:', endpoint);
-            console.error('   URL:', url);
-            console.error('   Error:', error);
-            throw error;
+            console.error('❌ API Error:', error);
+            return {
+                success: false,
+                error: error.message || 'Error de conexión con el servidor'
+            };
         }
     }
 
-    // ========================================
-    // FUNCIONES HELPER (GET, POST, PUT, DELETE)
-    // ========================================
-
     /**
-     * Realiza una petición GET
-     * @param {string} endpoint
-     * @param {Object} params - Query parameters (opcional)
-     * @returns {Promise<Object>} - Solo devuelve data
+     * Verificar salud de la API
      */
-    async function apiGet(endpoint, params = {}) {
-        // Construir query string si hay params
-        const queryString = Object.keys(params).length > 0
-            ? '?' + new URLSearchParams(params).toString()
-            : '';
-
-        const { data } = await apiFetch(endpoint + queryString, {
-            method: 'GET'
-        });
-
-        return data;
+    async function checkHealth() {
+        try {
+            const response = await apiFetch('health');
+            return response;
+        } catch (error) {
+            console.error('❌ Health check failed:', error);
+            return {
+                success: false,
+                error: 'No se pudo conectar con la API'
+            };
+        }
     }
 
     /**
-     * Realiza una petición POST
-     * @param {string} endpoint
-     * @param {Object} body - Datos a enviar
-     * @returns {Promise<Object>} - Solo devuelve data
+     * Login
      */
-    async function apiPost(endpoint, body = {}) {
-        const { data } = await apiFetch(endpoint, {
+    async function login(username, password) {
+        return await apiFetch('login', {
             method: 'POST',
-            body: JSON.stringify(body)
+            body: JSON.stringify({ username, password })
         });
-
-        return data;
     }
 
     /**
-     * Realiza una petición PUT
-     * @param {string} endpoint
-     * @param {Object} body - Datos a enviar
-     * @returns {Promise<Object>} - Solo devuelve data
+     * Logout
      */
-    async function apiPut(endpoint, body = {}) {
-        const { data } = await apiFetch(endpoint, {
-            method: 'PUT',
-            body: JSON.stringify(body)
+    async function logout() {
+        const response = await apiFetch('logout', {
+            method: 'POST'
         });
-
-        return data;
+        
+        // Limpiar storage
+        sessionStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        
+        return response;
     }
 
     /**
-     * Realiza una petición DELETE
-     * @param {string} endpoint
-     * @returns {Promise<Object>} - Solo devuelve data
+     * Verificar autenticación
      */
-    async function apiDelete(endpoint) {
-        const { data } = await apiFetch(endpoint, {
-            method: 'DELETE'
-        });
-
-        return data;
+    function isAuthenticated() {
+        return !!sessionStorage.getItem('auth_token');
     }
 
-    // ========================================
-    // EXPORTAR FUNCIONES AL SCOPE GLOBAL
-    // ========================================
-
-    window.buildApiUrl = buildApiUrl;
-    window.apiFetch = apiFetch;
-    window.apiGet = apiGet;
-    window.apiPost = apiPost;
-    window.apiPut = apiPut;
-    window.apiDelete = apiDelete;
-
-    // ========================================
-    // UTILIDADES ADICIONALES
-    // ========================================
+    /**
+     * Obtener datos del usuario
+     */
+    function getUserData() {
+        const data = localStorage.getItem('user_data');
+        return data ? JSON.parse(data) : null;
+    }
 
     /**
-     * Habilita modo debug (logs detallados en consola)
+     * Guardar datos del usuario
      */
-    window.enableApiDebug = function() {
-        localStorage.setItem('debug', 'true');
-        console.log('✅ API Debug mode enabled');
-    };
+    function setUserData(userData) {
+        localStorage.setItem('user_data', JSON.stringify(userData));
+    }
 
     /**
-     * Deshabilita modo debug
+     * Guardar token
      */
-    window.disableApiDebug = function() {
-        localStorage.removeItem('debug');
-        console.log('❌ API Debug mode disabled');
-    };
+    function setAuthToken(token) {
+        sessionStorage.setItem('auth_token', token);
+    }
 
     /**
-     * Construye una ruta completa del frontend (para navegación)
-     * @param {string} page - Página (ej: 'dashboard.html', 'gastos.html')
-     * @returns {string} - Ruta completa
+     * Redirigir a página
      */
-    window.buildPageUrl = function(page) {
-        // Quitar / inicial si existe
-        page = page.replace(/^\/+/, '');
-        return APP_BASE_PATH + '/gastos/' + page;
-    };
-
-    // ========================================
-    // MANEJADOR DE ERRORES DE AUTENTICACIÓN
-    // ========================================
+    function redirect(page) {
+        const url = buildPageUrl(page);
+        console.log('🔄 Redirecting to:', url);
+        window.location.href = url;
+    }
 
     /**
-     * Verifica si la respuesta indica sesión expirada
-     * y redirige al login si es necesario
+     * Mostrar notificación
      */
-    window.handleApiError = function(error, data) {
-        if (data && data.error === 'No autorizado') {
-            console.warn('🔒 Sesión expirada, redirigiendo a login...');
-            window.location.href = window.buildPageUrl('login.html');
-            return true;
+    function showNotification(message, type = 'info') {
+        // Si existe una función global showToast, usarla
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+            return;
         }
-        return false;
+
+        // Si no, usar alert simple
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        
+        if (type === 'error') {
+            alert(`Error: ${message}`);
+        } else if (type === 'success') {
+            console.log(`✅ ${message}`);
+        }
+    }
+
+    // ==========================================
+    // EXPORTAR API PÚBLICA
+    // ==========================================
+
+    window.APIClient = {
+        // Configuración
+        APP_BASE_PATH,
+        API_BASE_URL,
+        
+        // Funciones de utilidad
+        buildPageUrl,
+        redirect,
+        showNotification,
+        
+        // Funciones de API
+        apiFetch,
+        checkHealth,
+        
+        // Autenticación
+        login,
+        logout,
+        isAuthenticated,
+        getUserData,
+        setUserData,
+        setAuthToken,
+        
+        // Alias para compatibilidad
+        fetch: apiFetch
     };
 
-    // Mensaje de inicialización exitosa
-    console.log('✅ API Client v3.1 initialized');
+    // También exportar como variables globales para compatibilidad
+    window.APP_BASE_PATH = APP_BASE_PATH;
+    window.API_BASE_URL = API_BASE_URL;
+    window.apiFetch = apiFetch;
+    window.buildPageUrl = buildPageUrl;
+
+    console.log('✅ APIClient ready');
+    console.log('📦 Available methods:', Object.keys(window.APIClient));
 
 })(window);

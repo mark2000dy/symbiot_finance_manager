@@ -98,11 +98,11 @@
     <div class="auth-wrapper">
         <div class="auth-box">
             <div class="logo">
-                <img src="assets/images/Symbiot_logo_dark.png" alt="SYMBIOT Logo" style="max-width: 150px; height: auto;">
+                <a href="../index.html" style="cursor: pointer; text-decoration: none;">
+                    <img src="assets/images/Symbiot_logo_dark.png" alt="SYMBIOT Logo" style="max-width: 150px; height: auto;">
+                </a>
                 <p class="text-muted">Sistema de Gastos e Ingresos</p>
-                <div style="background: #00aa00; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; margin-top: 10px; font-weight: bold;">
-                    ✅ VERSION 3.1 - API CLIENT MODULE
-                </div>
+                
             </div>
 
             <!-- Contenedor de alertas -->
@@ -149,6 +149,12 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Definir base path ANTES de cargar api-client.js -->
+    <script>
+        window.APP_BASE_PATH = '/gastos';
+        window.API_BASE_URL = '/gastos/api/index.php';
+    </script>
+
     <!-- API Client v3.1 - Universal API Handler -->
     <script src="assets/js/api-client.js?v=3.1.1"></script>
 
@@ -161,16 +167,13 @@
         console.log('📦 Using API Client module for all API calls');
         console.log('📍 Current page path:', window.location.pathname);
 
-        // FALLBACK: Si api-client.js no cargó, detectar base path aquí
+        // Verificar que base path esté definido
         if (!window.APP_BASE_PATH) {
-            const currentPath = window.location.pathname;
-            const gastosIndex = currentPath.indexOf('/gastos/');
-            if (gastosIndex !== -1) {
-                window.APP_BASE_PATH = currentPath.substring(0, gastosIndex);
-            } else {
-                window.APP_BASE_PATH = '';
-            }
-            console.warn('⚠️ APP_BASE_PATH no estaba definido - usando fallback detection');
+            window.APP_BASE_PATH = '/gastos';
+            console.log('✅ APP_BASE_PATH definido en fallback');
+        }
+        if (!window.API_BASE_URL) {
+            window.API_BASE_URL = '/gastos/api/index.php';
         }
 
         console.log('📂 Base Path:', window.APP_BASE_PATH || '(root)');
@@ -293,22 +296,29 @@
             // Ctrl + 1 para admin Marco
             if (e.ctrlKey && e.key === '1') {
                 e.preventDefault();
-                document.getElementById('email').value = 'marco@symbiot.com';
-                document.getElementById('password').value = 'admin123';
+                document.getElementById('email').value = 'marco.delgado@symbiot.com.mx';
+                document.getElementById('password').value = 'admin1234';
                 document.getElementById('password').focus();
             }
             // Ctrl + 2 para admin Antonio
             if (e.ctrlKey && e.key === '2') {
                 e.preventDefault();
-                document.getElementById('email').value = 'antonio@rockstarskull.com';
-                document.getElementById('password').value = 'admin123';
+                document.getElementById('email').value = 'antonio.razo@symbiot.com.mx';
+                document.getElementById('password').value = 'admin1234';
                 document.getElementById('password').focus();
             }
             // Ctrl + 3 para user Hugo
             if (e.ctrlKey && e.key === '3') {
                 e.preventDefault();
-                document.getElementById('email').value = 'hugo@rockstarskull.com';
-                document.getElementById('password').value = 'admin123';
+                document.getElementById('email').value = 'hvazquez@rockstarskull.com';
+                document.getElementById('password').value = 'admin1234';
+                document.getElementById('password').focus();
+            }
+             // Ctrl + 4 para user Escuela
+            if (e.ctrlKey && e.key === '4') {
+                e.preventDefault();
+                document.getElementById('email').value = 'escuela@rockstarskull.com';
+                document.getElementById('password').value = 'admin1234';
                 document.getElementById('password').focus();
             }
         });
@@ -329,19 +339,19 @@
             `;
 
             try {
-                const { data: healthData } = await window.apiFetch('health', { method: 'GET' });
+                const { data } = await window.apiFetch('health', { method: 'GET' });
 
-                if (healthData.status === 'OK') {
-                    console.log('✅ Servidor conectado:', healthData);
+                if (data.success === true) {
+                    console.log('✅ Servidor conectado:', data);
                     alertContainer.innerHTML = `
                         <div class="alert alert-success">
                             <i class="fas fa-check-circle me-2"></i>
                             ✅ Servidor conectado correctamente
-                            <br><small>API: ${window.API_BASE_URL}</small>
+                            
                         </div>
                     `;
                 } else {
-                    console.warn('⚠️ Problemas con el servidor:', healthData);
+                    console.warn('⚠️ Problemas con el servidor:', data);
                     alertContainer.innerHTML += `
                         <div class="alert alert-warning mt-2">
                             <i class="fas fa-exclamation-triangle me-2"></i>

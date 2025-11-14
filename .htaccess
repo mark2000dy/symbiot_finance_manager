@@ -5,24 +5,24 @@
 
 # Habilitar rewrite engine
 RewriteEngine On
-RewriteBase /
+RewriteBase /symbiot/symbiot_finance_manager/
 
 # Debug: Log de reglas (descomentar si necesitas debug)
 # RewriteLog "/tmp/rewrite.log"
 # RewriteLogLevel 3
 
-# Redireccionar /gastos/api/* a api/index.php
+# Redireccionar /gastos/api/* a api/index.php (dentro del directorio correcto)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^gastos/api/(.*)$ /api/index.php [L,QSA]
+RewriteRule ^gastos/api/(.*)$ gastos/api/index.php/$1 [L,QSA]
 
-# Servir archivos estáticos desde /gastos
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^gastos/(.+\.(html|css|js|png|jpg|jpeg|gif|ico|json|svg|woff|woff2|ttf|eot))$ /public/$1 [L]
+# Servir archivos estáticos desde /gastos (sin redirección a /public)
+# Si el archivo existe físicamente, servirlo directamente
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^gastos/(.+\.(html|css|js|png|jpg|jpeg|gif|ico|json|svg|woff|woff2|ttf|eot))$ - [L]
 
-# Redirección principal /gastos a login o dashboard
-RewriteRule ^gastos/?$ /public/login.html [L]
+# Redirección principal /gastos a login
+RewriteRule ^gastos/?$ gastos/login.html [L]
 
 # Configuración de seguridad
 <IfModule mod_headers.c>
@@ -62,3 +62,15 @@ RewriteRule ^gastos/?$ /public/login.html [L]
 
 # Charset UTF-8
 AddDefaultCharset UTF-8
+
+# Página 404 personalizada
+ErrorDocument 404 /404.html
+
+# Otras páginas de error (opcional)
+ErrorDocument 403 /403.html
+ErrorDocument 500 /500.html
+```
+
+#### **Permisos del archivo:**
+```
+.htaccess: 644 (rw-r--r--)

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>404 - Página No Encontrada | Symbiot Technologies</title>
+  <meta name="description" content="La página que buscas no existe o ha sido movida">
+
+  <!-- Favicons -->
+  <link href="logo/favicon.ico" rel="icon">
+  <link href="logo/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@0,100;0,300;0,400;0,500;0,700;0,900&family=Poppins:wght@0,100;0,300;0,400;0,500;0,700;0,900&family=Raleway:wght@0,100;0,300;0,400;0,500;0,700;0,900&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --symbiot-yellow: #dec329;
+      --symbiot-gray: #999999;
+      --symbiot-white: #ffffff;
+      --symbiot-black: #000000;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+      color: var(--symbiot-white);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    .container-404 {
+      text-align: center;
+      padding: 40px 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .error-code {
+      font-size: 180px;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--symbiot-yellow);
+      text-shadow: 0 0 30px rgba(222, 195, 41, 0.5);
+      margin-bottom: 20px;
+      animation: glitch 3s infinite;
+    }
+
+    @keyframes glitch {
+      0%, 100% {
+        transform: translate(0);
+      }
+      20% {
+        transform: translate(-2px, 2px);
+      }
+      40% {
+        transform: translate(-2px, -2px);
+      }
+      60% {
+        transform: translate(2px, 2px);
+      }
+      80% {
+        transform: translate(2px, -2px);
+      }
+    }
+
+    .error-message {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: var(--symbiot-white);
+    }
+
+    .error-description {
+      font-size: 18px;
+      color: var(--symbiot-gray);
+      margin-bottom: 40px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .logo-404 {
+      max-width: 200px;
+      margin-bottom: 40px;
+      opacity: 0.9;
+    }
+
+    .btn-404 {
+      display: inline-block;
+      padding: 15px 40px;
+      margin: 10px;
+      border-radius: 50px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+
+    .btn-primary-404 {
+      background: var(--symbiot-yellow);
+      color: var(--symbiot-black);
+      border: 2px solid var(--symbiot-yellow);
+    }
+
+    .btn-primary-404:hover {
+      background: transparent;
+      color: var(--symbiot-yellow);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(222, 195, 41, 0.3);
+    }
+
+    .btn-secondary-404 {
+      background: transparent;
+      color: var(--symbiot-white);
+      border: 2px solid var(--symbiot-white);
+    }
+
+    .btn-secondary-404:hover {
+      background: var(--symbiot-white);
+      color: var(--symbiot-black);
+      transform: translateY(-3px);
+    }
+
+    .helpful-links {
+      margin-top: 60px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .helpful-links h3 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: var(--symbiot-yellow);
+    }
+
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .link-card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--symbiot-white);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .link-card:hover {
+      background: rgba(222, 195, 41, 0.1);
+      border-color: var(--symbiot-yellow);
+      transform: translateY(-5px);
+      color: var(--symbiot-yellow);
+    }
+
+    .link-card i {
+      font-size: 32px;
+      margin-bottom: 10px;
+      display: block;
+      color: var(--symbiot-yellow);
+    }
+
+    .link-card h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .link-card p {
+      font-size: 14px;
+      color: var(--symbiot-gray);
+      margin: 0;
+    }
+
+    /* Animated background particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--symbiot-yellow);
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: float 15s infinite ease-in-out;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0) translateX(0);
+      }
+      25% {
+        transform: translateY(-100px) translateX(50px);
+      }
+      50% {
+        transform: translateY(-50px) translateX(-50px);
+      }
+      75% {
+        transform: translateY(-150px) translateX(100px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .error-code {
+        font-size: 120px;
+      }
+
+      .error-message {
+        font-size: 24px;
+      }
+
+      .error-description {
+        font-size: 16px;
+      }
+
+      .btn-404 {
+        display: block;
+        margin: 10px auto;
+        max-width: 300px;
+      }
+
+      .links-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .footer-404 {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--symbiot-gray);
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Animated Background Particles -->
+  <div class="particles">
+    <div class="particle" style="left: 10%; top: 20%; animation-delay: 0s;"></div>
+    <div class="particle" style="left: 20%; top: 80%; animation-delay: 2s;"></div>
+    <div class="particle" style="left: 30%; top: 40%; animation-delay: 4s;"></div>
+    <div class="particle" style="left: 40%; top: 60%; animation-delay: 1s;"></div>
+    <div class="particle" style="left: 50%; top: 30%; animation-delay: 3s;"></div>
+    <div class="particle" style="left: 60%; top: 70%; animation-delay: 5s;"></div>
+    <div class="particle" style="left: 70%; top: 50%; animation-delay: 2s;"></div>
+    <div class="particle" style="left: 80%; top: 25%; animation-delay: 4s;"></div>
+    <div class="particle" style="left: 90%; top: 65%; animation-delay: 1s;"></div>
+    <div class="particle" style="left: 15%; top: 90%; animation-delay: 3s;"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container-404">
+    
+    <!-- Logo -->
+    <img src="assets/img/Symbiot_logo_dark_horizon.png" alt="Symbiot Technologies" class="logo-404">
+
+    <!-- Error Code -->
+    <div class="error-code">404</div>
+
+    <!-- Error Message -->
+    <h1 class="error-message">¡Oops! Página No Encontrada</h1>
+    
+    <!-- Description -->
+    <p class="error-description">
+      La página que estás buscando no existe, ha sido movida o la URL es incorrecta. 
+      No te preocupes, podemos ayudarte a encontrar lo que necesitas.
+    </p>
+
+    <!-- Action Buttons -->
+    <div>
+      <a href="index.html" class="btn-404 btn-primary-404">
+        <i class="bi bi-house-door-fill"></i> Volver al Inicio
+      </a>
+      <a href="index.html#contact" class="btn-404 btn-secondary-404">
+        <i class="bi bi-envelope-fill"></i> Contactar Soporte
+      </a>
+    </div>
+
+    <!-- Helpful Links -->
+    <div class="helpful-links">
+      <h3>Enlaces Útiles</h3>
+      <div class="links-grid">
+        
+        <a href="index.html#about" class="link-card">
+          <i class="bi bi-info-circle-fill"></i>
+          <h4>Sobre Nosotros</h4>
+          <p>Conoce Symbiot Technologies</p>
+        </a>
+
+        <a href="index.html#services" class="link-card">
+          <i class="bi bi-gear-fill"></i>
+          <h4>Servicios</h4>
+          <p>IA, IoT y Automatización</p>
+        </a>
+
+        <a href="index.html#portfolio" class="link-card">
+          <i class="bi bi-briefcase-fill"></i>
+          <h4>Portafolio</h4>
+          <p>Nuestros proyectos</p>
+        </a>
+
+        <a href="gastos/login.html" class="link-card">
+          <i class="bi bi-box-arrow-in-right"></i>
+          <h4>Acceso Clientes</h4>
+          <p>Dashboard financiero</p>
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-404">
+    © 2025 Symbiot Technologies - Todos los derechos reservados
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Add random movement to particles
+    document.addEventListener('DOMContentLoaded', function() {
+      const particles = document.querySelectorAll('.particle');
+      particles.forEach(particle => {
+        const randomDelay = Math.random() * 5;
+        const randomDuration = 10 + Math.random() * 10;
+        particle.style.animationDelay = randomDelay + 's';
+        particle.style.animationDuration = randomDuration + 's';
+      });
+    });
+
+    // Track 404 errors (opcional)
+    if (console && console.log) {
+      console.log('404 Error - Página no encontrada: ' + window.location.href);
+    }
+  </script>
+
+</body>
+
+</html>

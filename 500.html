@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>500 - Error del Servidor | Symbiot Technologies</title>
+  <meta name="description" content="Error interno del servidor - Estamos trabajando para resolverlo">
+
+  <!-- Favicons -->
+  <link href="logo/favicon.ico" rel="icon">
+  <link href="logo/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@0,100;0,300;0,400;0,500;0,700;0,900&family=Poppins:wght@0,100;0,300;0,400;0,500;0,700;0,900&family=Raleway:wght@0,100;0,300;0,400;0,500;0,700;0,900&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --symbiot-yellow: #dec329;
+      --symbiot-gray: #999999;
+      --symbiot-white: #ffffff;
+      --symbiot-black: #000000;
+      --error-red: #ff4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #1a0000 0%, #000000 100%);
+      color: var(--symbiot-white);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    .container-500 {
+      text-align: center;
+      padding: 40px 20px;
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+    }
+
+    .error-code {
+      font-size: 180px;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(45deg, var(--error-red), var(--symbiot-yellow));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.8;
+        transform: scale(0.98);
+      }
+    }
+
+    .error-icon {
+      font-size: 80px;
+      color: var(--error-red);
+      margin-bottom: 20px;
+      animation: shake 0.5s infinite;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .error-message {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: var(--symbiot-white);
+    }
+
+    .error-description {
+      font-size: 18px;
+      color: var(--symbiot-gray);
+      margin-bottom: 30px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+
+    .logo-500 {
+      max-width: 200px;
+      margin-bottom: 40px;
+      opacity: 0.9;
+    }
+
+    .alert-box {
+      background: rgba(255, 68, 68, 0.1);
+      border: 2px solid var(--error-red);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 30px auto;
+      max-width: 700px;
+    }
+
+    .alert-box h3 {
+      color: var(--error-red);
+      font-size: 20px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .alert-box p {
+      color: var(--symbiot-white);
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    .alert-box ul {
+      text-align: left;
+      margin: 15px auto;
+      max-width: 500px;
+      color: var(--symbiot-gray);
+    }
+
+    .alert-box ul li {
+      margin: 8px 0;
+    }
+
+    .btn-500 {
+      display: inline-block;
+      padding: 15px 40px;
+      margin: 10px;
+      border-radius: 50px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+
+    .btn-primary-500 {
+      background: var(--symbiot-yellow);
+      color: var(--symbiot-black);
+      border: 2px solid var(--symbiot-yellow);
+    }
+
+    .btn-primary-500:hover {
+      background: transparent;
+      color: var(--symbiot-yellow);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(222, 195, 41, 0.3);
+    }
+
+    .btn-danger-500 {
+      background: transparent;
+      color: var(--error-red);
+      border: 2px solid var(--error-red);
+    }
+
+    .btn-danger-500:hover {
+      background: var(--error-red);
+      color: var(--symbiot-white);
+      transform: translateY(-3px);
+    }
+
+    .status-info {
+      margin-top: 40px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .status-info h4 {
+      color: var(--symbiot-yellow);
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .status-info p {
+      color: var(--symbiot-gray);
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    .technical-info {
+      background: rgba(0, 0, 0, 0.5);
+      border-left: 4px solid var(--symbiot-yellow);
+      padding: 15px;
+      margin: 20px auto;
+      max-width: 600px;
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: var(--symbiot-gray);
+      border-radius: 5px;
+    }
+
+    /* Animated background warning */
+    .warning-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.1;
+    }
+
+    .warning-stripe {
+      position: absolute;
+      width: 200%;
+      height: 100px;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 35px,
+        var(--error-red) 35px,
+        var(--error-red) 70px
+      );
+      animation: slide 20s linear infinite;
+    }
+
+    @keyframes slide {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    @media (max-width: 768px) {
+      .error-code {
+        font-size: 100px;
+      }
+
+      .error-icon {
+        font-size: 60px;
+      }
+
+      .error-message {
+        font-size: 24px;
+      }
+
+      .error-description {
+        font-size: 16px;
+      }
+
+      .btn-500 {
+        display: block;
+        margin: 10px auto;
+        max-width: 300px;
+      }
+
+      .alert-box ul {
+        padding-left: 20px;
+      }
+    }
+
+    .footer-500 {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--symbiot-gray);
+      font-size: 14px;
+      z-index: 3;
+    }
+
+    .refresh-countdown {
+      display: inline-block;
+      background: rgba(222, 195, 41, 0.2);
+      padding: 5px 15px;
+      border-radius: 20px;
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--symbiot-yellow);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Animated Background Warning -->
+  <div class="warning-bg">
+    <div class="warning-stripe" style="top: 0;"></div>
+    <div class="warning-stripe" style="top: 150px; animation-delay: -5s;"></div>
+    <div class="warning-stripe" style="top: 300px; animation-delay: -10s;"></div>
+    <div class="warning-stripe" style="top: 450px; animation-delay: -15s;"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container-500">
+    
+    <!-- Logo -->
+    <img src="assets/img/Symbiot_logo_dark_horizon.png" alt="Symbiot Technologies" class="logo-500">
+
+    <!-- Error Icon -->
+    <div class="error-icon">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+    </div>
+
+    <!-- Error Code -->
+    <div class="error-code">500</div>
+
+    <!-- Error Message -->
+    <h1 class="error-message">Error Interno del Servidor</h1>
+    
+    <!-- Description -->
+    <p class="error-description">
+      Lo sentimos, algo salió mal en nuestro servidor. Nuestro equipo técnico ha sido notificado automáticamente 
+      y está trabajando para resolver el problema lo antes posible.
+    </p>
+
+    <!-- Alert Box -->
+    <div class="alert-box">
+      <h3>
+        <i class="bi bi-tools"></i>
+        ¿Qué puedes hacer?
+      </h3>
+      <ul>
+        <li><strong>Recargar la página</strong> en unos minutos</li>
+        <li><strong>Limpiar el caché</strong> de tu navegador</li>
+        <li><strong>Intentar más tarde</strong> - estamos resolviendo el problema</li>
+        <li><strong>Contactarnos</strong> si el error persiste</li>
+      </ul>
+      <div class="refresh-countdown" id="countdown">
+        <i class="bi bi-arrow-clockwise"></i> Recarga automática en: <span id="timer">60</span>s
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div>
+      <a href="javascript:location.reload()" class="btn-500 btn-primary-500">
+        <i class="bi bi-arrow-clockwise"></i> Recargar Página
+      </a>
+      <a href="index.html" class="btn-500 btn-danger-500">
+        <i class="bi bi-house-door-fill"></i> Volver al Inicio
+      </a>
+    </div>
+
+    <!-- Status Info -->
+    <div class="status-info">
+      <h4><i class="bi bi-info-circle-fill"></i> Información del Error</h4>
+      <p><strong>Código:</strong> HTTP 500 - Internal Server Error</p>
+      <p><strong>Hora:</strong> <span id="error-time"></span></p>
+      <p><strong>Estado:</strong> El equipo técnico ha sido notificado</p>
+    </div>
+
+    <!-- Technical Info -->
+    <div class="technical-info">
+      <strong>Para el administrador del sitio:</strong><br>
+      • Revisa los logs de PHP en Plesk<br>
+      • Verifica la configuración de Apache/nginx<br>
+      • Comprueba permisos de archivos (644/755)<br>
+      • Revisa la sintaxis de archivos PHP<br>
+      • Verifica la conexión a la base de datos
+    </div>
+
+    <!-- Contact Section -->
+    <div style="margin-top: 40px;">
+      <p style="color: var(--symbiot-gray); font-size: 16px;">
+        Si el problema persiste, contacta a soporte:
+      </p>
+      <p style="color: var(--symbiot-yellow); font-size: 18px; font-weight: 600; margin-top: 10px;">
+        <i class="bi bi-envelope-fill"></i> info@symbiot.com.mx
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-500">
+    © 2025 Symbiot Technologies - Todos los derechos reservados
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Display current time
+    document.getElementById('error-time').textContent = new Date().toLocaleString('es-MX');
+
+    // Auto-refresh countdown
+    let timeLeft = 60;
+    const timerElement = document.getElementById('timer');
+    const countdownElement = document.getElementById('countdown');
+
+    const countdown = setInterval(function() {
+      timeLeft--;
+      timerElement.textContent = timeLeft;
+      
+      if (timeLeft <= 10) {
+        countdownElement.style.background = 'rgba(255, 68, 68, 0.2)';
+        countdownElement.style.color = 'var(--error-red)';
+      }
+      
+      if (timeLeft <= 0) {
+        clearInterval(countdown);
+        location.reload();
+      }
+    }, 1000);
+
+    // Log error for debugging
+    if (console && console.error) {
+      console.error('500 Internal Server Error - ' + window.location.href);
+      console.error('Timestamp: ' + new Date().toISOString());
+    }
+
+    // Optional: Send error report to analytics
+    // You can implement error tracking here
+  </script>
+
+</body>
+
+</html>

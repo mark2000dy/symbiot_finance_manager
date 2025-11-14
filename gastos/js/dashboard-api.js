@@ -54,12 +54,12 @@ async function loadCurrentUser() {
         
     } catch (error) {
         console.error('❌ Error cargando usuario:', error);
-        
+
         // Redireccionar al login si no hay sesión válida
         if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-            window.location.href = '/gastos/login.html';
+            window.location.href = window.buildPageUrl('login.html');
         }
-        
+
         throw error;
     }
 }
@@ -550,7 +550,7 @@ function handleApiError(error, context = 'Operación') {
     if (error.message.includes('401')) {
         userMessage = 'Tu sesión ha expirado. Redirigiendo al login...';
         setTimeout(() => {
-            window.location.href = '/gastos/login.html';
+            window.location.href = window.buildPageUrl('login.html');
         }, 2000);
     } else if (error.message.includes('403')) {
         userMessage = 'No tienes permisos para realizar esta acción';

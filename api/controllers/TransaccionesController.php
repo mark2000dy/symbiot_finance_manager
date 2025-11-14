@@ -524,6 +524,163 @@ class TransaccionesController {
         }
     }
 
+    /**
+     * Actualizar datos de un alumno
+     * PUT /alumnos/{id}
+     */
+    public static function updateAlumno($id) {
+        $user = AuthController::requireAuth();
+
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            error_log("✏️ Actualizando alumno ID: $id");
+            error_log("📥 Datos recibidos: " . json_encode($input));
+
+            // Validar que el alumno existe
+            $alumnoExistente = executeQuery("
+                SELECT id, nombre FROM alumnos WHERE id = ?
+            ", [$id]);
+
+            if (empty($alumnoExistente)) {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Alumno no encontrado'
+                ]);
+                return;
+            }
+
+            // Construir query UPDATE dinámicamente
+            $fields = [];
+            $params = [];
+
+            if (isset($input['nombre'])) {
+                $fields[] = 'nombre = ?';
+                $params[] = $input['nombre'];
+            }
+            if (isset($input['edad'])) {
+                $fields[] = 'edad = ?';
+                $params[] = $input['edad'];
+            }
+            if (isset($input['telefono'])) {
+                $fields[] = 'telefono = ?';
+                $params[] = $input['telefono'];
+            }
+            if (isset($input['email'])) {
+                $fields[] = 'email = ?';
+                $params[] = $input['email'];
+            }
+            if (isset($input['fecha_inscripcion'])) {
+                $fields[] = 'fecha_inscripcion = ?';
+                $params[] = $input['fecha_inscripcion'];
+            }
+            if (isset($input['clase'])) {
+                $fields[] = 'clase = ?';
+                $params[] = $input['clase'];
+            }
+            if (isset($input['tipo_clase'])) {
+                $fields[] = 'tipo_clase = ?';
+                $params[] = $input['tipo_clase'];
+            }
+            if (isset($input['maestro_id'])) {
+                $fields[] = 'maestro_id = ?';
+                $params[] = $input['maestro_id'] ?: null;
+            }
+            if (isset($input['horario'])) {
+                $fields[] = 'horario = ?';
+                $params[] = $input['horario'];
+            }
+            if (isset($input['estatus'])) {
+                $fields[] = 'estatus = ?';
+                $params[] = $input['estatus'];
+            }
+            if (isset($input['promocion'])) {
+                $fields[] = 'promocion = ?';
+                $params[] = $input['promocion'];
+            }
+            if (isset($input['precio_mensual'])) {
+                $fields[] = 'precio_mensual = ?';
+                $params[] = $input['precio_mensual'];
+            }
+            if (isset($input['forma_pago'])) {
+                $fields[] = 'forma_pago = ?';
+                $params[] = $input['forma_pago'];
+            }
+            if (isset($input['domiciliado'])) {
+                $fields[] = 'domiciliado = ?';
+                $params[] = $input['domiciliado'] ? 1 : 0;
+            }
+            if (isset($input['titular_domicilado'])) {
+                $fields[] = 'titular_domicilado = ?';
+                $params[] = $input['titular_domicilado'];
+            }
+            // Compatibilidad con nombre_domiciliado (legacy)
+            if (isset($input['nombre_domiciliado'])) {
+                $fields[] = 'titular_domicilado = ?';
+                $params[] = $input['nombre_domiciliado'];
+            }
+
+            if (empty($fields)) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'No hay campos para actualizar'
+                ]);
+                return;
+            }
+
+            // Agregar ID al final de params
+            $params[] = $id;
+
+            $query = "UPDATE alumnos SET " . implode(', ', $fields) . " WHERE id = ?";
+
+            executeQuery($query, $params);
+
+            // Obtener alumno actualizado
+            $alumnoActualizado = executeQuery("
+                SELECT
+                    a.id,
+                    a.nombre,
+                    a.edad,
+                    a.telefono,
+                    a.email,
+                    a.clase,
+                    a.tipo_clase,
+                    a.horario,
+                    a.fecha_inscripcion,
+                    a.fecha_ultimo_pago,
+                    a.promocion,
+                    a.precio_mensual,
+                    a.forma_pago,
+                    a.domiciliado,
+                    a.titular_domicilado,
+                    a.estatus,
+                    COALESCE(m.nombre, 'Sin asignar') as maestro
+                FROM alumnos a
+                LEFT JOIN maestros m ON a.maestro_id = m.id
+                WHERE a.id = ?
+            ", [$id]);
+
+            error_log("✅ Alumno actualizado: " . $input['nombre']);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Alumno actualizado exitosamente',
+                'data' => $alumnoActualizado[0]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("❌ Error actualizando alumno: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     // Helper: Actualizar fecha último pago
     private static function actualizarFechaUltimoPago($concepto, $fecha) {
         try {
@@ -931,6 +1088,292 @@ class TransaccionesController {
                 'dias' => 0,
                 'fecha_corte' => null
             ];
+        }
+    }
+
+    // ============================================================
+    // NUEVOS ENDPOINTS AGREGADOS v3.1.5
+    // ============================================================
+
+    /**
+     * Obtener historial de pagos de un alumno por nombre
+     * GET /alumnos/{nombre}/historial-pagos?meses=12
+     */
+    public static function getHistorialPagosAlumno($nombreAlumno) {
+        AuthController::requireAuth();
+
+        $meses = isset($_GET['meses']) ? (int)$_GET['meses'] : null;
+
+        try {
+            // Decodificar nombre si viene URL-encoded
+            $nombreAlumno = urldecode($nombreAlumno);
+
+            error_log("🔍 Buscando historial de pagos para: $nombreAlumno");
+
+            // Construir query usando LIKE para buscar el nombre en el concepto
+            // El concepto tiene formato: "Mensualidad clase de [instrumento] [G/I] [Nombre Alumno]"
+            // Buscamos el nombre al final del concepto con LIKE
+            $query = "
+                SELECT
+                    id,
+                    concepto,
+                    (cantidad * precio_unitario) as total,
+                    fecha,
+                    tipo,
+                    empresa_id
+                FROM transacciones
+                WHERE tipo = 'I'
+                AND (
+                    concepto LIKE CONCAT('%', ?, '%')
+                    OR concepto LIKE CONCAT('% ', ?)
+                    OR concepto LIKE CONCAT('%[GI] ', ?)
+                )
+                AND empresa_id = 1
+            ";
+
+            $params = [$nombreAlumno, $nombreAlumno, $nombreAlumno];
+
+            // Si se especifica meses, filtrar
+            if ($meses) {
+                $query .= " AND fecha >= DATE_SUB(NOW(), INTERVAL ? MONTH)";
+                $params[] = $meses;
+            }
+
+            $query .= " ORDER BY fecha DESC";
+
+            $pagos = executeQuery($query, $params);
+
+            error_log("✅ Pagos encontrados: " . count($pagos));
+
+            echo json_encode([
+                'success' => true,
+                'data' => $pagos,
+                'alumno' => $nombreAlumno,
+                'total_pagos' => count($pagos)
+            ]);
+
+        } catch (Exception $e) {
+            error_log("❌ Error obteniendo historial de pagos: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener historial',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener rango de fechas de transacciones
+     * GET /transacciones/rango-fechas
+     */
+    public static function getRangoFechas() {
+        AuthController::requireAuth();
+
+        try {
+            $query = "
+                SELECT
+                    MIN(fecha) as fecha_minima,
+                    MAX(fecha) as fecha_maxima
+                FROM transacciones
+            ";
+
+            $result = executeQuery($query);
+
+            echo json_encode([
+                'success' => true,
+                'data' => $result[0]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error obteniendo rango de fechas: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener rango de fechas',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener conteo de transacciones
+     * GET /transacciones/count
+     */
+    public static function getCount() {
+        AuthController::requireAuth();
+
+        try {
+            $query = "
+                SELECT
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN tipo = 'I' THEN 1 END) as ingresos,
+                    COUNT(CASE WHEN tipo = 'G' THEN 1 END) as gastos
+                FROM transacciones
+            ";
+
+            $result = executeQuery($query);
+
+            echo json_encode([
+                'success' => true,
+                'data' => $result[0]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error obteniendo conteo: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener conteo',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Reporte de gastos reales
+     * GET /reportes/gastos-reales?empresa=&ano=2025&mes=&tipo=
+     */
+    public static function getReporteGastosReales() {
+        AuthController::requireAuth();
+
+        try {
+            $empresa = $_GET['empresa'] ?? '';
+            $ano = $_GET['ano'] ?? date('Y');
+            $mes = $_GET['mes'] ?? '';
+            $tipo = $_GET['tipo'] ?? '';
+
+            $whereConditions = ["YEAR(fecha) = ?"];
+            $params = [(int)$ano];
+
+            if (!empty($empresa)) {
+                $whereConditions[] = "empresa_id = ?";
+                $params[] = (int)$empresa;
+            }
+
+            if (!empty($mes)) {
+                $whereConditions[] = "MONTH(fecha) = ?";
+                $params[] = (int)$mes;
+            }
+
+            if (!empty($tipo)) {
+                $whereConditions[] = "tipo = ?";
+                $params[] = $tipo;
+            }
+
+            $whereClause = implode(' AND ', $whereConditions);
+
+            $query = "
+                SELECT
+                    concepto,
+                    total,
+                    fecha,
+                    tipo,
+                    empresa_id
+                FROM transacciones
+                WHERE $whereClause
+                ORDER BY fecha DESC
+            ";
+
+            $transacciones = executeQuery($query, $params);
+
+            // Calcular totales
+            $totalIngresos = 0;
+            $totalGastos = 0;
+
+            foreach ($transacciones as $t) {
+                if ($t['tipo'] === 'I') {
+                    $totalIngresos += floatval($t['total']);
+                } else {
+                    $totalGastos += floatval($t['total']);
+                }
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => $transacciones,
+                'resumen' => [
+                    'total_ingresos' => $totalIngresos,
+                    'total_gastos' => $totalGastos,
+                    'balance' => $totalIngresos - $totalGastos,
+                    'total_transacciones' => count($transacciones)
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en reporte gastos reales: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error generando reporte',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Reporte de balance general
+     * GET /reportes/balance-general?empresa=&ano=2025&mes=
+     */
+    public static function getReporteBalanceGeneral() {
+        AuthController::requireAuth();
+
+        try {
+            $empresa = $_GET['empresa'] ?? '';
+            $ano = $_GET['ano'] ?? date('Y');
+            $mes = $_GET['mes'] ?? '';
+
+            $whereConditions = ["YEAR(fecha) = ?"];
+            $params = [(int)$ano];
+
+            if (!empty($empresa)) {
+                $whereConditions[] = "empresa_id = ?";
+                $params[] = (int)$empresa;
+            }
+
+            if (!empty($mes)) {
+                $whereConditions[] = "MONTH(fecha) = ?";
+                $params[] = (int)$mes;
+            }
+
+            $whereClause = implode(' AND ', $whereConditions);
+
+            $query = "
+                SELECT
+                    SUM(CASE WHEN tipo = 'I' THEN total ELSE 0 END) as total_ingresos,
+                    SUM(CASE WHEN tipo = 'G' THEN total ELSE 0 END) as total_gastos,
+                    COUNT(CASE WHEN tipo = 'I' THEN 1 END) as count_ingresos,
+                    COUNT(CASE WHEN tipo = 'G' THEN 1 END) as count_gastos
+                FROM transacciones
+                WHERE $whereClause
+            ";
+
+            $result = executeQuery($query, $params);
+            $data = $result[0];
+
+            $totalIngresos = floatval($data['total_ingresos']);
+            $totalGastos = floatval($data['total_gastos']);
+            $balance = $totalIngresos - $totalGastos;
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'total_ingresos' => $totalIngresos,
+                    'total_gastos' => $totalGastos,
+                    'balance' => $balance,
+                    'count_ingresos' => (int)$data['count_ingresos'],
+                    'count_gastos' => (int)$data['count_gastos']
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en balance general: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error generando balance',
+                'message' => $e->getMessage()
+            ]);
         }
     }
 }
