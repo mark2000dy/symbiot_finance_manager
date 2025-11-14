@@ -2,7 +2,54 @@
    DASHBOARD STUDENTS MODULE - SYMBIOT FINANCIAL MANAGER
    Archivo: public/js/dashboard-students.js
    Widget completo de gestión de alumnos con correcciones críticas
+   Version: 3.1.6 - Adapter Functions for Backend Data
    ==================================================== */
+
+// ============================================================
+// 🔄 DATA ADAPTERS - Transform backend responses to expected format
+// ============================================================
+
+/**
+ * Adapter for historial-pagos endpoint
+ * Transforms backend array response to expected object format
+ * @param {Object} backendResponse - {success: true, data: [...], total_pagos: N}
+ * @returns {Object} - {pagosPorMes: {}, totalPagado: 0, totalTransacciones: 0}
+ */
+function adaptHistorialPagos(backendResponse) {
+    if (!backendResponse.success || !backendResponse.data) {
+        return {
+            pagosPorMes: {},
+            totalPagado: 0,
+            totalTransacciones: 0
+        };
+    }
+
+    const pagos = backendResponse.data;
+    const pagosPorMes = {};
+    let totalPagado = 0;
+
+    // Group payments by month (YYYY-MM format)
+    pagos.forEach(pago => {
+        if (pago.fecha && pago.total) {
+            // Extract YYYY-MM from fecha
+            const fecha = new Date(pago.fecha);
+            const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+
+            // Sum totals by month
+            if (!pagosPorMes[mesKey]) {
+                pagosPorMes[mesKey] = 0;
+            }
+            pagosPorMes[mesKey] += parseFloat(pago.total);
+            totalPagado += parseFloat(pago.total);
+        }
+    });
+
+    return {
+        pagosPorMes: pagosPorMes,
+        totalPagado: totalPagado,
+        totalTransacciones: pagos.length
+    };
+}
 
 // ============================================================
 // 🎓 FUNCIONES PRINCIPALES DE GESTIÓN DE ALUMNOS
@@ -305,7 +352,7 @@ async function saveNewStudent() {
             precio_mensual: parseFloat(document.getElementById('newStudentMonthlyFee')?.value) || null,
             forma_pago: document.getElementById('newStudentPaymentMethod')?.value || null,
             domiciliado: document.getElementById('newStudentDomiciled')?.value === 'Si',
-            nombre_domiciliado: document.getElementById('newStudentDomiciliedName')?.value || null,
+            titular_domicilado: document.getElementById('newStudentDomiciliedName')?.value || null,
             empresa_id: currentCompanyFilter || 1
         };
 
@@ -373,11 +420,11 @@ async function saveStudentChanges() {
             horario: document.getElementById('editStudentSchedule').value || null,
             estatus: document.getElementById('editStudentStatus').value || 'Activo',
             promocion: document.getElementById('editStudentPromotion').value || null,
-            precio_mensual: document.getElementById('editStudentMonthlyFee').value ? 
+            precio_mensual: document.getElementById('editStudentMonthlyFee').value ?
                 parseFloat(document.getElementById('editStudentMonthlyFee').value) : null,
             forma_pago: document.getElementById('editStudentPaymentMethod').value || null,
             domiciliado: document.getElementById('editStudentDomiciled').value === 'Si',
-            nombre_domiciliado: document.getElementById('editStudentDomiciliedName').value || null
+            titular_domicilado: document.getElementById('editStudentDomiciliedName').value || null
         };
         
         console.log('📤 Datos a actualizar:', studentData);
@@ -1523,16 +1570,10 @@ async function deleteStudent() {
         }
         
         console.log(`🗑️ Eliminando alumno: ${studentName} (ID: ${studentId})`);
-        
-        const response = await fetch(`/gastos/api/alumnos/${studentId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
+
+        const { response, data: result } = await window.apiFetch(`alumnos/${studentId}`, {
+            method: 'DELETE'
         });
-        
-        const result = await response.json();
         
         if (response.ok && result.success) {
             const editModal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
@@ -1930,14 +1971,9 @@ async function loadPaymentHistory(studentId, studentName) {
         document.getElementById('chartLoadingState').style.display = 'block';
         
         // Obtener datos reales del backend
-        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`, {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
+        const { response, data } = await window.apiFetch(`alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`, {
+            method: 'GET'
         });
-        const data = await response.json();
         
         document.getElementById('chartLoadingState').style.display = 'none';
         
@@ -1979,23 +2015,25 @@ async function showPaymentHistory(studentId, studentName) {
         `;
         
         // ✅ CRÍTICO: Sin parámetro meses para obtener TODO
-        const response = await fetch(`/gastos/api/alumnos/${encodeURIComponent(studentName)}/historial-pagos`, {
-            credentials: 'same-origin'
+        const { response, data } = await window.apiFetch(`alumnos/${encodeURIComponent(studentName)}/historial-pagos`, {
+            method: 'GET'
         });
-        const data = await response.json();
-        
+
         console.log('📥 Datos recibidos del backend:', data);
-        
-        if (data.success && data.data) {
+
+        // 🔄 Transform backend response to expected format
+        const adaptedData = adaptHistorialPagos(data);
+
+        if (data.success && adaptedData) {
             let html = `
                 <h6 class="text-white">
                     <i class="fas fa-chart-line me-2"></i>Historial Completo de Pagos
                 </h6>
             `;
-            
-            const pagosPorMes = data.data.pagosPorMes || {};
-            const totalPagado = parseFloat(data.data.totalPagado) || 0;
-            const totalTransacciones = data.data.totalTransacciones || 0;
+
+            const pagosPorMes = adaptedData.pagosPorMes || {};
+            const totalPagado = parseFloat(adaptedData.totalPagado) || 0;
+            const totalTransacciones = adaptedData.totalTransacciones || 0;
             
             const mesesConPagos = Object.entries(pagosPorMes).filter(([_, monto]) => parseFloat(monto) > 0);
             

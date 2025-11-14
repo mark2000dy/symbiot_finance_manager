@@ -398,17 +398,17 @@ async function logout() {
         }
         
         console.log('✅ Sesión cerrada correctamente');
-        
+
         // Redireccionar al login
-        window.location.href = '/gastos/login.html';
-        
+        window.location.href = window.buildPageUrl('login.html');
+
     } catch (error) {
         console.error('❌ Error cerrando sesión:', error);
-        
+
         // Forzar redirección al login aunque falle la API
         showAlert('warning', 'Error cerrando sesión. Redirigiendo al login...', 2000);
         setTimeout(() => {
-            window.location.href = '/gastos/login.html';
+            window.location.href = window.buildPageUrl('login.html');
         }, 2000);
     }
 }
@@ -418,11 +418,11 @@ async function logout() {
  */
 function handleInactivityLogout() {
     console.log('⏰ Sesión cerrada por inactividad');
-    
+
     showAlert('warning', 'Tu sesión ha expirado por inactividad. Redirigiendo al login...', 3000);
-    
+
     setTimeout(() => {
-        window.location.href = '/gastos/login.html';
+        window.location.href = window.buildPageUrl('login.html');
     }, 3000);
 }
 

@@ -660,18 +660,18 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- API Client v3.1 - Universal API Handler (DEBE CARGARSE PRIMERO) -->
-    <script src="assets/js/api-client.js?v=3.1.1"></script>
+    <script src="assets/js/api-client.js?v=3.1.3"></script>
 
     <!-- JAVASCRIPT MODULAR - ORDEN DE CARGA CRÍTICO -->
-    <script src="js/dashboard-core.js?v=3.1.1"></script>           <!-- v3.1.1: Cache busting -->
-    <script src="js/dashboard-auth.js?v=3.1.1"></script>           <!-- v3.1.1: Fix fetch to apiGet -->
-    <script src="js/dashboard-api.js?v=3.1.1"></script>            <!-- v3.1.1: Add apiRequest alias -->
+    <script src="js/dashboard-core.js?v=3.1.3"></script>           <!-- v3.1.3: Rutas dinámicas buildPageUrl -->
+    <script src="js/dashboard-auth.js?v=3.1.3"></script>           <!-- v3.1.3: Rutas dinámicas buildPageUrl -->
+    <script src="js/dashboard-api.js?v=3.1.3"></script>            <!-- v3.1.3: Rutas dinámicas buildPageUrl -->
     <script src="js/dashboard-stats.js?v=3.1.5"></script>          <!-- v3.1.5: Fix selector titulo dashboard (h4, no h2) -->
-    <script src="js/dashboard-payments.js?v=3.1.3"></script>       <!-- v3.1.3: Fix fetch to apiGet (alertas-pagos) -->
-    <script src="js/dashboard-transactions.js?v=3.1.2"></script>   <!-- v3.1.2: Fix endpoint path -->
-    <script src="js/dashboard-modals.js?v=3.1.1"></script>         <!-- v3.1.1: Cache busting -->
-    <script src="js/dashboard-students.js?v=3.1.3"></script>       <!-- v3.1.3: Fix fetch to apiGet (alumnos) -->
-    <script src="js/dashboard-init.js?v=3.1.1"></script>           <!-- v3.1.1: Cache busting -->
+    <script src="js/dashboard-payments.js?v=3.1.5"></script>       <!-- v3.1.5: Fix rutas API hardcodeadas alertas -->
+    <script src="js/dashboard-transactions.js?v=3.1.5"></script>   <!-- v3.1.5: Fix rutas API hardcodeadas transacciones -->
+    <script src="js/dashboard-modals.js?v=3.1.9"></script>         <!-- v3.1.9: Fix transactionPayment field ID (correcto) -->
+    <script src="js/dashboard-students.js?v=3.1.7"></script>       <!-- v3.1.7: Fix titular_domicilado field name -->
+    <script src="js/dashboard-init.js?v=3.1.3"></script>           <!-- v3.1.3: Rutas dinámicas buildPageUrl -->
 
 </body>
 </html>

@@ -266,11 +266,9 @@ function calculatePaymentStatus(alumno) {
 async function getPaymentAlertsummary() {
     try {
         const empresaParam = currentCompanyFilter || 1;
-        const response = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=${empresaParam}`, { 
-            cache: 'no-store',
-            credentials: 'include'
+        const { response, data } = await window.apiFetch(`dashboard/alertas-pagos?empresa_id=${empresaParam}`, {
+            method: 'GET'
         });
-        const data = await response.json();
         
         if (data.success) {
             console.log('🔍 Datos recibidos del backend:', data.data);
@@ -304,15 +302,10 @@ async function getPaymentAlertsummary() {
 async function markAlertAsNotified(alumnoId) {
     try {
         console.log(`📧 Marcando alerta como notificada para alumno ${alumnoId}`);
-        
-        const response = await fetch(`/gastos/api/alertas-pagos/marcar-notificado/${alumnoId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+
+        const { response, data: result } = await window.apiFetch(`alertas-pagos/marcar-notificado/${alumnoId}`, {
+            method: 'POST'
         });
-        
-        const result = await response.json();
         
         if (result.success) {
             console.log('✅ Alerta marcada como notificada');
@@ -333,13 +326,11 @@ async function markAlertAsNotified(alumnoId) {
 async function generateOverduePaymentsReport() {
     try {
         console.log('📊 Generando reporte de pagos vencidos...');
-        
+
         const empresaParam = currentCompanyFilter || 1;
-        const response = await fetch(`/gastos/api/dashboard/alertas-pagos?empresa_id=${empresaParam}`, { 
-            cache: 'no-store',
-            credentials: 'include'
+        const { response, data } = await window.apiFetch(`dashboard/alertas-pagos?empresa_id=${empresaParam}`, {
+            method: 'GET'
         });
-        const data = await response.json();
         
         if (data.success) {
             const vencidos = Array.isArray(data.data.vencidos) ? data.data.vencidos : [];

@@ -320,16 +320,15 @@ async function editTransaction(transactionId) {
         
         if (!transaction) {
             console.warn('⚠️ Transacción no encontrada en caché, consultando API...');
-            
-            const response = await fetch(`/gastos/api/transacciones/${transactionId}`, {
-                credentials: 'same-origin'
+
+            const { response, data: result } = await window.apiFetch(`transacciones/${transactionId}`, {
+                method: 'GET'
             });
-            
+
             if (!response.ok) {
                 throw new Error('No se pudo obtener la transacción');
             }
-            
-            const result = await response.json();
+
             transaction = result.data;
         }
         
@@ -581,18 +580,11 @@ async function deleteTransactionFromList(transactionId) {
         }
         
         console.log(`🗑️ Eliminando transacción: ${transaction.concepto} (ID: ${transactionId})`);
-    
-        // Llamar a la API directamente
-        const response = await fetch(`/gastos/api/transacciones/${transactionId}`, {
-            method: 'DELETE',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
 
-        const result = await response.json();
+        // Llamar a la API directamente
+        const { response, data: result } = await window.apiFetch(`transacciones/${transactionId}`, {
+            method: 'DELETE'
+        });
 
         if (!response.ok || !result.success) {
             throw new Error(result.message || 'Error eliminando transacción');
@@ -645,15 +637,9 @@ async function deleteTransactionFromModal(transactionId) {
         }
         
         // Llamar al API para eliminar
-        const response = await fetch(`/gastos/api/transacciones/${transactionId}`, {
-            method: 'DELETE',
-            credentials: 'same-origin',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        const { response, data: result } = await window.apiFetch(`transacciones/${transactionId}`, {
+            method: 'DELETE'
         });
-        
-        const result = await response.json();
         
         if (result.success) {
             console.log('✅ Transacción eliminada exitosamente');

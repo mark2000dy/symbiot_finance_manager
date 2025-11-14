@@ -2,9 +2,112 @@
    REPORTES WIDGETS MODULE - SYMBIOT FINANCIAL MANAGER
    Archivo: public/js/reportes-widgets.js
    Widgets específicos para reportes
+   Version: 3.1.6 - Adapter Functions for Backend Data
    ==================================================== */
 
 console.log('📊 Cargando Reportes Widgets Module...');
+
+// ============================================================
+// 🔄 DATA ADAPTERS - Transform backend responses to expected format
+// ============================================================
+
+/**
+ * Adapter for reportes/gastos-reales endpoint
+ * Transforms backend transaction array to monthly aggregated data
+ * @param {Object} backendResponse - {success: true, data: [...], resumen: {...}}
+ * @returns {Object} - {detalle_mensual: [...], total_entradas: N, total_salidas: N, flujo_neto: N}
+ */
+function adaptGastosReales(backendResponse) {
+    if (!backendResponse.success || !backendResponse.data) {
+        return {
+            detalle_mensual: [],
+            total_entradas: 0,
+            total_salidas: 0,
+            flujo_neto: 0
+        };
+    }
+
+    const transacciones = backendResponse.data;
+    const monthlyData = {};
+
+    // Group transactions by month
+    transacciones.forEach(tx => {
+        if (tx.fecha && tx.total && tx.tipo) {
+            const fecha = new Date(tx.fecha);
+            const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+
+            if (!monthlyData[mesKey]) {
+                monthlyData[mesKey] = {
+                    mes: mesKey,
+                    entradas: 0,
+                    salidas: 0,
+                    flujo: 0
+                };
+            }
+
+            const monto = parseFloat(tx.total);
+            if (tx.tipo === 'I') {
+                monthlyData[mesKey].entradas += monto;
+            } else if (tx.tipo === 'G') {
+                monthlyData[mesKey].salidas += monto;
+            }
+        }
+    });
+
+    // Calculate flujo for each month and convert to array
+    const detalleMensual = Object.values(monthlyData).map(month => {
+        month.flujo = month.entradas - month.salidas;
+        return month;
+    });
+
+    // Sort by month (ascending)
+    detalleMensual.sort((a, b) => a.mes.localeCompare(b.mes));
+
+    // Calculate totals
+    const totalEntradas = detalleMensual.reduce((sum, m) => sum + m.entradas, 0);
+    const totalSalidas = detalleMensual.reduce((sum, m) => sum + m.salidas, 0);
+    const flujoNeto = totalEntradas - totalSalidas;
+
+    return {
+        detalle_mensual: detalleMensual,
+        total_entradas: totalEntradas,
+        total_salidas: totalSalidas,
+        flujo_neto: flujoNeto
+    };
+}
+
+/**
+ * Adapter for reportes/balance-general endpoint
+ * Transforms backend balance data to expected format with investment metrics
+ * @param {Object} backendResponse - {success: true, data: {total_ingresos, total_gastos, balance}}
+ * @returns {Object} - {inversion_total, numero_socios, saldo_disponible, ...}
+ */
+function adaptBalanceGeneral(backendResponse) {
+    if (!backendResponse.success || !backendResponse.data) {
+        return {
+            inversion_total: 0,
+            numero_socios: 0,
+            saldo_disponible: 0,
+            total_ingresos: 0,
+            total_gastos: 0,
+            balance: 0,
+            margen_porcentaje: 0
+        };
+    }
+
+    const data = backendResponse.data;
+
+    // Map backend fields to expected frontend fields
+    return {
+        inversion_total: data.total_ingresos || 0,
+        numero_socios: data.numero_transacciones_ingresos || 0,
+        saldo_disponible: data.balance || 0,
+        total_ingresos: data.total_ingresos || 0,
+        total_gastos: data.total_gastos || 0,
+        balance: data.balance || 0,
+        margen_porcentaje: data.margen_porcentaje || 0
+    };
+}
 
 // ============================================================
 // 🌍 VARIABLES GLOBALES DE WIDGETS
@@ -126,36 +229,36 @@ async function loadGastosRealesData(filters = {}) {
         if (filters.tipo) params.append('tipo', filters.tipo);
         
         // Llamar al endpoint
-        const response = await fetch(`/gastos/api/reportes/gastos-reales?${params.toString()}`, {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
+        const { response, data } = await window.apiFetch(`reportes/gastos-reales?${params.toString()}`, {
+            method: 'GET'
         });
-        
+
         if (!response.ok) {
             throw new Error(`Error HTTP: ${response.status}`);
         }
-        
-        const data = await response.json();
-        
+
         if (!data.success) {
             throw new Error(data.message || 'Error en respuesta del servidor');
         }
-        
-        console.log('✅ Datos recibidos:', data.data);
-        
+
+        console.log('✅ Datos recibidos del backend:', data.data);
+
+        // 🔄 Transform backend response to expected format
+        const adaptedData = adaptGastosReales(data);
+
+        console.log('✅ Datos transformados:', adaptedData);
+
         // Actualizar indicadores
-        updateGastosRealesIndicators(data.data);
-        
+        updateGastosRealesIndicators(adaptedData);
+
         // Actualizar gráfico
-        updateGastosRealesChart(data.data.detalle_mensual);
-        
+        updateGastosRealesChart(adaptedData.detalle_mensual);
+
         // Actualizar tabla
-        updateGastosRealesTable(data.data.detalle_mensual);
-        
+        updateGastosRealesTable(adaptedData.detalle_mensual);
+
         // Guardar datos para exportación
-        gastosRealesData = data.data;
+        gastosRealesData = adaptedData;
         
         console.log('✅ Datos de Gastos Reales cargados correctamente');
         
@@ -612,45 +715,61 @@ async function loadBalanceGeneralData(filters = {}) {
         if (filters.mes) params.append('mes', filters.mes);
         
         // Llamar al endpoint
-        const response = await fetch(`/gastos/api/reportes/balance-general?${params.toString()}`, {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
+        const { response, data } = await window.apiFetch(`reportes/balance-general?${params.toString()}`, {
+            method: 'GET'
         });
-        
+
         if (!response.ok) {
             throw new Error(`Error HTTP: ${response.status}`);
         }
-        
-        const data = await response.json();
-        
+
         if (!data.success) {
             throw new Error(data.message || 'Error en respuesta del servidor');
         }
-        
-        console.log('✅ Datos de Balance General recibidos:', data.data);
-        
+
+        console.log('✅ Datos de Balance General recibidos del backend:', data.data);
+
+        // 🔄 Transform backend response to expected format
+        const adaptedResumen = adaptBalanceGeneral(data);
+
+        console.log('✅ Datos de resumen transformados:', adaptedResumen);
+
         // Actualizar resumen principal
-        updateBalanceGeneralResumen(data.data.resumen);
-        
-        // Actualizar tabla de socios
-        updateTablaSocios(data.data.socios, data.data.resumen.inversion_total);
-        
-        // Actualizar gastos escuela
-        updateGastosEscuela(data.data.gastos_escuela);
-        
-        // Actualizar estado de cuentas
-        updateEstadoCuentas(data.data.cuentas_bancarias);
-        
-        // Actualizar gráfico de participación
-        updateChartParticipacion(data.data.participacion);
-        
-        // Actualizar tabla de participación
-        updateTablaParticipacion(data.data.participacion);
-        
+        updateBalanceGeneralResumen(adaptedResumen);
+
+        // Actualizar tabla de socios (if available in backend)
+        if (data.data.socios) {
+            updateTablaSocios(data.data.socios, adaptedResumen.inversion_total);
+        }
+
+        // Actualizar gastos escuela (if available in backend)
+        if (data.data.gastos_escuela) {
+            updateGastosEscuela(data.data.gastos_escuela);
+        }
+
+        // Actualizar estado de cuentas (if available in backend)
+        if (data.data.cuentas_bancarias) {
+            updateEstadoCuentas(data.data.cuentas_bancarias);
+        }
+
+        // Actualizar gráfico de participación (if available in backend)
+        if (data.data.participacion) {
+            updateChartParticipacion(data.data.participacion);
+        }
+
+        // Actualizar tabla de participación (if available in backend)
+        if (data.data.participacion) {
+            updateTablaParticipacion(data.data.participacion);
+        }
+
         // Guardar datos para exportación
-        balanceGeneralData = data.data;
+        balanceGeneralData = {
+            resumen: adaptedResumen,
+            socios: data.data.socios || [],
+            gastos_escuela: data.data.gastos_escuela || [],
+            cuentas_bancarias: data.data.cuentas_bancarias || [],
+            participacion: data.data.participacion || []
+        };
         
         console.log('✅ Balance General actualizado correctamente');
         

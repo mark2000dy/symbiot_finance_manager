@@ -420,8 +420,10 @@ async function submitTransaction() {
         const concepto = document.getElementById('transactionConcept')?.value;
         const cantidad = parseInt(document.getElementById('transactionQuantity')?.value);
         const precio_unitario = parseFloat(document.getElementById('transactionUnitPrice')?.value);
-        const forma_pago = document.getElementById('transactionPaymentMethod')?.value;
-        
+        const forma_pago = document.getElementById('transactionPayment')?.value;  // ✅ Corregido: el ID real es transactionPayment (sin Method)
+
+        console.log('🔍 Forma de pago capturada:', forma_pago, '(tipo:', typeof forma_pago, ')');
+
         // Validar campos requeridos
         if (!fecha) {
             showAlert('warning', 'Por favor selecciona una fecha');
@@ -458,7 +460,7 @@ async function submitTransaction() {
             return;
         }
         
-        if (!forma_pago) {
+        if (!forma_pago || forma_pago.trim() === '') {
             showAlert('warning', 'Por favor selecciona una forma de pago');
             return;
         }
@@ -866,7 +868,7 @@ function loadTransactionInModal(transaction) {
         'transactionConcept': transaction.concepto,
         'transactionPartner': transaction.socio,
         'transactionCompany': transaction.empresa_id,
-        'transactionPayment': transaction.forma_pago,
+        'transactionPayment': transaction.forma_pago,  // ✅ ID correcto según dashboard.html línea 578
         'transactionQuantity': transaction.cantidad,
         'transactionUnitPrice': transaction.precio_unitario
     };

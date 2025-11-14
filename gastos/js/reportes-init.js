@@ -7,6 +7,23 @@
 console.log('📊 Cargando Reportes Init Module...');
 
 // ============================================================
+// 🛡️ FUNCIÓN FALLBACK PARA DETECTAR BASE PATH
+// ============================================================
+
+/**
+ * Detectar base path si window.buildPageUrl no está disponible
+ * @returns {string} Base path del proyecto
+ */
+function detectBasePathFallback() {
+    const currentPath = window.location.pathname;
+    const gastosIndex = currentPath.indexOf('/gastos/');
+    if (gastosIndex !== -1) {
+        return currentPath.substring(0, gastosIndex);
+    }
+    return '';
+}
+
+// ============================================================
 // 🌍 VARIABLES GLOBALES DE REPORTES
 // ============================================================
 
@@ -36,7 +53,12 @@ async function initializeReportes() {
         const isAuth = await verifyAuthenticationForReportes();
         if (!isAuth) {
             console.log('❌ Usuario no autenticado, redirigiendo...');
-            window.location.href = '/gastos/login.html';
+            // Usar buildPageUrl si está disponible, sino construir la ruta manualmente
+            const loginUrl = (typeof window.buildPageUrl === 'function')
+                ? window.buildPageUrl('login.html')
+                : detectBasePathFallback() + '/gastos/login.html';
+            console.log('🔄 Redirigiendo a:', loginUrl);
+            window.location.href = loginUrl;
             return;
         }
         
@@ -100,27 +122,19 @@ async function initializeReportes() {
 async function verifyAuthenticationForReportes() {
     try {
         console.log('🔐 Verificando autenticación del usuario...');
-        
-        const response = await fetch('/gastos/api/user', {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
+
+        const { response, data } = await window.apiFetch('user', {
+            method: 'GET'
         });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success && data.user) {
-                console.log(`✅ Usuario autenticado: ${data.user.nombre}`);
-                return true;
-            }
+
+        if (response.ok && data.success && data.user) {
+            console.log(`✅ Usuario autenticado: ${data.user.nombre}`);
+            return true;
         }
-        
+
         console.log('❌ Usuario no autenticado');
         return false;
-        
+
     } catch (error) {
         console.error('❌ Error verificando autenticación:', error);
         return false;
@@ -133,20 +147,15 @@ async function verifyAuthenticationForReportes() {
 async function loadUserInfoForReportes() {
     try {
         console.log('👤 Cargando información del usuario...');
-        
-        const response = await fetch('/gastos/api/user', {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
+
+        const { response, data } = await window.apiFetch('user', {
+            method: 'GET'
         });
-        
+
         if (!response.ok) {
             throw new Error('Error cargando usuario');
         }
-        
-        const data = await response.json();
-        
+
         if (data.success && data.user) {
             const user = data.user;
             
@@ -213,20 +222,15 @@ function updateCurrentDate() {
 async function loadCompaniesForFilter() {
     try {
         console.log('🏢 Cargando empresas...');
-        
-        const response = await fetch('/gastos/api/empresas', {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
+
+        const { response, data } = await window.apiFetch('empresas', {
+            method: 'GET'
         });
-        
+
         if (!response.ok) {
             throw new Error('Error cargando empresas');
         }
-        
-        const data = await response.json();
-        
+
         if (data.success && data.data) {
             const selectElement = document.getElementById('filterEmpresa');
             if (selectElement) {
@@ -256,20 +260,15 @@ async function loadCompaniesForFilter() {
 async function loadPeriodoAnalisis() {
     try {
         console.log('📅 Calculando periodo de análisis...');
-        
-        const response = await fetch('/gastos/api/transacciones/rango-fechas', {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
+
+        const { response, data } = await window.apiFetch('transacciones/rango-fechas', {
+            method: 'GET'
         });
-        
+
         if (!response.ok) {
             throw new Error('Error obteniendo rango de fechas');
         }
-        
-        const data = await response.json();
-        
+
         if (data.success && data.data) {
             const { fecha_minima, fecha_maxima } = data.data;
             
@@ -308,20 +307,15 @@ async function loadPeriodoAnalisis() {
 async function loadTotalTransacciones() {
     try {
         console.log('🔢 Cargando total de transacciones...');
-        
-        const response = await fetch('/gastos/api/transacciones/count', {
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
+
+        const { response, data } = await window.apiFetch('transacciones/count', {
+            method: 'GET'
         });
-        
+
         if (!response.ok) {
             throw new Error('Error obteniendo total de transacciones');
         }
-        
-        const data = await response.json();
-        
+
         if (data.success) {
             const total = data.data?.total || data.total || 0;
             

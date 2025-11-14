@@ -817,7 +817,7 @@ function handleInitializationError(error) {
                 <button class="btn btn-primary" onclick="window.location.reload()">
                     <i class="fas fa-sync-alt me-2"></i>Recargar Página
                 </button>
-                <button class="btn btn-secondary" onclick="window.location.href='/gastos/login.html'">
+                <button class="btn btn-secondary" onclick="window.location.href=window.buildPageUrl('login.html')">
                     <i class="fas fa-sign-out-alt me-2"></i>Ir al Login
                 </button>
             </div>
