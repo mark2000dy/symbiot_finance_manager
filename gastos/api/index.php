@@ -167,19 +167,19 @@ if ($endpoint === 'login' && $request_method === 'POST') {
     error_log("Login attempt - Raw input: " . $input);
     error_log("Login attempt - Parsed data: " . print_r($data, true));
 
-    // Aceptar tanto 'username' como 'email' para flexibilidad
-    $username = $data['username'] ?? $data['email'] ?? '';
+    // Obtener email y password del request
+    $email = $data['email'] ?? '';
     $password = $data['password'] ?? '';
 
     // Log de campos recibidos
-    error_log("Username/Email recibido: " . $username);
+    error_log("Email recibido: " . $email);
     error_log("Password recibido: " . (empty($password) ? 'VACIO' : 'PRESENTE'));
-    
+
     // Validaciones basicas
-    if (empty($username) || empty($password)) {
-        sendError('Usuario y contrasena son requeridos', 400);
+    if (empty($email) || empty($password)) {
+        sendError('Email y contrasena son requeridos', 400);
     }
-    
+
     try {
         // Conectar a base de datos
         $db = new PDO(
@@ -191,17 +191,17 @@ if ($endpoint === 'login' && $request_method === 'POST') {
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
             ]
         );
-        
+
         error_log("BD Conectada correctamente");
-        
-        // Buscar usuario por email o username
+
+        // Buscar usuario por email
         $stmt = $db->prepare("
-            SELECT id, username, email, nombre, empresa, rol, password_hash, activo 
-            FROM usuarios 
-            WHERE (email = :username OR username = :username) AND activo = 1
+            SELECT id, email, nombre, empresa, rol, password_hash, activo
+            FROM usuarios
+            WHERE email = :email AND activo = 1
             LIMIT 1
         ");
-        $stmt->execute(['username' => $username]);
+        $stmt->execute(['email' => $email]);
         $user = $stmt->fetch();
         
         error_log("Usuario encontrado: " . ($user ? 'SI' : 'NO'));
@@ -222,21 +222,19 @@ if ($endpoint === 'login' && $request_method === 'POST') {
                 if (class_exists('Session')) {
                     Session::start();
                     Session::set('user_id', $user['id']);
-                    Session::set('username', $user['username']);
                     Session::set('email', $user['email']);
                     Session::set('nombre', $user['nombre']);
                     Session::set('empresa', $user['empresa']);
                     Session::set('rol', $user['rol']);
                     Session::set('auth_token', $token);
                 }
-                
+
                 sendResponse([
                     'success' => true,
                     'message' => 'Login exitoso',
                     'token' => $token,
                     'user' => [
                         'id' => $user['id'],
-                        'username' => $user['username'],
                         'email' => $user['email'],
                         'nombre' => $user['nombre'],
                         'empresa' => $user['empresa'],
@@ -247,17 +245,15 @@ if ($endpoint === 'login' && $request_method === 'POST') {
         }
         
         // Si llegamos aqui, las credenciales son incorrectas
-        error_log("Credenciales incorrectas para: " . $username);
-        sendError('Usuario o contrasena incorrectos', 401);
-        
+        error_log("Credenciales incorrectas para: " . $email);
+        sendError('Email o contrasena incorrectos', 401);
+
     } catch (PDOException $e) {
         error_log("Error de BD en login: " . $e->getMessage());
-        // TEMPORAL: Mostrar error real para debugging
-        sendError('Error de BD: ' . $e->getMessage(), 500);
+        sendError('Error de conexion a la base de datos', 500);
     } catch (Exception $e) {
         error_log("Error en login: " . $e->getMessage());
-        // TEMPORAL: Mostrar error real para debugging
-        sendError('Error: ' . $e->getMessage(), 500);
+        sendError('Error al procesar login', 500);
     }
 }
 
@@ -297,7 +293,7 @@ if ($endpoint === 'auth/check' && $request_method === 'GET') {
                 $isAuthenticated = true;
                 $user = [
                     'id' => $user_id,
-                    'username' => Session::get('username')
+                    'email' => Session::get('email')
                 ];
             }
         }
