@@ -1,7 +1,11 @@
 /**
- * API Client v3.1.1
+ * API Client v3.1.2
  * Cliente para comunicación con la API del Sistema de Gastos
  * Compatible con Plesk PHP 8.1.33
+ *
+ * CHANGELOG v3.1.2:
+ * - Detección automática de base path para soportar múltiples entornos
+ * - Funciona en local (ej: /symbiot/symbiot_finance_manager/gastos) y producción (/gastos)
  */
 
 (function(window) {
@@ -10,17 +14,53 @@
     // ==========================================
     // CONFIGURACIÓN
     // ==========================================
-    
-    // Base path fijo para producción
-    const APP_BASE_PATH = '/gastos';
+
+    /**
+     * Detectar automáticamente la base path de la aplicación
+     * Busca '/gastos/' en la ruta actual y extrae todo hasta ahí
+     *
+     * Ejemplos:
+     * - /symbiot/symbiot_finance_manager/gastos/login.html → /symbiot/symbiot_finance_manager/gastos
+     * - /gastos/login.html → /gastos
+     * - /produccion/gastos/dashboard.html → /produccion/gastos
+     */
+    function detectBasePath() {
+        const currentPath = window.location.pathname;
+
+        // Buscar '/gastos/' en la ruta
+        const gastosIndex = currentPath.indexOf('/gastos/');
+
+        if (gastosIndex !== -1) {
+            // Encontramos '/gastos/', extraer todo hasta (e incluyendo) gastos
+            return currentPath.substring(0, gastosIndex + 7); // 7 = length of '/gastos'
+        }
+
+        // Si estamos exactamente en '/gastos' sin slash final
+        if (currentPath === '/gastos' || currentPath.startsWith('/gastos?')) {
+            return '/gastos';
+        }
+
+        // Fallback: buscar si la ruta termina en /gastos
+        if (currentPath.endsWith('/gastos')) {
+            return currentPath;
+        }
+
+        // Último fallback: usar /gastos fijo (para producción estándar)
+        console.warn('⚠️ No se pudo detectar base path automáticamente, usando /gastos');
+        return '/gastos';
+    }
+
+    // Detectar base path dinámicamente
+    const APP_BASE_PATH = detectBasePath();
     const API_PATH = '/api/index.php';
-    
+
     // URL completa de la API
     const API_BASE_URL = APP_BASE_PATH + API_PATH;
-    
-    console.log('✅ API Client v3.1.1 initialized');
-    console.log('📂 Base Path:', APP_BASE_PATH);
+
+    console.log('✅ API Client v3.1.2 initialized');
+    console.log('📂 Base Path (auto-detected):', APP_BASE_PATH);
     console.log('🌐 API URL:', API_BASE_URL);
+    console.log('🔍 Current location:', window.location.pathname);
 
     // ==========================================
     // FUNCIONES DE UTILIDAD
