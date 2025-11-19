@@ -1,7 +1,11 @@
 /**
- * API Client v3.1.2
+ * API Client v3.2.0
  * Cliente para comunicación con la API del Sistema de Gastos
  * Compatible con Plesk PHP 8.1.33
+ *
+ * CHANGELOG v3.2.0:
+ * - Añadidas funciones de atajo: apiGet, apiPost, apiPut, apiDelete
+ * - Corregido error "window.apiGet is not a function" que impedía la autenticación
  *
  * CHANGELOG v3.1.2:
  * - Detección automática de base path para soportar múltiples entornos
@@ -57,7 +61,7 @@
     // URL completa de la API
     const API_BASE_URL = APP_BASE_PATH + API_PATH;
 
-    console.log('✅ API Client v3.1.2 initialized');
+    console.log('✅ API Client v3.2.0 initialized');
     console.log('📂 Base Path (auto-detected):', APP_BASE_PATH);
     console.log('🌐 API URL:', API_BASE_URL);
     console.log('🔍 Current location:', window.location.pathname);
@@ -245,12 +249,68 @@
 
         // Si no, usar alert simple
         console.log(`[${type.toUpperCase()}] ${message}`);
-        
+
         if (type === 'error') {
             alert(`Error: ${message}`);
         } else if (type === 'success') {
             console.log(`✅ ${message}`);
         }
+    }
+
+    // ==========================================
+    // FUNCIONES DE ATAJO PARA MÉTODOS HTTP
+    // ==========================================
+
+    /**
+     * Realizar petición GET a la API
+     */
+    async function apiGet(endpoint, options = {}) {
+        return await apiFetch(endpoint, {
+            ...options,
+            method: 'GET'
+        });
+    }
+
+    /**
+     * Realizar petición POST a la API
+     */
+    async function apiPost(endpoint, data = null, options = {}) {
+        const postOptions = {
+            ...options,
+            method: 'POST'
+        };
+
+        if (data) {
+            postOptions.body = JSON.stringify(data);
+        }
+
+        return await apiFetch(endpoint, postOptions);
+    }
+
+    /**
+     * Realizar petición PUT a la API
+     */
+    async function apiPut(endpoint, data = null, options = {}) {
+        const putOptions = {
+            ...options,
+            method: 'PUT'
+        };
+
+        if (data) {
+            putOptions.body = JSON.stringify(data);
+        }
+
+        return await apiFetch(endpoint, putOptions);
+    }
+
+    /**
+     * Realizar petición DELETE a la API
+     */
+    async function apiDelete(endpoint, options = {}) {
+        return await apiFetch(endpoint, {
+            ...options,
+            method: 'DELETE'
+        });
     }
 
     // ==========================================
@@ -261,16 +321,20 @@
         // Configuración
         APP_BASE_PATH,
         API_BASE_URL,
-        
+
         // Funciones de utilidad
         buildPageUrl,
         redirect,
         showNotification,
-        
+
         // Funciones de API
         apiFetch,
+        apiGet,
+        apiPost,
+        apiPut,
+        apiDelete,
         checkHealth,
-        
+
         // Autenticación
         login,
         logout,
@@ -278,15 +342,23 @@
         getUserData,
         setUserData,
         setAuthToken,
-        
+
         // Alias para compatibilidad
-        fetch: apiFetch
+        fetch: apiFetch,
+        get: apiGet,
+        post: apiPost,
+        put: apiPut,
+        delete: apiDelete
     };
 
     // También exportar como variables globales para compatibilidad
     window.APP_BASE_PATH = APP_BASE_PATH;
     window.API_BASE_URL = API_BASE_URL;
     window.apiFetch = apiFetch;
+    window.apiGet = apiGet;
+    window.apiPost = apiPost;
+    window.apiPut = apiPut;
+    window.apiDelete = apiDelete;
     window.buildPageUrl = buildPageUrl;
 
     console.log('✅ APIClient ready');
