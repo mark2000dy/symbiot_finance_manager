@@ -238,8 +238,8 @@
                     
                     // Redirigir después de 1 segundo
                     setTimeout(() => {
-                        // Construir URL del dashboard usando la base path detectada
-                        const dashboardUrl = (window.APP_BASE_PATH || '') + '/gastos/dashboard.html';
+                        // Usar buildPageUrl para construir la URL correctamente
+                        const dashboardUrl = window.buildPageUrl('dashboard.html');
                         const finalUrl = data.redirectUrl || dashboardUrl;
 
                         console.log('🔄 Redirección configurada:');
