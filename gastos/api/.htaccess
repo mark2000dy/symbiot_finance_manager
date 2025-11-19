@@ -1,7 +1,0 @@
-# ====================================================
-# Apache Configuration for Gastos API
-# Configuración SIMPLIFICADA para compatibilidad
-# ====================================================
-
-# Habilitar AcceptPathInfo para permitir /index.php/login
-AcceptPathInfo On
