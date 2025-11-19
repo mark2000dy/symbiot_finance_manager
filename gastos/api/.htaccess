@@ -1,44 +1,7 @@
 # ====================================================
 # Apache Configuration for Gastos API
-# Permite PATH_INFO para routing de endpoints
+# Configuración SIMPLIFICADA para compatibilidad
 # ====================================================
 
 # Habilitar AcceptPathInfo para permitir /index.php/login
 AcceptPathInfo On
-
-# Configuración de PHP (si es necesario)
-<IfModule mod_php5.c>
-    php_flag display_errors Off
-    php_flag log_errors On
-</IfModule>
-
-<IfModule mod_php7.c>
-    php_flag display_errors Off
-    php_flag log_errors On
-</IfModule>
-
-# Proteger archivos sensibles
-<FilesMatch "\.(md|json|lock)$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
-
-# Habilitar CORS si es necesario
-<IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
-</IfModule>
-
-# URL Rewriting (alternativa si AcceptPathInfo no funciona)
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /gastos/api/
-
-    # No reescribir archivos que existen
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-
-    # Redirigir todo a index.php manteniendo el PATH_INFO
-    RewriteRule ^(.*)$ index.php/$1 [L,QSA]
-</IfModule>
