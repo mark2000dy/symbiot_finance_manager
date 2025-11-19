@@ -252,10 +252,12 @@ if ($endpoint === 'login' && $request_method === 'POST') {
         
     } catch (PDOException $e) {
         error_log("Error de BD en login: " . $e->getMessage());
-        sendError('Error de conexion a la base de datos', 500);
+        // TEMPORAL: Mostrar error real para debugging
+        sendError('Error de BD: ' . $e->getMessage(), 500);
     } catch (Exception $e) {
         error_log("Error en login: " . $e->getMessage());
-        sendError('Error al procesar login', 500);
+        // TEMPORAL: Mostrar error real para debugging
+        sendError('Error: ' . $e->getMessage(), 500);
     }
 }
 
