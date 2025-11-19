@@ -1,5 +1,6 @@
 # ====================================================
 # Apache Configuration for Gastos App
+# Configuración SIMPLIFICADA para compatibilidad
 # ====================================================
 
 # Directorio index por defecto
@@ -7,34 +8,3 @@ DirectoryIndex login.html index.php index.html
 
 # Configuración de charset
 AddDefaultCharset UTF-8
-
-# Habilitar compresión si está disponible
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
-</IfModule>
-
-# Cache para recursos estáticos
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType image/jpg "access plus 1 month"
-    ExpiresByType image/jpeg "access plus 1 month"
-    ExpiresByType image/gif "access plus 1 month"
-    ExpiresByType image/png "access plus 1 month"
-    ExpiresByType image/svg+xml "access plus 1 month"
-    ExpiresByType text/css "access plus 1 week"
-    ExpiresByType application/javascript "access plus 1 week"
-    ExpiresByType application/json "access plus 0 seconds"
-</IfModule>
-
-# Proteger archivos sensibles
-<FilesMatch "\.(env|ini|log|sh|sql)$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
-
-# Prevenir acceso a directorios
-Options -Indexes
-
-# Error pages personalizadas
-ErrorDocument 404 /gastos/404.html
-ErrorDocument 500 /gastos/500.html
