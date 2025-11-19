@@ -213,7 +213,7 @@
                 console.log('🔐 Intentando login con:', email);
 
                 // ✅ LLAMADA REAL A LA API (usando helper)
-                const { response, data } = await window.apiFetch('login', {
+                const data = await window.apiFetch('login', {
                     method: 'POST',
                     body: JSON.stringify({ email, password })
                 });
@@ -339,7 +339,7 @@
             `;
 
             try {
-                const { data } = await window.apiFetch('health', { method: 'GET' });
+                const data = await window.apiFetch('health', { method: 'GET' });
 
                 if (data.success === true) {
                     console.log('✅ Servidor conectado:', data);
