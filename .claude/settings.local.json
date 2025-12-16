@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(git checkout:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(dir:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nPREPRODUCCION 1.1 - BASELINE FUNCIONAL (NO VALIDADO)\n\n🎯 RESPALDO FUNCIONAL - Dashboard accesible con proxy PHP\n\n## Cambios Principales\n\n### 1. API Proxy System (gastos/api/index.php)\n- Implementado proxy PHP que redirige todas las llamadas a /api/index.php (raíz)\n- Compatible con AppServ 9.3.0 (local) y Plesk PHP 8.1.33 (producción)\n- No depende de mod_rewrite, funciona sin .htaccess\n- Log completo de todas las redirecciones en error.log\n\n### 2. API Client v3.1.3 (gastos/assets/js/api-client.js)\n- Agregados helpers HTTP: apiGet, apiPost, apiPut, apiDelete\n- Exportados globalmente para módulos del dashboard\n- Detección automática de base path para múltiples entornos\n- Compatible con estructura de subdirectorios variable\n\n### 3. Health Check Consistency (api/index.php)\n- Agregado campo ''success: true'' para consistencia con frontend\n- Mantiene compatibilidad con formato original ''status: OK''\n\n### 4. .htaccess Routing\n- Configurada regla de rewrite para /gastos/api/* → api/index.php\n- Respaldo en caso de que mod_rewrite esté disponible\n\n### 5. Login v3.2 (gastos/login.html)\n- Corregida URL de redirección al dashboard\n- Corregida desestructuración de respuestas API\n- Referencias a api-client.js v3.1.3\n\n### 6. Dashboard HTML Files\n- Actualizadas referencias a api-client.js v3.1.3\n- Preparados para usar helpers HTTP globales\n\n### 7. Archivos de Sesión (gastos/includes/)\n- Session.php: Manejo de sesiones PHP con cookie path configurable\n- config.php: Configuración de base de datos\n- Database.php: Clase de conexión PDO\n\n## Estado Actual\n\n✅ Login funcional\n✅ Dashboard cargando correctamente\n✅ Proxy API redirigiendo a API completa\n✅ Health check respondiendo con success: true\n⚠️ Endpoints NO VALIDADOS (pendiente pruebas funcionales)\n\n## Endpoints Disponibles (20+)\n\n- Autenticación: login, logout, user\n- Transacciones: GET, POST, PUT, DELETE, resumen, count, rango-fechas\n- Gastos/Ingresos: GET, POST\n- Dashboard: general, alumnos, alertas-pagos\n- Alumnos: GET, PUT, historial-pagos\n- Reportes: gastos-reales, balance-general\n- Empresas: GET\n\n## Compatibilidad\n\n✅ AppServ 9.3.0 (PHP 7.3.10 - local)\n✅ Plesk Obsidian 18.0.74 (PHP 8.1.33 - producción)\n✅ Sin dependencia de mod_rewrite\n✅ Rutas relativas detectadas automáticamente\n\n## Próximos Pasos\n\n1. Validar funcionalidad de cada endpoint\n2. Probar CRUD de transacciones\n3. Verificar dashboard widgets (alumnos, pagos, estadísticas)\n4. Validar reportes\n5. Probar gestión de alumnos\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git tag:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
