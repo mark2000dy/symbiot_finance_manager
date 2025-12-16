@@ -1,30 +1,42 @@
 # ====================================================
-# HTACCESS - GASTOS SYMBIOT APP (PHP VERSION)
-# Archivo: .htaccess
+# HTACCESS - GASTOS SYMBIOT APP
+# Compatible con AppServ (local) y Plesk (producción)
 # ====================================================
 
-# Habilitar rewrite engine
 RewriteEngine On
+
+# Detectar automáticamente el RewriteBase
+# AppServ: /symbiot/symbiot_finance_manager/
+# Plesk: / (o el path que corresponda)
 RewriteBase /symbiot/symbiot_finance_manager/
 
-# Debug: Log de reglas (descomentar si necesitas debug)
-# RewriteLog "/tmp/rewrite.log"
-# RewriteLogLevel 3
+# ==========================================
+# API ROUTING
+# ==========================================
 
-# Redireccionar /gastos/api/* a api/index.php (dentro del directorio correcto)
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^gastos/api/(.*)$ gastos/api/index.php/$1 [L,QSA]
+# Redireccionar /gastos/api/* a api/index.php (API completa en raíz)
+# IMPORTANTE: Esta regla se ejecuta SIEMPRE para /gastos/api/, sin verificar si el archivo existe
+RewriteRule ^gastos/api/(.*)$ api/index.php/$1 [L,QSA]
 
-# Servir archivos estáticos desde /gastos (sin redirección a /public)
-# Si el archivo existe físicamente, servirlo directamente
+# ==========================================
+# ARCHIVOS ESTÁTICOS
+# ==========================================
+
+# Servir archivos estáticos directamente
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^gastos/(.+\.(html|css|js|png|jpg|jpeg|gif|ico|json|svg|woff|woff2|ttf|eot))$ - [L]
+
+# ==========================================
+# REDIRECCIONES PRINCIPALES
+# ==========================================
 
 # Redirección principal /gastos a login
 RewriteRule ^gastos/?$ gastos/login.html [L]
 
-# Configuración de seguridad
+# ==========================================
+# CONFIGURACIÓN DE SEGURIDAD
+# ==========================================
+
 <IfModule mod_headers.c>
     # Prevenir clickjacking
     Header always append X-Frame-Options SAMEORIGIN
@@ -35,6 +47,10 @@ RewriteRule ^gastos/?$ gastos/login.html [L]
     # Habilitar XSS protection
     Header set X-XSS-Protection "1; mode=block"
 </IfModule>
+
+# ==========================================
+# OPTIMIZACIÓN
+# ==========================================
 
 # Habilitar compresión GZIP
 <IfModule mod_deflate.c>
@@ -54,23 +70,24 @@ RewriteRule ^gastos/?$ gastos/login.html [L]
     ExpiresByType text/html "access plus 0 seconds"
 </IfModule>
 
-# Prevenir acceso directo a archivos PHP
-<FilesMatch "\.(htaccess|ini|log|sh|sql)$">
+# ==========================================
+# PROTECCIÓN DE ARCHIVOS
+# ==========================================
+
+# Prevenir acceso directo a archivos sensibles
+<FilesMatch "\.(htaccess|ini|log|sh|sql|env)$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
 
+# ==========================================
+# CONFIGURACIÓN GENERAL
+# ==========================================
+
 # Charset UTF-8
 AddDefaultCharset UTF-8
 
-# Página 404 personalizada
+# Páginas de error personalizadas
 ErrorDocument 404 /404.html
-
-# Otras páginas de error (opcional)
 ErrorDocument 403 /403.html
 ErrorDocument 500 /500.html
-```
-
-#### **Permisos del archivo:**
-```
-.htaccess: 644 (rw-r--r--)

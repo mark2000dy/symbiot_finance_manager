@@ -99,6 +99,7 @@ try {
         }
 
         echo json_encode([
+            'success' => true,
             'status' => 'OK',
             'timestamp' => date('c'),
             'environment' => getenv('ENV') ?: 'production',

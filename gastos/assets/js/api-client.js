@@ -1,7 +1,15 @@
 /**
- * API Client v3.1.1
+ * API Client v3.1.3
  * Cliente para comunicación con la API del Sistema de Gastos
- * Compatible con Plesk PHP 8.1.33
+ * Compatible con Plesk PHP 8.1.33 y AppServ 9.3.0
+ *
+ * CHANGELOG v3.1.3:
+ * - Agregados helpers HTTP: apiGet, apiPost, apiPut, apiDelete
+ * - Compatibilidad completa con dashboard modules
+ *
+ * CHANGELOG v3.1.2:
+ * - Detección automática de base path para soportar múltiples entornos
+ * - Funciona en local (ej: /symbiot/symbiot_finance_manager/gastos) y producción (/gastos)
  */
 
 (function(window) {
@@ -10,17 +18,53 @@
     // ==========================================
     // CONFIGURACIÓN
     // ==========================================
-    
-    // Base path fijo para producción
-    const APP_BASE_PATH = '/gastos';
+
+    /**
+     * Detectar automáticamente la base path de la aplicación
+     * Busca '/gastos/' en la ruta actual y extrae todo hasta ahí
+     *
+     * Ejemplos:
+     * - /symbiot/symbiot_finance_manager/gastos/login.html → /symbiot/symbiot_finance_manager/gastos
+     * - /gastos/login.html → /gastos
+     * - /produccion/gastos/dashboard.html → /produccion/gastos
+     */
+    function detectBasePath() {
+        const currentPath = window.location.pathname;
+
+        // Buscar '/gastos/' en la ruta
+        const gastosIndex = currentPath.indexOf('/gastos/');
+
+        if (gastosIndex !== -1) {
+            // Encontramos '/gastos/', extraer todo hasta (e incluyendo) gastos
+            return currentPath.substring(0, gastosIndex + 7); // 7 = length of '/gastos'
+        }
+
+        // Si estamos exactamente en '/gastos' sin slash final
+        if (currentPath === '/gastos' || currentPath.startsWith('/gastos?')) {
+            return '/gastos';
+        }
+
+        // Fallback: buscar si la ruta termina en /gastos
+        if (currentPath.endsWith('/gastos')) {
+            return currentPath;
+        }
+
+        // Último fallback: usar /gastos fijo (para producción estándar)
+        console.warn('⚠️ No se pudo detectar base path automáticamente, usando /gastos');
+        return '/gastos';
+    }
+
+    // Detectar base path dinámicamente
+    const APP_BASE_PATH = detectBasePath();
     const API_PATH = '/api/index.php';
-    
+
     // URL completa de la API
     const API_BASE_URL = APP_BASE_PATH + API_PATH;
-    
-    console.log('✅ API Client v3.1.1 initialized');
-    console.log('📂 Base Path:', APP_BASE_PATH);
+
+    console.log('✅ API Client v3.1.3 initialized');
+    console.log('📂 Base Path (auto-detected):', APP_BASE_PATH);
     console.log('🌐 API URL:', API_BASE_URL);
+    console.log('🔍 Current location:', window.location.pathname);
 
     // ==========================================
     // FUNCIONES DE UTILIDAD
@@ -194,6 +238,50 @@
     }
 
     /**
+     * Helper: GET request
+     */
+    async function apiGet(endpoint, params = {}) {
+        let url = endpoint;
+
+        // Si hay parámetros, construir query string
+        if (Object.keys(params).length > 0) {
+            const queryString = new URLSearchParams(params).toString();
+            url = `${endpoint}?${queryString}`;
+        }
+
+        return await apiFetch(url, { method: 'GET' });
+    }
+
+    /**
+     * Helper: POST request
+     */
+    async function apiPost(endpoint, data = {}) {
+        return await apiFetch(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Helper: PUT request
+     */
+    async function apiPut(endpoint, data = {}) {
+        return await apiFetch(endpoint, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    /**
+     * Helper: DELETE request
+     */
+    async function apiDelete(endpoint) {
+        return await apiFetch(endpoint, {
+            method: 'DELETE'
+        });
+    }
+
+    /**
      * Mostrar notificación
      */
     function showNotification(message, type = 'info') {
@@ -248,6 +336,12 @@
     window.API_BASE_URL = API_BASE_URL;
     window.apiFetch = apiFetch;
     window.buildPageUrl = buildPageUrl;
+
+    // Exportar helpers HTTP
+    window.apiGet = apiGet;
+    window.apiPost = apiPost;
+    window.apiPut = apiPut;
+    window.apiDelete = apiDelete;
 
     console.log('✅ APIClient ready');
     console.log('📦 Available methods:', Object.keys(window.APIClient));
