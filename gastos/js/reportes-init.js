@@ -2,6 +2,11 @@
    REPORTES INITIALIZATION MODULE - SYMBIOT FINANCIAL MANAGER
    Archivo: public/js/reportes-init.js
    Inicialización de la página de reportes
+
+   Version: 3.1.6
+   Changelog v3.1.6:
+   - FIX: Correcciones en llamadas a API (apiGet en lugar de apiFetch)
+   - Compatible con api-client.js v3.1.4
    ==================================================== */
 
 console.log('📊 Cargando Reportes Init Module...');
@@ -123,11 +128,9 @@ async function verifyAuthenticationForReportes() {
     try {
         console.log('🔐 Verificando autenticación del usuario...');
 
-        const { response, data } = await window.apiFetch('user', {
-            method: 'GET'
-        });
+        const data = await window.apiGet('user');
 
-        if (response.ok && data.success && data.user) {
+        if (data.success && data.user) {
             console.log(`✅ Usuario autenticado: ${data.user.nombre}`);
             return true;
         }
@@ -148,11 +151,9 @@ async function loadUserInfoForReportes() {
     try {
         console.log('👤 Cargando información del usuario...');
 
-        const { response, data } = await window.apiFetch('user', {
-            method: 'GET'
-        });
+        const data = await window.apiGet('user');
 
-        if (!response.ok) {
+        if (!data.success) {
             throw new Error('Error cargando usuario');
         }
 
@@ -223,11 +224,9 @@ async function loadCompaniesForFilter() {
     try {
         console.log('🏢 Cargando empresas...');
 
-        const { response, data } = await window.apiFetch('empresas', {
-            method: 'GET'
-        });
+        const data = await window.apiGet('empresas');
 
-        if (!response.ok) {
+        if (!data.success) {
             throw new Error('Error cargando empresas');
         }
 
@@ -261,11 +260,9 @@ async function loadPeriodoAnalisis() {
     try {
         console.log('📅 Calculando periodo de análisis...');
 
-        const { response, data } = await window.apiFetch('transacciones/rango-fechas', {
-            method: 'GET'
-        });
+        const data = await window.apiGet('transacciones/rango-fechas');
 
-        if (!response.ok) {
+        if (!data.success) {
             throw new Error('Error obteniendo rango de fechas');
         }
 
@@ -308,11 +305,9 @@ async function loadTotalTransacciones() {
     try {
         console.log('🔢 Cargando total de transacciones...');
 
-        const { response, data } = await window.apiFetch('transacciones/count', {
-            method: 'GET'
-        });
+        const data = await window.apiGet('transacciones/count');
 
-        if (!response.ok) {
+        if (!data.success) {
             throw new Error('Error obteniendo total de transacciones');
         }
 

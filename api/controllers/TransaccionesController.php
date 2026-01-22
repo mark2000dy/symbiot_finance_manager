@@ -1239,12 +1239,17 @@ class TransaccionesController {
 
         try {
             $empresa = $_GET['empresa'] ?? '';
-            $ano = $_GET['ano'] ?? date('Y');
+            $ano = $_GET['ano'] ?? '';
             $mes = $_GET['mes'] ?? '';
             $tipo = $_GET['tipo'] ?? '';
 
-            $whereConditions = ["YEAR(fecha) = ?"];
-            $params = [(int)$ano];
+            $whereConditions = [];
+            $params = [];
+
+            if (!empty($ano)) {
+                $whereConditions[] = "YEAR(fecha) = ?";
+                $params[] = (int)$ano;
+            }
 
             if (!empty($empresa)) {
                 $whereConditions[] = "empresa_id = ?";
@@ -1261,7 +1266,7 @@ class TransaccionesController {
                 $params[] = $tipo;
             }
 
-            $whereClause = implode(' AND ', $whereConditions);
+            $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
 
             $query = "
                 SELECT
@@ -1271,7 +1276,7 @@ class TransaccionesController {
                     tipo,
                     empresa_id
                 FROM transacciones
-                WHERE $whereClause
+                $whereClause
                 ORDER BY fecha DESC
             ";
 
@@ -1320,11 +1325,16 @@ class TransaccionesController {
 
         try {
             $empresa = $_GET['empresa'] ?? '';
-            $ano = $_GET['ano'] ?? date('Y');
+            $ano = $_GET['ano'] ?? '';
             $mes = $_GET['mes'] ?? '';
 
-            $whereConditions = ["YEAR(fecha) = ?"];
-            $params = [(int)$ano];
+            $whereConditions = [];
+            $params = [];
+
+            if (!empty($ano)) {
+                $whereConditions[] = "YEAR(fecha) = ?";
+                $params[] = (int)$ano;
+            }
 
             if (!empty($empresa)) {
                 $whereConditions[] = "empresa_id = ?";
@@ -1336,7 +1346,7 @@ class TransaccionesController {
                 $params[] = (int)$mes;
             }
 
-            $whereClause = implode(' AND ', $whereConditions);
+            $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
 
             $query = "
                 SELECT
@@ -1345,7 +1355,7 @@ class TransaccionesController {
                     COUNT(CASE WHEN tipo = 'I' THEN 1 END) as count_ingresos,
                     COUNT(CASE WHEN tipo = 'G' THEN 1 END) as count_gastos
                 FROM transacciones
-                WHERE $whereClause
+                $whereClause
             ";
 
             $result = executeQuery($query, $params);

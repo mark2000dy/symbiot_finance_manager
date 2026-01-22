@@ -1,7 +1,11 @@
 /**
- * API Client v3.1.3
+ * API Client v3.1.4
  * Cliente para comunicación con la API del Sistema de Gastos
  * Compatible con Plesk PHP 8.1.33 y AppServ 9.3.0
+ *
+ * CHANGELOG v3.1.4:
+ * - FIX: Agregada función buildApiUrl para compatibilidad con auth-check.js
+ * - Corrige problema de autenticación en gastos.html, ingresos.html y reportes.html
  *
  * CHANGELOG v3.1.3:
  * - Agregados helpers HTTP: apiGet, apiPost, apiPut, apiDelete
@@ -76,6 +80,14 @@
     function buildPageUrl(page) {
         const cleanPage = page.replace(/^\/+/, '');
         return `${APP_BASE_PATH}/${cleanPage}`;
+    }
+
+    /**
+     * Construir URL de API (necesaria para auth-check.js)
+     */
+    function buildApiUrl(endpoint) {
+        const cleanEndpoint = endpoint.replace(/^\/+/, '');
+        return `${API_BASE_URL}/${cleanEndpoint}`;
     }
 
     /**
@@ -336,6 +348,7 @@
     window.API_BASE_URL = API_BASE_URL;
     window.apiFetch = apiFetch;
     window.buildPageUrl = buildPageUrl;
+    window.buildApiUrl = buildApiUrl;
 
     // Exportar helpers HTTP
     window.apiGet = apiGet;

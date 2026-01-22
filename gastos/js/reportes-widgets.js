@@ -2,6 +2,29 @@
    REPORTES WIDGETS MODULE - SYMBIOT FINANCIAL MANAGER
    Archivo: public/js/reportes-widgets.js
    Widgets específicos para reportes
+
+   Version: 3.2.0
+   Changelog v3.2.0:
+   - FIX: Filtro Tipo ahora afecta el gráfico (Gastos solo muestra salidas, Ingresos solo entradas)
+   - Compatible con TransaccionesController v3.2.0 (filtro año opcional)
+
+   Version: 3.1.9
+   Changelog v3.1.9:
+   - FIX: Gráfico ordenado de más antiguo a más reciente (ascendente)
+   - FIX: Tabla ordenada de más reciente a más antiguo (descendente)
+   - FIX: Corregido nombre de parámetro empresa_id → empresa para backend
+   - FIX: Filtro "Todos" ahora funciona correctamente
+
+   Version: 3.1.8
+   Changelog v3.1.8:
+   - FIX: Ordenar tabla mensual de más reciente a más antiguo
+   - Compatible con api-client.js v3.1.4
+
+   Version: 3.1.7
+   Changelog v3.1.7:
+   - FIX: Correcciones en llamadas a API (apiGet en lugar de apiFetch)
+   - Compatible con api-client.js v3.1.4
+
    Version: 3.1.6 - Adapter Functions for Backend Data
    ==================================================== */
 
@@ -60,7 +83,7 @@ function adaptGastosReales(backendResponse) {
         return month;
     });
 
-    // Sort by month (ascending)
+    // Sort by month (ascending - más antiguo primero, para el gráfico)
     detalleMensual.sort((a, b) => a.mes.localeCompare(b.mes));
 
     // Calculate totals
@@ -220,22 +243,16 @@ async function initializeGastosRealesWidget() {
 async function loadGastosRealesData(filters = {}) {
     try {
         console.log('📥 Cargando datos de Gastos Reales...', filters);
-        
-        // Construir parámetros
-        const params = new URLSearchParams();
-        if (filters.empresa) params.append('empresa_id', filters.empresa);
-        if (filters.ano) params.append('ano', filters.ano);
-        if (filters.mes) params.append('mes', filters.mes);
-        if (filters.tipo) params.append('tipo', filters.tipo);
-        
-        // Llamar al endpoint
-        const { response, data } = await window.apiFetch(`reportes/gastos-reales?${params.toString()}`, {
-            method: 'GET'
-        });
 
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-        }
+        // Construir parámetros
+        const params = {};
+        if (filters.empresa) params.empresa = filters.empresa;
+        if (filters.ano) params.ano = filters.ano;
+        if (filters.mes) params.mes = filters.mes;
+        if (filters.tipo) params.tipo = filters.tipo;
+
+        // Llamar al endpoint
+        const data = await window.apiGet('reportes/gastos-reales', params);
 
         if (!data.success) {
             throw new Error(data.message || 'Error en respuesta del servidor');
@@ -251,8 +268,8 @@ async function loadGastosRealesData(filters = {}) {
         // Actualizar indicadores
         updateGastosRealesIndicators(adaptedData);
 
-        // Actualizar gráfico
-        updateGastosRealesChart(adaptedData.detalle_mensual);
+        // Actualizar gráfico (pasar filtro tipo para mostrar solo las curvas relevantes)
+        updateGastosRealesChart(adaptedData.detalle_mensual, filters.tipo);
 
         // Actualizar tabla
         updateGastosRealesTable(adaptedData.detalle_mensual);
@@ -322,48 +339,64 @@ function updateGastosRealesIndicators(data) {
 
 /**
  * Actualizar gráfico de Gastos Reales
+ * @param {Array} detalleMensual - Datos mensuales
+ * @param {String} tipoFiltro - Filtro de tipo: '' (todos), 'I' (ingresos), 'G' (gastos)
  */
-function updateGastosRealesChart(detalleMensual) {
+function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
     const ctx = document.getElementById('chartGastosReales');
     if (!ctx) return;
-    
+
     // Destruir gráfico anterior si existe
     if (gastosRealesChart) {
         gastosRealesChart.destroy();
     }
-    
+
     const meses = detalleMensual.map(d => d.mes);
     const entradas = detalleMensual.map(d => d.entradas);
     const salidas = detalleMensual.map(d => d.salidas);
     const flujos = detalleMensual.map(d => d.flujo);
-    
+
+    // Construir datasets según el filtro de tipo
+    const datasets = [];
+
+    // Si filtro es '' (Todos) o 'I' (Ingresos), mostrar Entradas
+    if (tipoFiltro === '' || tipoFiltro === 'I') {
+        datasets.push({
+            label: 'Entradas',
+            data: entradas,
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        });
+    }
+
+    // Si filtro es '' (Todos) o 'G' (Gastos), mostrar Salidas
+    if (tipoFiltro === '' || tipoFiltro === 'G') {
+        datasets.push({
+            label: 'Salidas',
+            data: salidas,
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1
+        });
+    }
+
+    // Flujo Neto solo si no hay filtro de tipo (mostrar ambos)
+    if (tipoFiltro === '') {
+        datasets.push({
+            label: 'Flujo Neto',
+            data: flujos,
+            borderColor: 'rgb(255, 206, 86)',
+            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+            tension: 0.1
+        });
+    }
+
     gastosRealesChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: meses,
-            datasets: [
-                {
-                    label: 'Entradas',
-                    data: entradas,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.1
-                },
-                {
-                    label: 'Salidas',
-                    data: salidas,
-                    borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    tension: 0.1
-                },
-                {
-                    label: 'Flujo Neto',
-                    data: flujos,
-                    borderColor: 'rgb(255, 206, 86)',
-                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                    tension: 0.1
-                }
-            ]
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -407,14 +440,14 @@ function updateGastosRealesChart(detalleMensual) {
 function updateGastosRealesTable(detalleMensual) {
     const tbody = document.getElementById('tablaGastosReales');
     if (!tbody) return;
-    
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('es-MX', {
             style: 'currency',
             currency: 'MXN'
         }).format(amount);
     };
-    
+
     if (!detalleMensual || detalleMensual.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -426,10 +459,13 @@ function updateGastosRealesTable(detalleMensual) {
         `;
         return;
     }
-    
+
     tbody.innerHTML = '';
-    
-    detalleMensual.forEach(item => {
+
+    // Ordenar de más reciente a más antiguo para la tabla
+    const sortedData = [...detalleMensual].sort((a, b) => b.mes.localeCompare(a.mes));
+
+    sortedData.forEach(item => {
         const flujoClass = item.flujo >= 0 ? 'text-success' : 'text-danger';
         const flujoIcon = item.flujo >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
         
@@ -456,8 +492,8 @@ function updateGastosRealesTable(detalleMensual) {
         
         tbody.insertAdjacentHTML('beforeend', row);
     });
-    
-    console.log(`✅ Tabla actualizada con ${detalleMensual.length} registros`);
+
+    console.log(`✅ Tabla actualizada con ${sortedData.length} registros`);
 }
 
 /**
@@ -707,21 +743,15 @@ async function initializeBalanceGeneralWidget() {
 async function loadBalanceGeneralData(filters = {}) {
     try {
         console.log('📥 Cargando datos de Balance General...', filters);
-        
-        // Construir parámetros
-        const params = new URLSearchParams();
-        if (filters.empresa) params.append('empresa_id', filters.empresa);
-        if (filters.ano) params.append('ano', filters.ano);
-        if (filters.mes) params.append('mes', filters.mes);
-        
-        // Llamar al endpoint
-        const { response, data } = await window.apiFetch(`reportes/balance-general?${params.toString()}`, {
-            method: 'GET'
-        });
 
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-        }
+        // Construir parámetros
+        const params = {};
+        if (filters.empresa) params.empresa = filters.empresa;
+        if (filters.ano) params.ano = filters.ano;
+        if (filters.mes) params.mes = filters.mes;
+
+        // Llamar al endpoint
+        const data = await window.apiGet('reportes/balance-general', params);
 
         if (!data.success) {
             throw new Error(data.message || 'Error en respuesta del servidor');
