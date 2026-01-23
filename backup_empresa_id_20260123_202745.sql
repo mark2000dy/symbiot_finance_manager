@@ -1,0 +1,639 @@
+-- Backup antes de corregir empresa_id
+-- Fecha: 2026-01-23 20:27:45
+
+-- Transacciones con empresa_id = 2 (antes de corrección)
+-- ID: 889 | Fecha: 2025-07-27 | Concepto: Mensualidad Clases de Batería G Abril Torres Jime | Empresa: 2
+-- ID: 890 | Fecha: 2025-08-27 | Concepto: Mensualidad Clases de Batería G Abril Torres Jime | Empresa: 2
+-- ID: 891 | Fecha: 2025-09-27 | Concepto: Mensualidad Clases de Batería G Abril Torres Jime | Empresa: 2
+-- ID: 892 | Fecha: 2025-10-27 | Concepto: Mensualidad Clases de Batería G Abril Torres Jime | Empresa: 2
+-- ID: 893 | Fecha: 2025-11-27 | Concepto: Mensualidad Clases de Batería G Abril Torres Jime | Empresa: 2
+-- ID: 894 | Fecha: 2024-06-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 895 | Fecha: 2024-07-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 896 | Fecha: 2024-08-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 897 | Fecha: 2024-09-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 898 | Fecha: 2024-10-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 899 | Fecha: 2024-11-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 900 | Fecha: 2024-12-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 901 | Fecha: 2025-01-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 902 | Fecha: 2025-02-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 903 | Fecha: 2025-03-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 904 | Fecha: 2025-04-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 905 | Fecha: 2025-05-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 906 | Fecha: 2025-06-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 907 | Fecha: 2025-07-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 908 | Fecha: 2025-08-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 909 | Fecha: 2025-09-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 910 | Fecha: 2025-10-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 911 | Fecha: 2025-11-04 | Concepto: Mensualidad Clases de Batería G Aidan Crosby Lobo | Empresa: 2
+-- ID: 912 | Fecha: 2025-06-27 | Concepto: Mensualidad Clases de Guitarra G Aileen Muñoa | Empresa: 2
+-- ID: 913 | Fecha: 2025-07-27 | Concepto: Mensualidad Clases de Guitarra G Aileen Muñoa | Empresa: 2
+-- ID: 914 | Fecha: 2025-08-27 | Concepto: Mensualidad Clases de Guitarra G Aileen Muñoa | Empresa: 2
+-- ID: 915 | Fecha: 2025-07-12 | Concepto: Mensualidad Clases de Guitarra G Aisee Nuñez Lope | Empresa: 2
+-- ID: 916 | Fecha: 2025-08-12 | Concepto: Mensualidad Clases de Guitarra G Aisee Nuñez Lope | Empresa: 2
+-- ID: 917 | Fecha: 2025-09-12 | Concepto: Mensualidad Clases de Guitarra G Aisee Nuñez Lope | Empresa: 2
+-- ID: 918 | Fecha: 2025-10-12 | Concepto: Mensualidad Clases de Guitarra G Aisee Nuñez Lope | Empresa: 2
+-- ID: 919 | Fecha: 2025-11-12 | Concepto: Mensualidad Clases de Guitarra G Aisee Nuñez Lope | Empresa: 2
+-- ID: 920 | Fecha: 2023-09-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 921 | Fecha: 2023-10-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 922 | Fecha: 2023-11-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 923 | Fecha: 2023-12-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 924 | Fecha: 2024-01-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 925 | Fecha: 2024-02-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 926 | Fecha: 2024-03-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 927 | Fecha: 2024-04-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 928 | Fecha: 2024-05-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 929 | Fecha: 2024-06-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 930 | Fecha: 2024-07-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 931 | Fecha: 2024-09-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 932 | Fecha: 2024-10-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 933 | Fecha: 2024-11-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 934 | Fecha: 2024-12-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 935 | Fecha: 2025-01-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 936 | Fecha: 2025-02-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 937 | Fecha: 2025-03-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 938 | Fecha: 2025-04-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 939 | Fecha: 2025-05-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 940 | Fecha: 2025-06-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 941 | Fecha: 2025-07-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 942 | Fecha: 2025-08-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 943 | Fecha: 2025-09-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 944 | Fecha: 2025-10-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 945 | Fecha: 2025-11-09 | Concepto: Mensualidad Clases de Guitarra I Alan Mateo Gomez  | Empresa: 2
+-- ID: 946 | Fecha: 2023-08-02 | Concepto: Mensualidad Clases de Guitarra G Alejandro Navarro | Empresa: 2
+-- ID: 947 | Fecha: 2023-09-02 | Concepto: Mensualidad Clases de Guitarra G Alejandro Navarro | Empresa: 2
+-- ID: 948 | Fecha: 2025-07-21 | Concepto: Mensualidad Clases de Guitarra G Alejandro Paris H | Empresa: 2
+-- ID: 949 | Fecha: 2025-08-21 | Concepto: Mensualidad Clases de Guitarra G Alejandro Paris H | Empresa: 2
+-- ID: 950 | Fecha: 2025-09-21 | Concepto: Mensualidad Clases de Guitarra G Alejandro Paris H | Empresa: 2
+-- ID: 951 | Fecha: 2025-10-21 | Concepto: Mensualidad Clases de Guitarra G Alejandro Paris H | Empresa: 2
+-- ID: 952 | Fecha: 2025-11-21 | Concepto: Mensualidad Clases de Guitarra G Alejandro Paris H | Empresa: 2
+-- ID: 953 | Fecha: 2024-08-28 | Concepto: Mensualidad Clases de Teclado G Alejandro Quijano | Empresa: 2
+-- ID: 954 | Fecha: 2024-09-28 | Concepto: Mensualidad Clases de Teclado G Alejandro Quijano | Empresa: 2
+-- ID: 955 | Fecha: 2024-10-28 | Concepto: Mensualidad Clases de Teclado G Alejandro Quijano | Empresa: 2
+-- ID: 956 | Fecha: 2024-09-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 957 | Fecha: 2024-10-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 958 | Fecha: 2024-11-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 959 | Fecha: 2024-12-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 960 | Fecha: 2025-01-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 961 | Fecha: 2025-02-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 962 | Fecha: 2025-03-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 963 | Fecha: 2025-04-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 964 | Fecha: 2025-05-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 965 | Fecha: 2025-06-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 966 | Fecha: 2025-07-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 967 | Fecha: 2025-08-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 968 | Fecha: 2025-09-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 969 | Fecha: 2025-10-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 970 | Fecha: 2025-11-13 | Concepto: Mensualidad Clases de Bajo G Alexis Cordova | Empresa: 2
+-- ID: 971 | Fecha: 2024-03-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 972 | Fecha: 2024-04-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 973 | Fecha: 2024-05-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 974 | Fecha: 2024-06-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 975 | Fecha: 2024-07-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 976 | Fecha: 2024-08-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 977 | Fecha: 2024-09-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 978 | Fecha: 2024-10-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 979 | Fecha: 2024-11-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 980 | Fecha: 2024-12-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 981 | Fecha: 2025-01-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 982 | Fecha: 2025-02-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 983 | Fecha: 2025-03-15 | Concepto: Mensualidad Clases de Guitarra G Alondra Cecilia M | Empresa: 2
+-- ID: 984 | Fecha: 2025-06-15 | Concepto: Mensualidad Clases de Guitarra G Andrés Daza Flor | Empresa: 2
+-- ID: 985 | Fecha: 2025-07-15 | Concepto: Mensualidad Clases de Guitarra G Andrés Daza Flor | Empresa: 2
+-- ID: 986 | Fecha: 2025-08-15 | Concepto: Mensualidad Clases de Guitarra G Andrés Daza Flor | Empresa: 2
+-- ID: 987 | Fecha: 2025-09-15 | Concepto: Mensualidad Clases de Guitarra G Andrés Daza Flor | Empresa: 2
+-- ID: 988 | Fecha: 2025-10-15 | Concepto: Mensualidad Clases de Guitarra G Andrés Daza Flor | Empresa: 2
+-- ID: 989 | Fecha: 2025-11-15 | Concepto: Mensualidad Clases de Guitarra G Andrés Daza Flor | Empresa: 2
+-- ID: 990 | Fecha: 2025-12-15 | Concepto: Mensualidad Clases de Guitarra G Andrés Daza Flor | Empresa: 2
+-- ID: 991 | Fecha: 2024-12-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 992 | Fecha: 2025-01-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 993 | Fecha: 2025-02-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 994 | Fecha: 2025-03-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 995 | Fecha: 2025-04-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 996 | Fecha: 2025-05-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 997 | Fecha: 2025-06-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 998 | Fecha: 2025-07-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 999 | Fecha: 2025-08-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 1000 | Fecha: 2025-09-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 1001 | Fecha: 2025-10-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 1002 | Fecha: 2025-11-20 | Concepto: Mensualidad Clases de Batería G Arath Martinez Go | Empresa: 2
+-- ID: 1003 | Fecha: 2024-10-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1004 | Fecha: 2024-11-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1005 | Fecha: 2024-12-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1006 | Fecha: 2025-01-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1007 | Fecha: 2025-02-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1008 | Fecha: 2025-03-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1009 | Fecha: 2025-04-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1010 | Fecha: 2025-05-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1011 | Fecha: 2025-06-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1012 | Fecha: 2025-07-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1013 | Fecha: 2025-09-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1014 | Fecha: 2025-10-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1015 | Fecha: 2025-11-02 | Concepto: Mensualidad Clases de Batería G Ares Maximiliano  | Empresa: 2
+-- ID: 1016 | Fecha: 2025-08-04 | Concepto: Mensualidad Clases de Teclado G Arianne Nahomy Rod | Empresa: 2
+-- ID: 1017 | Fecha: 2025-09-04 | Concepto: Mensualidad Clases de Teclado G Arianne Nahomy Rod | Empresa: 2
+-- ID: 1018 | Fecha: 2025-10-04 | Concepto: Mensualidad Clases de Teclado G Arianne Nahomy Rod | Empresa: 2
+-- ID: 1019 | Fecha: 2025-11-04 | Concepto: Mensualidad Clases de Teclado G Arianne Nahomy Rod | Empresa: 2
+-- ID: 1020 | Fecha: 2024-05-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1021 | Fecha: 2024-06-30 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1022 | Fecha: 2024-07-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1023 | Fecha: 2024-08-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1024 | Fecha: 2024-09-30 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1025 | Fecha: 2024-10-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1026 | Fecha: 2024-11-30 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1027 | Fecha: 2024-12-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1028 | Fecha: 2025-01-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1029 | Fecha: 2025-02-28 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1030 | Fecha: 2025-03-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1031 | Fecha: 2025-04-30 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1032 | Fecha: 2025-05-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1033 | Fecha: 2025-06-30 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1034 | Fecha: 2025-07-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1035 | Fecha: 2025-08-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1036 | Fecha: 2025-09-30 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1037 | Fecha: 2025-10-31 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1038 | Fecha: 2025-11-30 | Concepto: Mensualidad Clases de Guitarra G Axel Adrian Herna | Empresa: 2
+-- ID: 1039 | Fecha: 2025-06-30 | Concepto: Mensualidad Clases de Batería G Axel Emiliano Roj | Empresa: 2
+-- ID: 1040 | Fecha: 2025-07-30 | Concepto: Mensualidad Clases de Batería G Axel Emiliano Roj | Empresa: 2
+-- ID: 1041 | Fecha: 2025-09-30 | Concepto: Mensualidad Clases de Batería G Axel Emiliano Roj | Empresa: 2
+-- ID: 1042 | Fecha: 2025-10-30 | Concepto: Mensualidad Clases de Batería G Axel Emiliano Roj | Empresa: 2
+-- ID: 1043 | Fecha: 2025-07-23 | Concepto: Mensualidad Clases de Canto G Ayin Michelle Peña  | Empresa: 2
+-- ID: 1044 | Fecha: 2023-09-30 | Concepto: Mensualidad Clases de Bajo G Brenda Serrano Cervan | Empresa: 2
+-- ID: 1045 | Fecha: 2023-10-30 | Concepto: Mensualidad Clases de Bajo G Brenda Serrano Cervan | Empresa: 2
+-- ID: 1046 | Fecha: 2023-11-30 | Concepto: Mensualidad Clases de Bajo G Brenda Serrano Cervan | Empresa: 2
+-- ID: 1047 | Fecha: 2023-12-30 | Concepto: Mensualidad Clases de Bajo G Brenda Serrano Cervan | Empresa: 2
+-- ID: 1048 | Fecha: 2024-01-30 | Concepto: Mensualidad Clases de Bajo G Brenda Serrano Cervan | Empresa: 2
+-- ID: 1049 | Fecha: 2024-02-29 | Concepto: Mensualidad Clases de Bajo G Brenda Serrano Cervan | Empresa: 2
+-- ID: 1050 | Fecha: 2024-03-30 | Concepto: Mensualidad Clases de Bajo G Brenda Serrano Cervan | Empresa: 2
+-- ID: 1051 | Fecha: 2025-01-29 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1052 | Fecha: 2025-02-28 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1053 | Fecha: 2025-03-29 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1054 | Fecha: 2025-04-29 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1055 | Fecha: 2025-05-29 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1056 | Fecha: 2025-06-29 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1057 | Fecha: 2025-07-29 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1058 | Fecha: 2025-10-29 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1059 | Fecha: 2025-11-29 | Concepto: Mensualidad Clases de Teclado G Carlos Alejandro M | Empresa: 2
+-- ID: 1060 | Fecha: 2024-12-02 | Concepto: Mensualidad Clases de Bajo G Carlos Bennet | Empresa: 2
+-- ID: 1061 | Fecha: 2025-01-02 | Concepto: Mensualidad Clases de Bajo G Carlos Bennet | Empresa: 2
+-- ID: 1062 | Fecha: 2025-04-21 | Concepto: Mensualidad Clases de Guitarra G Cesar Augusto Anc | Empresa: 2
+-- ID: 1063 | Fecha: 2025-05-21 | Concepto: Mensualidad Clases de Guitarra G Cesar Augusto Anc | Empresa: 2
+-- ID: 1064 | Fecha: 2025-06-21 | Concepto: Mensualidad Clases de Guitarra G Cesar Augusto Anc | Empresa: 2
+-- ID: 1065 | Fecha: 2025-06-21 | Concepto: Mensualidad Clases de Canto G Cristopher Eduardo L | Empresa: 2
+-- ID: 1066 | Fecha: 2025-07-21 | Concepto: Mensualidad Clases de Canto G Cristopher Eduardo L | Empresa: 2
+-- ID: 1067 | Fecha: 2025-08-21 | Concepto: Mensualidad Clases de Canto G Cristopher Eduardo L | Empresa: 2
+-- ID: 1068 | Fecha: 2025-09-21 | Concepto: Mensualidad Clases de Canto G Cristopher Eduardo L | Empresa: 2
+-- ID: 1069 | Fecha: 2025-10-21 | Concepto: Mensualidad Clases de Canto G Cristopher Eduardo L | Empresa: 2
+-- ID: 1070 | Fecha: 2025-11-21 | Concepto: Mensualidad Clases de Canto G Cristopher Eduardo L | Empresa: 2
+-- ID: 1071 | Fecha: 2025-01-07 | Concepto: Mensualidad Clases de Teclado G Cristopher Rafael  | Empresa: 2
+-- ID: 1072 | Fecha: 2025-02-07 | Concepto: Mensualidad Clases de Teclado G Cristopher Rafael  | Empresa: 2
+-- ID: 1073 | Fecha: 2025-03-07 | Concepto: Mensualidad Clases de Teclado G Cristopher Rafael  | Empresa: 2
+-- ID: 1074 | Fecha: 2024-05-08 | Concepto: Mensualidad Clases de Teclado G Daniel Alexander H | Empresa: 2
+-- ID: 1075 | Fecha: 2025-08-28 | Concepto: Mensualidad Clases de Batería G Daniel Yamir Quir | Empresa: 2
+-- ID: 1076 | Fecha: 2025-09-28 | Concepto: Mensualidad Clases de Batería G Daniel Yamir Quir | Empresa: 2
+-- ID: 1077 | Fecha: 2025-10-28 | Concepto: Mensualidad Clases de Batería G Daniel Yamir Quir | Empresa: 2
+-- ID: 1078 | Fecha: 2025-11-28 | Concepto: Mensualidad Clases de Batería G Daniel Yamir Quir | Empresa: 2
+-- ID: 1079 | Fecha: 2025-03-28 | Concepto: Mensualidad Clases de Canto G David Alejandro Alle | Empresa: 2
+-- ID: 1080 | Fecha: 2025-04-28 | Concepto: Mensualidad Clases de Canto G David Alejandro Alle | Empresa: 2
+-- ID: 1081 | Fecha: 2025-05-28 | Concepto: Mensualidad Clases de Canto G David Alejandro Alle | Empresa: 2
+-- ID: 1082 | Fecha: 2025-06-28 | Concepto: Mensualidad Clases de Canto G David Alejandro Alle | Empresa: 2
+-- ID: 1083 | Fecha: 2025-07-28 | Concepto: Mensualidad Clases de Canto G David Alejandro Alle | Empresa: 2
+-- ID: 1084 | Fecha: 2025-03-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1085 | Fecha: 2025-04-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1086 | Fecha: 2025-05-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1087 | Fecha: 2025-06-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1088 | Fecha: 2025-07-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1089 | Fecha: 2025-08-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1090 | Fecha: 2025-09-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1091 | Fecha: 2025-10-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1092 | Fecha: 2025-11-19 | Concepto: Mensualidad Clases de Batería G Diego Alonso Graj | Empresa: 2
+-- ID: 1093 | Fecha: 2025-09-02 | Concepto: Mensualidad Clases de Guitarra G Diego Yael Cano S | Empresa: 2
+-- ID: 1094 | Fecha: 2025-10-02 | Concepto: Mensualidad Clases de Guitarra G Diego Yael Cano S | Empresa: 2
+-- ID: 1095 | Fecha: 2025-11-02 | Concepto: Mensualidad Clases de Guitarra G Diego Yael Cano S | Empresa: 2
+-- ID: 1096 | Fecha: 2024-10-05 | Concepto: Mensualidad Clases de Canto G Dulce Yael Tarrios | Empresa: 2
+-- ID: 1097 | Fecha: 2024-09-29 | Concepto: Mensualidad Clases de Guitarra G Edgar Javier Chav | Empresa: 2
+-- ID: 1098 | Fecha: 2024-10-29 | Concepto: Mensualidad Clases de Guitarra G Edgar Javier Chav | Empresa: 2
+-- ID: 1099 | Fecha: 2024-11-29 | Concepto: Mensualidad Clases de Guitarra G Edgar Javier Chav | Empresa: 2
+-- ID: 1100 | Fecha: 2024-12-29 | Concepto: Mensualidad Clases de Guitarra G Edgar Javier Chav | Empresa: 2
+-- ID: 1101 | Fecha: 2025-06-23 | Concepto: Mensualidad Clases de Guitarra G Edwin Kevin Salaz | Empresa: 2
+-- ID: 1102 | Fecha: 2025-07-23 | Concepto: Mensualidad Clases de Guitarra G Edwin Kevin Salaz | Empresa: 2
+-- ID: 1103 | Fecha: 2025-08-23 | Concepto: Mensualidad Clases de Guitarra G Edwin Kevin Salaz | Empresa: 2
+-- ID: 1104 | Fecha: 2025-09-23 | Concepto: Mensualidad Clases de Guitarra G Edwin Kevin Salaz | Empresa: 2
+-- ID: 1105 | Fecha: 2025-03-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1106 | Fecha: 2025-04-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1107 | Fecha: 2025-05-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1108 | Fecha: 2025-06-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1109 | Fecha: 2025-07-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1110 | Fecha: 2025-08-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1111 | Fecha: 2025-09-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1112 | Fecha: 2025-10-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1113 | Fecha: 2025-11-15 | Concepto: Mensualidad Clases de Guitarra G Eitan Peña Gonza | Empresa: 2
+-- ID: 1114 | Fecha: 2024-12-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1115 | Fecha: 2025-01-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1116 | Fecha: 2025-02-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1117 | Fecha: 2025-03-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1118 | Fecha: 2025-04-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1119 | Fecha: 2025-05-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1120 | Fecha: 2025-06-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1121 | Fecha: 2025-07-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1122 | Fecha: 2025-08-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1123 | Fecha: 2025-09-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1124 | Fecha: 2025-10-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1125 | Fecha: 2025-11-10 | Concepto: Mensualidad Clases de Guitarra G Elian Matias Ayal | Empresa: 2
+-- ID: 1126 | Fecha: 2025-09-12 | Concepto: Mensualidad Clases de Teclado G Emilia Delgado | Empresa: 2
+-- ID: 1127 | Fecha: 2025-10-12 | Concepto: Mensualidad Clases de Teclado G Emilia Delgado | Empresa: 2
+-- ID: 1128 | Fecha: 2025-11-12 | Concepto: Mensualidad Clases de Teclado G Emilia Delgado | Empresa: 2
+-- ID: 1129 | Fecha: 2025-09-02 | Concepto: Mensualidad Clases de Batería G Emiliano Alberto  | Empresa: 2
+-- ID: 1130 | Fecha: 2025-10-02 | Concepto: Mensualidad Clases de Batería G Emiliano Alberto  | Empresa: 2
+-- ID: 1131 | Fecha: 2025-11-02 | Concepto: Mensualidad Clases de Batería G Emiliano Alberto  | Empresa: 2
+-- ID: 1132 | Fecha: 2023-09-27 | Concepto: Mensualidad Clases de Batería G Enrique Alexander | Empresa: 2
+-- ID: 1133 | Fecha: 2023-10-27 | Concepto: Mensualidad Clases de Batería G Enrique Alexander | Empresa: 2
+-- ID: 1134 | Fecha: 2023-11-27 | Concepto: Mensualidad Clases de Batería G Enrique Alexander | Empresa: 2
+-- ID: 1135 | Fecha: 2023-12-27 | Concepto: Mensualidad Clases de Batería G Enrique Alexander | Empresa: 2
+-- ID: 1136 | Fecha: 2024-01-27 | Concepto: Mensualidad Clases de Batería G Enrique Alexander | Empresa: 2
+-- ID: 1137 | Fecha: 2024-02-27 | Concepto: Mensualidad Clases de Batería G Enrique Alexander | Empresa: 2
+-- ID: 1138 | Fecha: 2024-03-27 | Concepto: Mensualidad Clases de Batería G Enrique Alexander | Empresa: 2
+-- ID: 1139 | Fecha: 2024-06-10 | Concepto: Mensualidad Clases de Guitarra G Erik Alcantara Tr | Empresa: 2
+-- ID: 1140 | Fecha: 2024-07-10 | Concepto: Mensualidad Clases de Guitarra G Erik Alcantara Tr | Empresa: 2
+-- ID: 1141 | Fecha: 2024-08-10 | Concepto: Mensualidad Clases de Guitarra G Erik Alcantara Tr | Empresa: 2
+-- ID: 1142 | Fecha: 2024-09-10 | Concepto: Mensualidad Clases de Guitarra G Erik Alcantara Tr | Empresa: 2
+-- ID: 1143 | Fecha: 2024-10-10 | Concepto: Mensualidad Clases de Guitarra G Erik Alcantara Tr | Empresa: 2
+-- ID: 1144 | Fecha: 2024-11-10 | Concepto: Mensualidad Clases de Guitarra G Erik Alcantara Tr | Empresa: 2
+-- ID: 1145 | Fecha: 2025-07-05 | Concepto: Mensualidad Clases de Canto G Fabricio Tello Herna | Empresa: 2
+-- ID: 1146 | Fecha: 2023-09-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1147 | Fecha: 2023-10-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1148 | Fecha: 2023-12-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1149 | Fecha: 2024-01-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1150 | Fecha: 2024-02-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1151 | Fecha: 2024-03-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1152 | Fecha: 2024-04-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1153 | Fecha: 2024-05-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1154 | Fecha: 2024-06-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1155 | Fecha: 2024-07-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1156 | Fecha: 2025-01-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1157 | Fecha: 2025-02-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1158 | Fecha: 2025-03-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1159 | Fecha: 2025-04-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1160 | Fecha: 2025-05-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1161 | Fecha: 2025-06-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1162 | Fecha: 2025-07-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1163 | Fecha: 2025-08-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1164 | Fecha: 2025-09-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1165 | Fecha: 2025-10-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1166 | Fecha: 2025-11-17 | Concepto: Mensualidad Clases de Batería G Fanny Ieraldini G | Empresa: 2
+-- ID: 1167 | Fecha: 2025-05-17 | Concepto: Mensualidad Clases de Batería G Felix Santamaría | Empresa: 2
+-- ID: 1168 | Fecha: 2025-06-17 | Concepto: Mensualidad Clases de Batería G Felix Santamaría | Empresa: 2
+-- ID: 1169 | Fecha: 2025-07-17 | Concepto: Mensualidad Clases de Batería G Felix Santamaría | Empresa: 2
+-- ID: 1170 | Fecha: 2025-08-17 | Concepto: Mensualidad Clases de Batería G Felix Santamaría | Empresa: 2
+-- ID: 1171 | Fecha: 2025-09-17 | Concepto: Mensualidad Clases de Batería G Felix Santamaría | Empresa: 2
+-- ID: 1172 | Fecha: 2025-10-17 | Concepto: Mensualidad Clases de Batería G Felix Santamaría | Empresa: 2
+-- ID: 1173 | Fecha: 2025-11-17 | Concepto: Mensualidad Clases de Batería G Felix Santamaría | Empresa: 2
+-- ID: 1174 | Fecha: 2025-10-30 | Concepto: Mensualidad Clases de Teclado G Frida Valentina Va | Empresa: 2
+-- ID: 1175 | Fecha: 2025-11-30 | Concepto: Mensualidad Clases de Teclado G Frida Valentina Va | Empresa: 2
+-- ID: 1176 | Fecha: 2025-04-26 | Concepto: Mensualidad Clases de Guitarra G Gerardo Alexis Ay | Empresa: 2
+-- ID: 1177 | Fecha: 2025-05-26 | Concepto: Mensualidad Clases de Guitarra G Gerardo Alexis Ay | Empresa: 2
+-- ID: 1178 | Fecha: 2025-06-26 | Concepto: Mensualidad Clases de Guitarra G Gerardo Alexis Ay | Empresa: 2
+-- ID: 1179 | Fecha: 2025-05-20 | Concepto: Mensualidad Clases de Batería G Gerardo Tadeo Yé | Empresa: 2
+-- ID: 1180 | Fecha: 2025-06-20 | Concepto: Mensualidad Clases de Batería G Gerardo Tadeo Yé | Empresa: 2
+-- ID: 1181 | Fecha: 2025-07-20 | Concepto: Mensualidad Clases de Batería G Gerardo Tadeo Yé | Empresa: 2
+-- ID: 1182 | Fecha: 2025-08-20 | Concepto: Mensualidad Clases de Batería G Gerardo Tadeo Yé | Empresa: 2
+-- ID: 1183 | Fecha: 2025-09-20 | Concepto: Mensualidad Clases de Batería G Gerardo Tadeo Yé | Empresa: 2
+-- ID: 1184 | Fecha: 2025-10-20 | Concepto: Mensualidad Clases de Batería G Gerardo Tadeo Yé | Empresa: 2
+-- ID: 1185 | Fecha: 2025-11-20 | Concepto: Mensualidad Clases de Batería G Gerardo Tadeo Yé | Empresa: 2
+-- ID: 1186 | Fecha: 2023-10-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1187 | Fecha: 2023-11-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1188 | Fecha: 2023-12-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1189 | Fecha: 2024-01-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1190 | Fecha: 2024-02-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1191 | Fecha: 2024-03-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1192 | Fecha: 2024-04-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1193 | Fecha: 2024-05-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1194 | Fecha: 2024-06-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1195 | Fecha: 2024-07-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1196 | Fecha: 2024-08-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1197 | Fecha: 2024-09-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1198 | Fecha: 2024-10-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1199 | Fecha: 2024-11-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1200 | Fecha: 2024-12-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1201 | Fecha: 2025-01-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1202 | Fecha: 2025-02-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1203 | Fecha: 2025-03-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1204 | Fecha: 2025-04-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1205 | Fecha: 2025-05-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1206 | Fecha: 2025-06-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1207 | Fecha: 2025-07-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1208 | Fecha: 2025-08-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1209 | Fecha: 2025-09-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1210 | Fecha: 2025-10-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1211 | Fecha: 2025-11-20 | Concepto: Mensualidad Clases de Guitarra G Guadalupe Donaji  | Empresa: 2
+-- ID: 1212 | Fecha: 2024-03-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1213 | Fecha: 2024-04-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1214 | Fecha: 2024-05-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1215 | Fecha: 2024-06-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1216 | Fecha: 2024-07-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1217 | Fecha: 2024-08-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1218 | Fecha: 2024-09-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1219 | Fecha: 2024-10-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1220 | Fecha: 2024-11-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1221 | Fecha: 2024-12-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1222 | Fecha: 2025-01-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1223 | Fecha: 2025-02-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1224 | Fecha: 2025-03-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1225 | Fecha: 2025-04-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1226 | Fecha: 2025-05-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1227 | Fecha: 2025-06-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1228 | Fecha: 2025-07-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1229 | Fecha: 2025-08-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1230 | Fecha: 2025-09-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1231 | Fecha: 2025-10-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1232 | Fecha: 2025-11-04 | Concepto: Mensualidad Clases de Batería I Guadalupe Rebeca  | Empresa: 2
+-- ID: 1233 | Fecha: 2023-08-01 | Concepto: Mensualidad Clases de Guitarra G Gwyneth Adriana T | Empresa: 2
+-- ID: 1234 | Fecha: 2023-09-01 | Concepto: Mensualidad Clases de Guitarra G Gwyneth Adriana T | Empresa: 2
+-- ID: 1235 | Fecha: 2023-10-01 | Concepto: Mensualidad Clases de Guitarra G Gwyneth Adriana T | Empresa: 2
+-- ID: 1236 | Fecha: 2023-11-01 | Concepto: Mensualidad Clases de Guitarra G Gwyneth Adriana T | Empresa: 2
+-- ID: 1237 | Fecha: 2025-06-04 | Concepto: Mensualidad Clases de Guitarra G Iktan Nezzo Buend | Empresa: 2
+-- ID: 1238 | Fecha: 2025-03-04 | Concepto: Mensualidad Clases de Guitarra G Irving Omar Pache | Empresa: 2
+-- ID: 1239 | Fecha: 2023-11-11 | Concepto: Mensualidad Clases de Guitarra G Isabel Ramos | Empresa: 2
+-- ID: 1240 | Fecha: 2023-12-11 | Concepto: Mensualidad Clases de Guitarra G Isabel Ramos | Empresa: 2
+-- ID: 1241 | Fecha: 2024-01-11 | Concepto: Mensualidad Clases de Guitarra G Isabel Ramos | Empresa: 2
+-- ID: 1242 | Fecha: 2025-05-17 | Concepto: Mensualidad Clases de Canto G Itzel Ameyalli Lechu | Empresa: 2
+-- ID: 1243 | Fecha: 2025-06-17 | Concepto: Mensualidad Clases de Canto G Itzel Ameyalli Lechu | Empresa: 2
+-- ID: 1244 | Fecha: 2025-07-17 | Concepto: Mensualidad Clases de Canto G Itzel Ameyalli Lechu | Empresa: 2
+-- ID: 1245 | Fecha: 2025-08-17 | Concepto: Mensualidad Clases de Canto G Itzel Ameyalli Lechu | Empresa: 2
+-- ID: 1246 | Fecha: 2025-09-17 | Concepto: Mensualidad Clases de Canto G Itzel Ameyalli Lechu | Empresa: 2
+-- ID: 1247 | Fecha: 2025-10-17 | Concepto: Mensualidad Clases de Canto G Itzel Ameyalli Lechu | Empresa: 2
+-- ID: 1248 | Fecha: 2025-11-17 | Concepto: Mensualidad Clases de Canto G Itzel Ameyalli Lechu | Empresa: 2
+-- ID: 1249 | Fecha: 2024-10-27 | Concepto: Mensualidad Clases de Canto G Ivan Eidan Espinosa | Empresa: 2
+-- ID: 1250 | Fecha: 2023-10-30 | Concepto: Mensualidad Clases de Guitarra G Joaquin Pimentel | Empresa: 2
+-- ID: 1251 | Fecha: 2024-10-07 | Concepto: Mensualidad Clases de Batería G Jorge Armando Her | Empresa: 2
+-- ID: 1252 | Fecha: 2024-11-07 | Concepto: Mensualidad Clases de Batería G Jorge Armando Her | Empresa: 2
+-- ID: 1253 | Fecha: 2024-12-07 | Concepto: Mensualidad Clases de Batería G Jorge Armando Her | Empresa: 2
+-- ID: 1254 | Fecha: 2025-01-07 | Concepto: Mensualidad Clases de Batería G Jorge Armando Her | Empresa: 2
+-- ID: 1255 | Fecha: 2025-02-07 | Concepto: Mensualidad Clases de Batería G Jorge Armando Her | Empresa: 2
+-- ID: 1256 | Fecha: 2025-03-07 | Concepto: Mensualidad Clases de Batería G Jorge Armando Her | Empresa: 2
+-- ID: 1257 | Fecha: 2023-09-08 | Concepto: Mensualidad Clases de Guitarra I Jose Fernando Cam | Empresa: 2
+-- ID: 1258 | Fecha: 2023-08-25 | Concepto: Mensualidad Clases de Guitarra G Jose Francisco Ra | Empresa: 2
+-- ID: 1259 | Fecha: 2025-07-02 | Concepto: Mensualidad Clases de Guitarra G Joshua Chanampa V | Empresa: 2
+-- ID: 1260 | Fecha: 2025-09-02 | Concepto: Mensualidad Clases de Guitarra G Joshua Chanampa V | Empresa: 2
+-- ID: 1261 | Fecha: 2025-10-02 | Concepto: Mensualidad Clases de Guitarra G Joshua Chanampa V | Empresa: 2
+-- ID: 1262 | Fecha: 2025-11-02 | Concepto: Mensualidad Clases de Guitarra G Joshua Chanampa V | Empresa: 2
+-- ID: 1263 | Fecha: 2025-10-03 | Concepto: Mensualidad Clases de Teclado G Julissa Lopez Guev | Empresa: 2
+-- ID: 1264 | Fecha: 2025-11-03 | Concepto: Mensualidad Clases de Teclado G Julissa Lopez Guev | Empresa: 2
+-- ID: 1265 | Fecha: 2024-07-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1266 | Fecha: 2024-08-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1267 | Fecha: 2024-09-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1268 | Fecha: 2024-10-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1269 | Fecha: 2024-11-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1270 | Fecha: 2024-12-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1271 | Fecha: 2025-01-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1272 | Fecha: 2025-02-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1273 | Fecha: 2025-03-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1274 | Fecha: 2025-04-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1275 | Fecha: 2025-05-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1276 | Fecha: 2025-06-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1277 | Fecha: 2025-07-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1278 | Fecha: 2025-08-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1279 | Fecha: 2025-09-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1280 | Fecha: 2025-10-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1281 | Fecha: 2025-11-05 | Concepto: Mensualidad Clases de Guitarra G Leonardo Arturo G | Empresa: 2
+-- ID: 1282 | Fecha: 2023-12-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1283 | Fecha: 2024-01-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1284 | Fecha: 2024-02-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1285 | Fecha: 2024-03-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1286 | Fecha: 2024-04-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1287 | Fecha: 2024-05-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1288 | Fecha: 2024-06-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1289 | Fecha: 2024-07-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1290 | Fecha: 2024-08-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1291 | Fecha: 2024-09-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1292 | Fecha: 2024-10-09 | Concepto: Mensualidad Clases de Batería G Leonardo Landa Sa | Empresa: 2
+-- ID: 1293 | Fecha: 2024-11-09 | Concepto: Mensualidad Clases de Batería G Leonardo Perez Go | Empresa: 2
+-- ID: 1294 | Fecha: 2024-12-09 | Concepto: Mensualidad Clases de Batería G Leonardo Perez Go | Empresa: 2
+-- ID: 1295 | Fecha: 2025-01-09 | Concepto: Mensualidad Clases de Batería G Leonardo Perez Go | Empresa: 2
+-- ID: 1296 | Fecha: 2025-02-09 | Concepto: Mensualidad Clases de Batería G Leonardo Perez Go | Empresa: 2
+-- ID: 1297 | Fecha: 2025-03-09 | Concepto: Mensualidad Clases de Batería G Leonardo Perez Go | Empresa: 2
+-- ID: 1298 | Fecha: 2025-04-09 | Concepto: Mensualidad Clases de Batería G Leonardo Perez Go | Empresa: 2
+-- ID: 1299 | Fecha: 2025-05-09 | Concepto: Mensualidad Clases de Batería G Leonardo Perez Go | Empresa: 2
+-- ID: 1300 | Fecha: 2024-12-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1301 | Fecha: 2025-01-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1302 | Fecha: 2025-02-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1303 | Fecha: 2025-03-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1304 | Fecha: 2025-04-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1305 | Fecha: 2025-05-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1306 | Fecha: 2025-06-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1307 | Fecha: 2025-07-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1308 | Fecha: 2025-08-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1309 | Fecha: 2025-09-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1310 | Fecha: 2025-10-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1311 | Fecha: 2025-11-10 | Concepto: Mensualidad Clases de Batería G Leonardo Saul Aya | Empresa: 2
+-- ID: 1312 | Fecha: 2024-05-08 | Concepto: Mensualidad Clases de Teclado G Luciano Ariel Hern | Empresa: 2
+-- ID: 1313 | Fecha: 2024-10-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1314 | Fecha: 2024-11-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1315 | Fecha: 2024-12-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1316 | Fecha: 2025-01-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1317 | Fecha: 2025-02-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1318 | Fecha: 2025-03-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1319 | Fecha: 2025-04-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1320 | Fecha: 2025-05-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1321 | Fecha: 2025-06-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1322 | Fecha: 2025-07-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1323 | Fecha: 2025-08-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1324 | Fecha: 2025-09-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1325 | Fecha: 2025-10-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1326 | Fecha: 2025-11-05 | Concepto: Mensualidad Clases de Batería G Luciano Gastelum  | Empresa: 2
+-- ID: 1327 | Fecha: 2024-08-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1328 | Fecha: 2024-09-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1329 | Fecha: 2024-10-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1330 | Fecha: 2024-11-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1331 | Fecha: 2024-12-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1332 | Fecha: 2025-01-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1333 | Fecha: 2025-02-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1334 | Fecha: 2025-03-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1335 | Fecha: 2025-04-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1336 | Fecha: 2025-05-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1337 | Fecha: 2025-06-05 | Concepto: Mensualidad Clases de Canto G Luis Alberto Guizar  | Empresa: 2
+-- ID: 1338 | Fecha: 2023-09-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1339 | Fecha: 2023-10-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1340 | Fecha: 2023-11-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1341 | Fecha: 2023-12-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1342 | Fecha: 2024-01-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1343 | Fecha: 2024-02-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1344 | Fecha: 2024-03-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1345 | Fecha: 2024-05-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1346 | Fecha: 2024-07-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1347 | Fecha: 2024-08-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1348 | Fecha: 2024-09-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1349 | Fecha: 2024-10-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1350 | Fecha: 2024-11-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1351 | Fecha: 2024-12-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1352 | Fecha: 2025-01-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1353 | Fecha: 2025-02-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1354 | Fecha: 2025-03-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1355 | Fecha: 2025-04-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1356 | Fecha: 2025-05-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1357 | Fecha: 2025-06-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1358 | Fecha: 2025-07-01 | Concepto: Mensualidad Clases de Teclado G Luis Erik Arias Ay | Empresa: 2
+-- ID: 1359 | Fecha: 2024-10-05 | Concepto: Mensualidad Clases de Batería G Luis Fernando Fer | Empresa: 2
+-- ID: 1360 | Fecha: 2024-11-05 | Concepto: Mensualidad Clases de Batería G Luis Fernando Fer | Empresa: 2
+-- ID: 1361 | Fecha: 2024-12-05 | Concepto: Mensualidad Clases de Batería G Luis Fernando Fer | Empresa: 2
+-- ID: 1362 | Fecha: 2025-01-05 | Concepto: Mensualidad Clases de Batería G Luis Fernando Fer | Empresa: 2
+-- ID: 1363 | Fecha: 2025-02-05 | Concepto: Mensualidad Clases de Batería G Luis Fernando Fer | Empresa: 2
+-- ID: 1364 | Fecha: 2025-03-05 | Concepto: Mensualidad Clases de Batería G Luis Fernando Fer | Empresa: 2
+-- ID: 1365 | Fecha: 2025-04-05 | Concepto: Mensualidad Clases de Batería G Luis Fernando Fer | Empresa: 2
+-- ID: 1366 | Fecha: 2024-11-25 | Concepto: Mensualidad Clases de Guitarra G Luis Mario Oropez | Empresa: 2
+-- ID: 1367 | Fecha: 2025-03-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1368 | Fecha: 2025-04-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1369 | Fecha: 2025-05-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1370 | Fecha: 2025-06-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1371 | Fecha: 2025-07-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1372 | Fecha: 2025-08-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1373 | Fecha: 2025-09-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1374 | Fecha: 2025-10-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1375 | Fecha: 2025-11-25 | Concepto: Mensualidad Clases de Bajo G Luis Tadeo Diaz Serv� | Empresa: 2
+-- ID: 1376 | Fecha: 2025-07-25 | Concepto: Mensualidad Clases de Teclado G Luna Daniela Flore | Empresa: 2
+-- ID: 1377 | Fecha: 2025-08-25 | Concepto: Mensualidad Clases de Teclado G Luna Daniela Flore | Empresa: 2
+-- ID: 1378 | Fecha: 2025-09-25 | Concepto: Mensualidad Clases de Teclado G Luna Daniela Flore | Empresa: 2
+-- ID: 1379 | Fecha: 2024-06-01 | Concepto: Mensualidad Clases de Guitarra G Luzbel Rueda Muñ | Empresa: 2
+-- ID: 1380 | Fecha: 2024-07-01 | Concepto: Mensualidad Clases de Guitarra G Luzbel Rueda Muñ | Empresa: 2
+-- ID: 1381 | Fecha: 2024-08-01 | Concepto: Mensualidad Clases de Guitarra G Luzbel Rueda Muñ | Empresa: 2
+-- ID: 1382 | Fecha: 2024-09-01 | Concepto: Mensualidad Clases de Guitarra G Luzbel Rueda Muñ | Empresa: 2
+-- ID: 1383 | Fecha: 2024-10-01 | Concepto: Mensualidad Clases de Guitarra G Luzbel Rueda Muñ | Empresa: 2
+-- ID: 1384 | Fecha: 2024-11-01 | Concepto: Mensualidad Clases de Guitarra G Luzbel Rueda Muñ | Empresa: 2
+-- ID: 1385 | Fecha: 2024-07-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1386 | Fecha: 2024-08-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1387 | Fecha: 2024-09-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1388 | Fecha: 2024-10-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1389 | Fecha: 2024-11-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1390 | Fecha: 2024-12-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1391 | Fecha: 2025-01-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1392 | Fecha: 2025-02-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1393 | Fecha: 2025-03-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1394 | Fecha: 2025-04-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1395 | Fecha: 2025-05-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1396 | Fecha: 2025-06-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1397 | Fecha: 2025-07-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1398 | Fecha: 2025-08-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1399 | Fecha: 2025-09-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1400 | Fecha: 2025-10-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1401 | Fecha: 2025-11-04 | Concepto: Mensualidad Clases de Guitarra G Manuel Santiago M | Empresa: 2
+-- ID: 1402 | Fecha: 2023-08-31 | Concepto: Mensualidad Clases de Guitarra G Manuel Zacate Mil | Empresa: 2
+-- ID: 1403 | Fecha: 2023-09-30 | Concepto: Mensualidad Clases de Guitarra G Manuel Zacate Mil | Empresa: 2
+-- ID: 1404 | Fecha: 2025-06-30 | Concepto: Mensualidad Clases de Teclado G Maria de Lourdes G | Empresa: 2
+-- ID: 1405 | Fecha: 2025-01-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1406 | Fecha: 2025-02-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1407 | Fecha: 2025-03-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1408 | Fecha: 2025-04-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1409 | Fecha: 2025-05-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1410 | Fecha: 2025-06-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1411 | Fecha: 2025-07-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1412 | Fecha: 2025-08-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1413 | Fecha: 2025-09-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1414 | Fecha: 2025-10-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1415 | Fecha: 2025-11-21 | Concepto: Mensualidad Clases de Guitarra G Mariana Diaz Garc | Empresa: 2
+-- ID: 1416 | Fecha: 2025-05-27 | Concepto: Mensualidad Clases de Guitarra G Mario Andrés Alp | Empresa: 2
+-- ID: 1417 | Fecha: 2025-06-27 | Concepto: Mensualidad Clases de Guitarra G Mario Andrés Alp | Empresa: 2
+-- ID: 1418 | Fecha: 2025-07-27 | Concepto: Mensualidad Clases de Guitarra G Mario Andrés Alp | Empresa: 2
+-- ID: 1419 | Fecha: 2025-08-27 | Concepto: Mensualidad Clases de Guitarra G Mario Andrés Alp | Empresa: 2
+-- ID: 1420 | Fecha: 2025-09-27 | Concepto: Mensualidad Clases de Guitarra G Mario Andrés Alp | Empresa: 2
+-- ID: 1421 | Fecha: 2025-10-27 | Concepto: Mensualidad Clases de Guitarra G Mario Andrés Alp | Empresa: 2
+-- ID: 1422 | Fecha: 2025-11-27 | Concepto: Mensualidad Clases de Guitarra G Mario Andrés Alp | Empresa: 2
+-- ID: 1423 | Fecha: 2025-05-08 | Concepto: Mensualidad Clases de Guitarra G Marty Isabella Al | Empresa: 2
+-- ID: 1424 | Fecha: 2025-06-08 | Concepto: Mensualidad Clases de Guitarra G Marty Isabella Al | Empresa: 2
+-- ID: 1425 | Fecha: 2025-07-08 | Concepto: Mensualidad Clases de Guitarra G Marty Isabella Al | Empresa: 2
+-- ID: 1426 | Fecha: 2025-08-08 | Concepto: Mensualidad Clases de Guitarra G Marty Isabella Al | Empresa: 2
+-- ID: 1427 | Fecha: 2025-09-08 | Concepto: Mensualidad Clases de Guitarra G Marty Isabella Al | Empresa: 2
+-- ID: 1428 | Fecha: 2025-10-08 | Concepto: Mensualidad Clases de Guitarra G Marty Isabella Al | Empresa: 2
+-- ID: 1429 | Fecha: 2025-11-08 | Concepto: Mensualidad Clases de Guitarra G Marty Isabella Al | Empresa: 2
+-- ID: 1430 | Fecha: 2024-10-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1431 | Fecha: 2024-11-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1432 | Fecha: 2024-12-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1433 | Fecha: 2025-01-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1434 | Fecha: 2025-02-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1435 | Fecha: 2025-03-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1436 | Fecha: 2025-04-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1437 | Fecha: 2025-05-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1438 | Fecha: 2025-06-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1439 | Fecha: 2025-07-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1440 | Fecha: 2025-09-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1441 | Fecha: 2025-10-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1442 | Fecha: 2025-11-02 | Concepto: Mensualidad Clases de Teclado G Mateo Gonzalez | Empresa: 2
+-- ID: 1443 | Fecha: 2024-03-19 | Concepto: Mensualidad Clases de Bajo G Mateo Ludwig | Empresa: 2
+-- ID: 1444 | Fecha: 2025-07-25 | Concepto: Mensualidad Clases de Guitarra G Max Flores Alvare | Empresa: 2
+-- ID: 1445 | Fecha: 2025-08-25 | Concepto: Mensualidad Clases de Guitarra G Max Flores Alvare | Empresa: 2
+-- ID: 1446 | Fecha: 2025-09-25 | Concepto: Mensualidad Clases de Guitarra G Max Flores Alvare | Empresa: 2
+-- ID: 1447 | Fecha: 2025-10-25 | Concepto: Mensualidad Clases de Guitarra G Max Flores Alvare | Empresa: 2
+-- ID: 1448 | Fecha: 2025-08-25 | Concepto: Mensualidad Clases de Teclado G Montserrat Paulina | Empresa: 2
+-- ID: 1449 | Fecha: 2024-11-09 | Concepto: Mensualidad Clases de Teclado G Nicolas Gutierrez  | Empresa: 2
+-- ID: 1450 | Fecha: 2024-03-22 | Concepto: Mensualidad Clases de Teclado G Oscar Castilla | Empresa: 2
+-- ID: 1451 | Fecha: 2024-04-22 | Concepto: Mensualidad Clases de Teclado G Oscar Castilla | Empresa: 2
+-- ID: 1452 | Fecha: 2024-05-22 | Concepto: Mensualidad Clases de Teclado G Oscar Castilla | Empresa: 2
+-- ID: 1453 | Fecha: 2024-06-22 | Concepto: Mensualidad Clases de Teclado G Oscar Castilla | Empresa: 2
+-- ID: 1454 | Fecha: 2024-09-30 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1455 | Fecha: 2024-10-31 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1456 | Fecha: 2024-11-30 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1457 | Fecha: 2024-12-31 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1458 | Fecha: 2025-01-31 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1459 | Fecha: 2025-02-28 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1460 | Fecha: 2025-03-31 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1461 | Fecha: 2025-04-30 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1462 | Fecha: 2025-05-31 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1463 | Fecha: 2025-06-30 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1464 | Fecha: 2025-07-31 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1465 | Fecha: 2025-08-31 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1466 | Fecha: 2025-09-30 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1467 | Fecha: 2025-10-31 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1468 | Fecha: 2025-11-30 | Concepto: Mensualidad Clases de Guitarra G Oscar Godinez Mar | Empresa: 2
+-- ID: 1469 | Fecha: 2025-08-31 | Concepto: Mensualidad Clases de Batería G Pamela Gutierrez  | Empresa: 2
+-- ID: 1470 | Fecha: 2025-09-30 | Concepto: Mensualidad Clases de Batería G Pamela Gutierrez  | Empresa: 2
+-- ID: 1471 | Fecha: 2025-10-31 | Concepto: Mensualidad Clases de Batería G Pamela Gutierrez  | Empresa: 2
+-- ID: 1472 | Fecha: 2025-02-28 | Concepto: Mensualidad Clases de Batería G Paulina Yazmin Va | Empresa: 2
+-- ID: 1473 | Fecha: 2025-04-28 | Concepto: Mensualidad Clases de Batería G Paulina Yazmin Va | Empresa: 2
+-- ID: 1474 | Fecha: 2025-05-28 | Concepto: Mensualidad Clases de Batería G Paulina Yazmin Va | Empresa: 2
+-- ID: 1475 | Fecha: 2025-09-03 | Concepto: Mensualidad Clases de Batería G Rania Victoria Al | Empresa: 2
+-- ID: 1476 | Fecha: 2025-10-03 | Concepto: Mensualidad Clases de Batería G Rania Victoria Al | Empresa: 2
+-- ID: 1477 | Fecha: 2025-11-03 | Concepto: Mensualidad Clases de Batería G Rania Victoria Al | Empresa: 2
+-- ID: 1478 | Fecha: 2024-08-01 | Concepto: Mensualidad Clases de Canto G Rebeca Ramirez | Empresa: 2
+-- ID: 1479 | Fecha: 2024-09-01 | Concepto: Mensualidad Clases de Canto G Rebeca Ramirez | Empresa: 2
+-- ID: 1480 | Fecha: 2025-06-30 | Concepto: Mensualidad Clases de Guitarra G Romina Rojas Avil | Empresa: 2
+-- ID: 1481 | Fecha: 2025-07-30 | Concepto: Mensualidad Clases de Guitarra G Romina Rojas Avil | Empresa: 2
+-- ID: 1482 | Fecha: 2025-09-30 | Concepto: Mensualidad Clases de Guitarra G Romina Rojas Avil | Empresa: 2
+-- ID: 1483 | Fecha: 2025-10-30 | Concepto: Mensualidad Clases de Guitarra G Romina Rojas Avil | Empresa: 2
+-- ID: 1484 | Fecha: 2025-11-30 | Concepto: Mensualidad Clases de Guitarra G Romina Rojas Avil | Empresa: 2
+-- ID: 1485 | Fecha: 2024-07-05 | Concepto: Mensualidad Clases de Guitarra G Rui Ortiz | Empresa: 2
+-- ID: 1486 | Fecha: 2024-08-05 | Concepto: Mensualidad Clases de Guitarra G Rui Ortiz | Empresa: 2
+-- ID: 1487 | Fecha: 2024-09-05 | Concepto: Mensualidad Clases de Guitarra G Rui Ortiz | Empresa: 2
+-- ID: 1488 | Fecha: 2024-10-05 | Concepto: Mensualidad Clases de Guitarra G Rui Ortiz | Empresa: 2
+-- ID: 1489 | Fecha: 2024-11-05 | Concepto: Mensualidad Clases de Guitarra G Rui Ortiz | Empresa: 2
+-- ID: 1490 | Fecha: 2024-12-05 | Concepto: Mensualidad Clases de Guitarra G Rui Ortiz | Empresa: 2
+-- ID: 1491 | Fecha: 2025-10-02 | Concepto: Mensualidad Clases de Teclado G Samantha Sandoval | Empresa: 2
+-- ID: 1492 | Fecha: 2025-11-02 | Concepto: Mensualidad Clases de Teclado G Samantha Sandoval | Empresa: 2
+-- ID: 1493 | Fecha: 2025-06-12 | Concepto: Mensualidad Clases de Batería G Santiago Bustaman | Empresa: 2
+-- ID: 1494 | Fecha: 2025-01-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1495 | Fecha: 2025-02-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1496 | Fecha: 2025-03-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1497 | Fecha: 2025-04-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1498 | Fecha: 2025-05-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1499 | Fecha: 2025-06-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1500 | Fecha: 2025-07-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1501 | Fecha: 2025-08-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1502 | Fecha: 2025-09-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1503 | Fecha: 2025-10-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1504 | Fecha: 2025-11-11 | Concepto: Mensualidad Clases de Batería G Sergio Hector Riv | Empresa: 2
+-- ID: 1505 | Fecha: 2025-06-30 | Concepto: Mensualidad Clases de Teclado G Sofia Patiño Gonz | Empresa: 2
+-- ID: 1506 | Fecha: 2025-08-29 | Concepto: Mensualidad Clases de Batería G Vanessa Desire Ma | Empresa: 2
+-- ID: 1507 | Fecha: 2025-09-29 | Concepto: Mensualidad Clases de Batería G Vanessa Desire Ma | Empresa: 2
+-- ID: 1508 | Fecha: 2025-10-29 | Concepto: Mensualidad Clases de Batería G Vanessa Desire Ma | Empresa: 2
+-- ID: 1509 | Fecha: 2025-11-29 | Concepto: Mensualidad Clases de Batería G Vanessa Desire Ma | Empresa: 2
+-- ID: 1510 | Fecha: 2025-07-30 | Concepto: Mensualidad Clases de Guitarra G Veronica Ramirez  | Empresa: 2
+-- ID: 1511 | Fecha: 2025-08-30 | Concepto: Mensualidad Clases de Guitarra G Veronica Ramirez  | Empresa: 2
+-- ID: 1512 | Fecha: 2025-09-30 | Concepto: Mensualidad Clases de Guitarra G Veronica Ramirez  | Empresa: 2
+-- ID: 1513 | Fecha: 2025-10-30 | Concepto: Mensualidad Clases de Guitarra G Veronica Ramirez  | Empresa: 2
+-- ID: 1514 | Fecha: 2025-11-30 | Concepto: Mensualidad Clases de Guitarra G Veronica Ramirez  | Empresa: 2
+-- ID: 1515 | Fecha: 2024-10-05 | Concepto: Mensualidad Clases de Teclado G Victor Eduardo Cab | Empresa: 2
+-- ID: 1516 | Fecha: 2024-11-05 | Concepto: Mensualidad Clases de Teclado G Victor Eduardo Cab | Empresa: 2
+-- ID: 1517 | Fecha: 2025-08-26 | Concepto: Mensualidad Clases de Canto G Xanat Yamil Carmona  | Empresa: 2
+-- ID: 1518 | Fecha: 2025-09-26 | Concepto: Mensualidad Clases de Canto G Xanat Yamil Carmona  | Empresa: 2
+-- ID: 1519 | Fecha: 2025-10-26 | Concepto: Mensualidad Clases de Canto G Xanat Yamil Carmona  | Empresa: 2
+-- ID: 1520 | Fecha: 2025-11-26 | Concepto: Mensualidad Clases de Canto G Xanat Yamil Carmona  | Empresa: 2
+-- ID: 1521 | Fecha: 2024-07-18 | Concepto: Mensualidad Clases de Canto G Yoanna Barrios | Empresa: 2
+-- ID: 1522 | Fecha: 2024-08-18 | Concepto: Mensualidad Clases de Canto G Yoanna Barrios | Empresa: 2
+-- ID: 1523 | Fecha: 2025-11-04 | Concepto: Mensualidad Clases de Canto G Yolotl Zeltzin Aguil | Empresa: 2
