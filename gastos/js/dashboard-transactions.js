@@ -26,8 +26,8 @@ async function loadRecentTransactions(page = 1) {
         };
         
         // Agregar filtro de empresa si existe
-        if (currentCompanyFilter) {
-            params.empresa_id = currentCompanyFilter;
+        if (window.currentCompanyFilter) {
+            params.empresa_id = window.currentCompanyFilter;
         }
         
         console.log('📡 Parámetros de solicitud:', params);
