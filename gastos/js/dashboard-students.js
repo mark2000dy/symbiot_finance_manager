@@ -1571,11 +1571,11 @@ async function deleteStudent() {
         
         console.log(`🗑️ Eliminando alumno: ${studentName} (ID: ${studentId})`);
 
-        const { response, data: result } = await window.apiFetch(`alumnos/${studentId}`, {
+        const result = await window.apiFetch(`alumnos/${studentId}`, {
             method: 'DELETE'
         });
-        
-        if (response.ok && result.success) {
+
+        if (result.success) {
             const editModal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
             editModal.hide();
             
@@ -1971,7 +1971,7 @@ async function loadPaymentHistory(studentId, studentName) {
         document.getElementById('chartLoadingState').style.display = 'block';
         
         // Obtener datos reales del backend
-        const { response, data } = await window.apiFetch(`alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`, {
+        const data = await window.apiFetch(`alumnos/${encodeURIComponent(studentName)}/historial-pagos?meses=12`, {
             method: 'GET'
         });
         
@@ -2015,7 +2015,7 @@ async function showPaymentHistory(studentId, studentName) {
         `;
         
         // ✅ CRÍTICO: Sin parámetro meses para obtener TODO
-        const { response, data } = await window.apiFetch(`alumnos/${encodeURIComponent(studentName)}/historial-pagos`, {
+        const data = await window.apiFetch(`alumnos/${encodeURIComponent(studentName)}/historial-pagos`, {
             method: 'GET'
         });
 
