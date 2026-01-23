@@ -161,7 +161,7 @@ for row_num in range(2, ws.max_row + 1):
             """
 
             cursor.execute(insert_query, (
-                2,  # empresa_id: Rockstar Skull
+                1,  # empresa_id: Rockstar Skull (1 = Rockstar Skull, 2 = Symbiot Technologies)
                 'I',  # tipo: Ingreso
                 concepto,  # concepto
                 fecha_pago,  # fecha
