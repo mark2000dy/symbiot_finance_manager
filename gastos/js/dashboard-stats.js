@@ -577,7 +577,13 @@ async function handleCompanyChange() {
         
         // Cargar datos con filtro
         await loadDashboardData();
-        
+
+        // ⭐ RECARGAR TRANSACCIONES RECIENTES con el nuevo filtro de empresa
+        if (typeof loadRecentTransactions === 'function') {
+            await loadRecentTransactions(1);
+            console.log('✅ Transacciones recientes recargadas con filtro de empresa');
+        }
+
         // CRÍTICO: Cargar datos específicos si es RockstarSkull (SIN verificaciones como el original)
         if (selectedCompany === '1') {
             await loadRockstarSkullDataReal();
