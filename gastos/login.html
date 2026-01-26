@@ -135,14 +135,6 @@
                 </button>
             </form>
             
-            <div class="demo-users">
-                <h6 class="text-white mb-2">👤 Usuarios de Prueba:</h6>
-                <small class="text-muted">
-                    <strong>Admin:</strong> marco@symbiot.com / admin123<br>
-                    <strong>Admin:</strong> antonio@rockstarskull.com / admin123<br>
-                    <strong>User:</strong> hugo@rockstarskull.com / admin123
-                </small>
-            </div>
         </div>
     </div>
 
@@ -152,38 +144,14 @@
     <!-- API Client v3.1.3 - Universal API Handler con auto-detección -->
     <script src="assets/js/api-client.js?v=3.1.3"></script>
 
-    <!-- ========================================= -->
-    <!-- LOGIN PAGE SCRIPT v3.2                   -->
-    <!-- FIX: Corrección de URL de redirección    -->
-    <!-- ========================================= -->
+    <!-- LOGIN PAGE SCRIPT v3.3 - Production Ready -->
     <script>
-        // 🚀 LOGIN PAGE v3.2 - Using API Client Module
-        console.log('%c🚀 LOGIN PAGE v3.2', 'background: #222; color: #00ff00; font-size: 16px; font-weight: bold; padding: 10px;');
-        console.log('📦 Using API Client module for all API calls');
-        console.log('📍 Current page path:', window.location.pathname);
-
-        // Verificar que base path esté definido
+        // Configuración silenciosa para producción
         if (!window.APP_BASE_PATH) {
             window.APP_BASE_PATH = '/gastos';
-            console.log('✅ APP_BASE_PATH definido en fallback');
         }
         if (!window.API_BASE_URL) {
             window.API_BASE_URL = '/gastos/api/index.php';
-        }
-
-        console.log('📂 Base Path:', window.APP_BASE_PATH || '(root)');
-        console.log('🌐 API Base URL:', window.API_BASE_URL);
-
-        // Verificación de funciones disponibles
-        if (typeof window.buildPageUrl === 'function') {
-            console.log('✅ buildPageUrl disponible');
-        } else {
-            console.warn('⚠️ buildPageUrl NO disponible - usando fallback');
-        }
-        if (typeof window.apiFetch === 'function') {
-            console.log('✅ apiFetch disponible');
-        } else {
-            console.error('❌ apiFetch NO disponible - revisar carga de api-client.js');
         }
     </script>
 
@@ -205,24 +173,17 @@
             loginBtn.disabled = true;
 
             try {
-                console.log('🔐 Intentando login con:', email);
-
-                // ✅ LLAMADA REAL A LA API (usando helper)
                 const data = await window.apiFetch('login', {
                     method: 'POST',
                     body: JSON.stringify({ email, password })
                 });
-                console.log('📋 Respuesta del servidor:', data);
-                
+
                 if (data.success) {
-                    // ✅ LOGIN EXITOSO
-                    console.log('✅ Login exitoso para:', data.user.nombre);
-                    
                     // Guardar email si "recordarme" está activo
                     if (document.getElementById('rememberMe').checked) {
                         localStorage.setItem('rememberedEmail', email);
                     }
-                    
+
                     // Mostrar éxito
                     alertContainer.innerHTML = `
                         <div class="alert alert-success">
@@ -230,28 +191,19 @@
                             ¡Bienvenido ${data.user.nombre}! Redirigiendo...
                         </div>
                     `;
-                    
+
                     // Redirigir después de 1 segundo
                     setTimeout(() => {
-                        // Construir URL del dashboard usando la base path detectada
                         const dashboardUrl = (window.APP_BASE_PATH || '') + '/dashboard.html';
                         const finalUrl = data.redirectUrl || dashboardUrl;
-
-                        console.log('🔄 Redirección configurada:');
-                        console.log('   data.redirectUrl:', data.redirectUrl || '(no definido)');
-                        console.log('   dashboardUrl construido:', dashboardUrl);
-                        console.log('   ➡️ URL FINAL:', finalUrl);
-
                         window.location.href = finalUrl;
                     }, 1000);
-                    
+
                 } else {
-                    // ❌ LOGIN FALLIDO
                     throw new Error(data.error || 'Credenciales inválidas');
                 }
-                
+
             } catch (error) {
-                console.error('❌ Error en login:', error);
                 
                 // Mostrar error
                 alertContainer.innerHTML = `
@@ -286,82 +238,19 @@
             }
         });
         
-        // 🔧 Auto-completar credenciales de prueba (solo para desarrollo)
-        document.addEventListener('keydown', function(e) {
-            // Ctrl + 1 para admin Marco
-            if (e.ctrlKey && e.key === '1') {
-                e.preventDefault();
-                document.getElementById('email').value = 'marco.delgado@symbiot.com.mx';
-                document.getElementById('password').value = 'admin1234';
-                document.getElementById('password').focus();
-            }
-            // Ctrl + 2 para admin Antonio
-            if (e.ctrlKey && e.key === '2') {
-                e.preventDefault();
-                document.getElementById('email').value = 'antonio.razo@symbiot.com.mx';
-                document.getElementById('password').value = 'admin1234';
-                document.getElementById('password').focus();
-            }
-            // Ctrl + 3 para user Hugo
-            if (e.ctrlKey && e.key === '3') {
-                e.preventDefault();
-                document.getElementById('email').value = 'hvazquez@rockstarskull.com';
-                document.getElementById('password').value = 'admin1234';
-                document.getElementById('password').focus();
-            }
-             // Ctrl + 4 para user Escuela
-            if (e.ctrlKey && e.key === '4') {
-                e.preventDefault();
-                document.getElementById('email').value = 'escuela@rockstarskull.com';
-                document.getElementById('password').value = 'admin1234';
-                document.getElementById('password').focus();
-            }
-        });
 
-        // 🌐 Verificar conectividad con el servidor
+        // Verificar conectividad con el servidor (silencioso)
         window.addEventListener('load', async function() {
-            // Mostrar la configuración detectada en la página
-            const alertContainer = document.getElementById('alertContainer');
-            alertContainer.innerHTML = `
-                <div class="alert alert-info" style="font-size: 11px; padding: 10px;">
-                    <strong>🔧 Configuración Detectada:</strong><br>
-                    <small>
-                        <strong>Ruta Base:</strong> ${window.APP_BASE_PATH || '(raíz)'}<br>
-                        <strong>API URL:</strong> ${window.API_BASE_URL}<br>
-                        <strong>Health Check:</strong> ${window.API_BASE_URL}/health
-                    </small>
-                </div>
-            `;
-
             try {
                 const data = await window.apiFetch('health', { method: 'GET' });
-
-                if (data.success === true) {
-                    console.log('✅ Servidor conectado:', data);
-                    alertContainer.innerHTML = `
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle me-2"></i>
-                            ✅ Servidor conectado correctamente
-                            
-                        </div>
-                    `;
-                } else {
-                    console.warn('⚠️ Problemas con el servidor:', data);
-                    alertContainer.innerHTML += `
-                        <div class="alert alert-warning mt-2">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            ⚠️ Problemas con el servidor
-                        </div>
-                    `;
-                }
+                // Conexión exitosa - no mostrar nada
             } catch (error) {
-                console.error('❌ No se puede conectar con el servidor:', error);
+                // Solo mostrar alerta si hay error de conexión
+                const alertContainer = document.getElementById('alertContainer');
                 alertContainer.innerHTML = `
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Sin conexión al servidor<br>
-                        <small>Intentando: ${window.API_BASE_URL}/health</small><br>
-                        <small>Error: ${error.message}</small>
+                        Sin conexión al servidor. Verifique su conexión a internet.
                     </div>
                 `;
             }

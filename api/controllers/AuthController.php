@@ -44,20 +44,19 @@ class AuthController {
             $user = $users[0];
             $passwordValid = false;
 
-            // Si el hash es temporal, usar contraseña por defecto
-            if ($user['password_hash'] === '$2b$10$TEMP_HASH_TO_UPDATE') {
-                $passwordValid = ($password === 'admin123');
-
-                // Actualizar con hash real
-                if ($passwordValid) {
-                    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-                    executeUpdate(
-                        'UPDATE usuarios SET password_hash = ? WHERE id = ?',
-                        [$hashedPassword, $user['id']]
-                    );
-                }
-            } else {
+            // Verificar contraseña con hash bcrypt
+            if ($user['password_hash'] && strpos($user['password_hash'], '$2') === 0) {
+                // Hash válido de bcrypt
                 $passwordValid = password_verify($password, $user['password_hash']);
+            } else {
+                // Hash inválido o temporal - rechazar login
+                // El administrador debe resetear la contraseña del usuario
+                http_response_code(401);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Contraseña no configurada. Contacte al administrador.'
+                ]);
+                return;
             }
 
             if (!$passwordValid) {

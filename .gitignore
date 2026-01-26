@@ -1,1 +1,38 @@
+# Archivos temporales de Excel
 ~$*.xlsx
+
+# Variables de entorno (credenciales)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Archivos de debug/test
+debug_*.py
+test_*.php
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+*.cache
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencias (si se usan)
+node_modules/
+vendor/
+
+# Backups de BD
+*.sql
+backups/

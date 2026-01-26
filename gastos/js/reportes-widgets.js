@@ -260,8 +260,6 @@ async function initializeGastosRealesWidget() {
  */
 async function loadGastosRealesData(filters = {}) {
     try {
-        console.log('📥 Cargando datos de Gastos Reales...', filters);
-
         // Construir parámetros
         const params = {};
         if (filters.empresa) params.empresa = filters.empresa;
@@ -276,12 +274,8 @@ async function loadGastosRealesData(filters = {}) {
             throw new Error(data.message || 'Error en respuesta del servidor');
         }
 
-        console.log('✅ Datos recibidos del backend:', data.data);
-
-        // 🔄 Transform backend response to expected format
+        // Transform backend response to expected format
         const adaptedData = adaptGastosReales(data);
-
-        console.log('✅ Datos transformados:', adaptedData);
 
         // Actualizar indicadores
         updateGastosRealesIndicators(adaptedData);
@@ -294,8 +288,6 @@ async function loadGastosRealesData(filters = {}) {
 
         // Guardar datos para exportación
         gastosRealesData = adaptedData;
-        
-        console.log('✅ Datos de Gastos Reales cargados correctamente');
         
     } catch (error) {
         console.error('❌ Error cargando datos de Gastos Reales:', error);
@@ -760,8 +752,6 @@ async function initializeBalanceGeneralWidget() {
  */
 async function loadBalanceGeneralData(filters = {}) {
     try {
-        console.log('📥 Cargando datos de Balance General...', filters);
-
         // Construir parámetros
         const params = {};
         if (filters.empresa) params.empresa = filters.empresa;
@@ -775,12 +765,8 @@ async function loadBalanceGeneralData(filters = {}) {
             throw new Error(data.message || 'Error en respuesta del servidor');
         }
 
-        console.log('✅ Datos de Balance General recibidos del backend:', data.data);
-
-        // 🔄 Transform backend response to expected format
+        // Transform backend response to expected format
         const adaptedResumen = adaptBalanceGeneral(data);
-
-        console.log('✅ Datos de resumen transformados:', adaptedResumen);
 
         // Actualizar resumen principal
         updateBalanceGeneralResumen(adaptedResumen);
