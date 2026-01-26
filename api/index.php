@@ -261,6 +261,11 @@ try {
         exit;
     }
 
+    if ($requestUri === '/reportes/balance-general-v2' && $requestMethod === 'GET') {
+        TransaccionesController::getReporteBalanceGeneralV2();
+        exit;
+    }
+
     // ============================================================
     // RUTAS DE DASHBOARD
     // ============================================================

@@ -813,15 +813,13 @@ class TransaccionesController {
             ";
             $distribucion_clases = executeQuery($clasesQuery, [$empresa_id]);
 
-            // 3. DISTRIBUCIÓN POR MAESTRO
+            // 3. DISTRIBUCIÓN POR MAESTRO - Contadores de alumnos
             $maestrosQuery = "
                 SELECT
                     COALESCE(m.nombre, 'Sin asignar') as maestro,
                     COALESCE(a.clase, 'Sin clase') as especialidad,
                     SUM(CASE WHEN a.estatus = 'Activo' THEN 1 ELSE 0 END) as alumnos_activos,
-                    SUM(CASE WHEN a.estatus = 'Baja' THEN 1 ELSE 0 END) as alumnos_bajas,
-                    SUM(CASE WHEN a.estatus = 'Activo' THEN COALESCE(a.precio_mensual, 0) ELSE 0 END) as ingresos_activos,
-                    SUM(CASE WHEN a.estatus = 'Baja' THEN COALESCE(a.precio_mensual, 0) ELSE 0 END) as ingresos_bajas
+                    SUM(CASE WHEN a.estatus = 'Baja' THEN 1 ELSE 0 END) as alumnos_bajas
                 FROM alumnos a
                 LEFT JOIN maestros m ON a.maestro_id = m.id
                 WHERE a.empresa_id = ?
@@ -831,6 +829,43 @@ class TransaccionesController {
                 ORDER BY alumnos_activos DESC, maestro
             ";
             $distribucion_maestros = executeQuery($maestrosQuery, [$empresa_id]);
+
+            // 3b. INGRESOS REALES desde transacciones (suma de pagos históricos)
+            $ingresosQuery = "
+                SELECT
+                    t.socio as maestro,
+                    al.estatus,
+                    SUM(t.total) as total_ingresos
+                FROM transacciones t
+                INNER JOIN alumnos al ON t.concepto LIKE CONCAT('% ', al.nombre)
+                WHERE t.concepto LIKE 'Mensualidad Clases%'
+                    AND t.empresa_id = ?
+                    AND al.empresa_id = ?
+                GROUP BY t.socio, al.estatus
+            ";
+            $ingresos = executeQuery($ingresosQuery, [$empresa_id, $empresa_id]);
+
+            // Crear mapa de ingresos por maestro
+            $ingresosMap = [];
+            foreach ($ingresos as $ing) {
+                $maestro = $ing['maestro'];
+                if (!isset($ingresosMap[$maestro])) {
+                    $ingresosMap[$maestro] = ['activos' => 0, 'bajas' => 0];
+                }
+                if ($ing['estatus'] === 'Activo') {
+                    $ingresosMap[$maestro]['activos'] = (float)$ing['total_ingresos'];
+                } else {
+                    $ingresosMap[$maestro]['bajas'] = (float)$ing['total_ingresos'];
+                }
+            }
+
+            // Agregar ingresos reales a la distribución de maestros
+            foreach ($distribucion_maestros as &$maestro) {
+                $nombre = $maestro['maestro'];
+                $maestro['ingresos_activos'] = $ingresosMap[$nombre]['activos'] ?? 0;
+                $maestro['ingresos_bajas'] = $ingresosMap[$nombre]['bajas'] ?? 0;
+            }
+            unset($maestro);
 
             // 4. MÉTRICAS ESPECÍFICAS DE ROCKSTARSKULL
             $metricasQuery = "
@@ -1382,6 +1417,296 @@ class TransaccionesController {
             echo json_encode([
                 'success' => false,
                 'error' => 'Error generando balance',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Reporte de balance general v2 - Con inversión por socio y estado de cuenta
+     * GET /reportes/balance-general-v2?empresa=&ano=&mes=
+     *
+     * Socios inversores: Marco Delgado, Hugo Vazquez, Antonio Razo
+     * Estado de cuenta por forma de pago: TPV->Mercado Pago, Transferencia->Inbursa, Efectivo->Caja Fuerte
+     */
+    public static function getReporteBalanceGeneralV2() {
+        AuthController::requireAuth();
+
+        try {
+            $empresa = $_GET['empresa'] ?? '';
+            $ano = $_GET['ano'] ?? '';
+            $mes = $_GET['mes'] ?? '';
+
+            // Construir cláusula WHERE para filtros
+            $whereConditions = [];
+            $params = [];
+
+            if (!empty($ano)) {
+                $whereConditions[] = "YEAR(fecha) = ?";
+                $params[] = (int)$ano;
+            }
+
+            if (!empty($empresa)) {
+                $whereConditions[] = "empresa_id = ?";
+                $params[] = (int)$empresa;
+            }
+
+            if (!empty($mes)) {
+                $whereConditions[] = "MONTH(fecha) = ?";
+                $params[] = (int)$mes;
+            }
+
+            $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+
+            // ============================================================
+            // 1. INVERSIÓN POR SOCIO (Gastos - Abonos recibidos)
+            // Inversión neta = Gastos del socio - Ingresos (abonos) que recibió
+            // ============================================================
+            $sociosInversores = ['Marco Delgado', 'Hugo Vazquez', 'Antonio Razo'];
+            $sociosPlaceholders = implode(',', array_fill(0, count($sociosInversores), '?'));
+
+            // Construir cláusula WHERE base para socios
+            $sociosWhereClause = $whereClause;
+            if (!empty($whereClause)) {
+                $sociosWhereClause .= " AND socio IN ($sociosPlaceholders)";
+            } else {
+                $sociosWhereClause = "WHERE socio IN ($sociosPlaceholders)";
+            }
+
+            $sociosParams = array_merge($params, $sociosInversores);
+
+            // Calcular inversión neta: Gastos - Abonos (solo ingresos con concepto que contiene 'abono')
+            // Los ingresos de mensualidades de clases NO se restan, solo los abonos/transferencias
+            $sociosQuery = "
+                SELECT
+                    socio,
+                    SUM(CASE WHEN tipo = 'G' THEN total ELSE 0 END) as total_gastos,
+                    SUM(CASE WHEN tipo = 'I' AND LOWER(concepto) LIKE '%abono%' THEN total ELSE 0 END) as total_abonos,
+                    SUM(CASE WHEN tipo = 'G' THEN total ELSE 0 END) -
+                    SUM(CASE WHEN tipo = 'I' AND LOWER(concepto) LIKE '%abono%' THEN total ELSE 0 END) as inversion_neta,
+                    MAX(fecha) as ultima_actualizacion
+                FROM transacciones
+                $sociosWhereClause
+                GROUP BY socio
+                ORDER BY inversion_neta DESC
+            ";
+
+            $sociosResult = executeQuery($sociosQuery, $sociosParams);
+
+            // Calcular total de inversión y porcentajes
+            $totalInversion = 0;
+            foreach ($sociosResult as $socio) {
+                $totalInversion += floatval($socio['inversion_neta']);
+            }
+
+            $socios = [];
+            foreach ($sociosResult as $socio) {
+                $inversionNeta = floatval($socio['inversion_neta']);
+                $socios[] = [
+                    'socio' => $socio['socio'],
+                    'inversion' => $inversionNeta,
+                    'gastos' => floatval($socio['total_gastos']),
+                    'abonos' => floatval($socio['total_abonos']),
+                    'porcentaje' => $totalInversion > 0 ? ($inversionNeta / $totalInversion) * 100 : 0,
+                    'ultima_actualizacion' => $socio['ultima_actualizacion']
+                ];
+            }
+
+            // ============================================================
+            // 2. ESTADO DE CUENTA (Reglas específicas por cuenta)
+            // ============================================================
+            // MERCADO PAGO:
+            //   (+) Ingresos: TPV
+            //   (-) Gastos: TPV, Mercado Pago
+            //   (-) Gastos por Transferencia con concepto: Clases, Limpieza, Quincena, TotalPlay, Renta, Meta Ads, Pago Nov, Mantenimiento, Comisiones TPV
+            //
+            // INBURSA:
+            //   (+) Ingresos: Transferencia, CTIM
+            //   (-) Gastos por Transferencia con concepto: Honorarios, Prestamo
+            //   (-) Gastos de Symbiot Technologies (empresa_id=2) - fueron devueltos a Marco Delgado
+            //
+            // CAJA FUERTE EFECTIVO:
+            //   (+) Ingresos: Efectivo
+            //   (-) Gastos: Efectivo
+            // ============================================================
+
+            // Conceptos de gastos que se pagan desde Mercado Pago aunque sean por transferencia
+            $conceptosMercadoPago = ['clases', 'limpieza', 'quincena', 'totalplay', 'renta', 'meta ads', 'pago nov', 'mantenimiento', 'comisiones tpv'];
+            // Nota: Gastos por transferencia que NO coinciden con conceptosMercadoPago van a Inbursa por defecto
+            // (incluye: Honorarios, Prestamo, y cualquier otro concepto)
+
+            // Query para obtener todas las transacciones con sus detalles (incluyendo empresa_id)
+            $cuentasQuery = "
+                SELECT
+                    tipo,
+                    forma_pago,
+                    LOWER(concepto) as concepto_lower,
+                    total,
+                    empresa_id
+                FROM transacciones
+                $whereClause
+            ";
+
+            $transacciones = executeQuery($cuentasQuery, $params);
+
+            // Inicializar cuentas
+            $mercadoPago = ['ingresos' => 0, 'gastos' => 0];
+            $inbursa = ['ingresos' => 0, 'gastos' => 0];
+            $cajaFuerte = ['ingresos' => 0, 'gastos' => 0];
+
+            foreach ($transacciones as $tx) {
+                $tipo = $tx['tipo'];
+                $formaPago = $tx['forma_pago'];
+                $concepto = $tx['concepto_lower'];
+                $monto = floatval($tx['total']);
+                $empresaId = intval($tx['empresa_id']);
+
+                if ($tipo === 'I') {
+                    // INGRESOS
+                    if ($formaPago === 'TPV' || $formaPago === 'Mercado Pago') {
+                        $mercadoPago['ingresos'] += $monto;
+                    } elseif ($formaPago === 'Transferencia' || $formaPago === 'CTIM') {
+                        $inbursa['ingresos'] += $monto;
+                    } elseif ($formaPago === 'Efectivo') {
+                        $cajaFuerte['ingresos'] += $monto;
+                    }
+                } else {
+                    // GASTOS
+
+                    // Regla especial: Gastos de Symbiot Technologies (empresa_id=2) van a Inbursa
+                    // (fueron devueltos a Marco Delgado desde Inbursa)
+                    if ($empresaId === 2) {
+                        $inbursa['gastos'] += $monto;
+                        continue;
+                    }
+
+                    // Reglas para RockstarSkull (empresa_id=1)
+                    if ($formaPago === 'TPV' || $formaPago === 'Mercado Pago') {
+                        // Gastos TPV/Mercado Pago van a Mercado Pago
+                        $mercadoPago['gastos'] += $monto;
+                    } elseif ($formaPago === 'Transferencia') {
+                        // Gastos por transferencia: determinar cuenta según concepto
+                        $esConceptoMercadoPago = false;
+                        foreach ($conceptosMercadoPago as $conceptoMP) {
+                            if (strpos($concepto, $conceptoMP) !== false) {
+                                $esConceptoMercadoPago = true;
+                                break;
+                            }
+                        }
+
+                        if ($esConceptoMercadoPago) {
+                            $mercadoPago['gastos'] += $monto;
+                        } else {
+                            // Por defecto, gastos por transferencia van a Inbursa
+                            $inbursa['gastos'] += $monto;
+                        }
+                    } elseif ($formaPago === 'Efectivo') {
+                        $cajaFuerte['gastos'] += $monto;
+                    }
+                }
+            }
+
+            // Calcular saldos
+            $saldoMercadoPago = $mercadoPago['ingresos'] - $mercadoPago['gastos'];
+            $saldoInbursa = $inbursa['ingresos'] - $inbursa['gastos'];
+            $saldoCajaFuerte = $cajaFuerte['ingresos'] - $cajaFuerte['gastos'];
+            $saldoTotal = $saldoMercadoPago + $saldoInbursa + $saldoCajaFuerte;
+
+            $cuentasBancarias = [
+                [
+                    'nombre' => 'Mercado Pago',
+                    'banco' => 'Mercado Pago',
+                    'tipo' => 'Cuenta Digital',
+                    'ingresos' => $mercadoPago['ingresos'],
+                    'gastos' => $mercadoPago['gastos'],
+                    'saldo' => $saldoMercadoPago
+                ],
+                [
+                    'nombre' => 'Cuenta Inbursa',
+                    'banco' => 'Inbursa',
+                    'tipo' => 'Cuenta Bancaria',
+                    'ingresos' => $inbursa['ingresos'],
+                    'gastos' => $inbursa['gastos'],
+                    'saldo' => $saldoInbursa
+                ],
+                [
+                    'nombre' => 'Caja Fuerte Efectivo',
+                    'banco' => 'Efectivo',
+                    'tipo' => 'Caja',
+                    'ingresos' => $cajaFuerte['ingresos'],
+                    'gastos' => $cajaFuerte['gastos'],
+                    'saldo' => $saldoCajaFuerte
+                ]
+            ];
+
+            // ============================================================
+            // 3. GASTOS DE LA ESCUELA (Gastos que NO son de los socios)
+            // ============================================================
+            $gastosEscuelaWhereClause = $whereClause;
+            if (!empty($whereClause)) {
+                $gastosEscuelaWhereClause .= " AND tipo = 'G' AND socio NOT IN ($sociosPlaceholders)";
+            } else {
+                $gastosEscuelaWhereClause = "WHERE tipo = 'G' AND socio NOT IN ($sociosPlaceholders)";
+            }
+
+            $gastosEscuelaParams = array_merge($params, $sociosInversores);
+
+            $gastosEscuelaQuery = "
+                SELECT SUM(total) as monto
+                FROM transacciones
+                $gastosEscuelaWhereClause
+            ";
+
+            $gastosEscuelaResult = executeQuery($gastosEscuelaQuery, $gastosEscuelaParams);
+            $montoGastosEscuela = floatval($gastosEscuelaResult[0]['monto'] ?? 0);
+
+            // Calcular porcentaje de gastos escuela sobre el total de gastos
+            $totalGastosQuery = "
+                SELECT SUM(total) as total
+                FROM transacciones
+                " . (!empty($whereClause) ? $whereClause . " AND tipo = 'G'" : "WHERE tipo = 'G'");
+
+            $totalGastosResult = executeQuery($totalGastosQuery, $params);
+            $totalGastos = floatval($totalGastosResult[0]['total'] ?? 0);
+
+            $gastosEscuela = [
+                'monto' => $montoGastosEscuela,
+                'porcentaje' => $totalGastos > 0 ? ($montoGastosEscuela / $totalGastos) * 100 : 0
+            ];
+
+            // ============================================================
+            // 4. PARTICIPACIÓN EN LA SOCIEDAD (basada en inversión)
+            // ============================================================
+            $participacion = [];
+            foreach ($socios as $socio) {
+                $participacion[] = [
+                    'socio' => $socio['socio'],
+                    'porcentaje' => $socio['porcentaje']
+                ];
+            }
+
+            // ============================================================
+            // RESPUESTA FINAL
+            // ============================================================
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'inversion_total' => $totalInversion,
+                    'numero_socios' => count($socios),
+                    'saldo_total_cuentas' => $saldoTotal,
+                    'socios' => $socios,
+                    'cuentas_bancarias' => $cuentasBancarias,
+                    'gastos_escuela' => $gastosEscuela,
+                    'participacion' => $participacion
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en balance general v2: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error generando balance general',
                 'message' => $e->getMessage()
             ]);
         }

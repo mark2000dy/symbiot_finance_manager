@@ -3,6 +3,32 @@
    Archivo: public/js/reportes-widgets.js
    Widgets específicos para reportes
 
+   Version: 3.3.4
+   Changelog v3.3.4:
+   - FIX: Estado de Cuenta con reglas específicas por cuenta
+   - Mercado Pago: Ingresos TPV + Gastos TPV/MP + Gastos transferencia (Clases, Limpieza, Quincena, etc.)
+   - Inbursa: Ingresos Transferencia/CTIM + Gastos transferencia (Honorarios, Prestamo)
+   - Caja Fuerte: Ingresos/Gastos en Efectivo
+   - UI: Cards de cuentas muestran detalle de ingresos y gastos
+
+   Version: 3.3.3
+   Changelog v3.3.3:
+   - FIX: Widgets respetan filtros globales de la página
+   - FIX: Por defecto: todas empresas, todos años, todos meses, todos tipos
+   - FIX: Datos se actualizan correctamente al cambiar filtros
+
+   Version: 3.3.1
+   Changelog v3.3.1:
+   - FIX: Balance General muestra histórico completo (sin filtro de año por defecto)
+   - FIX: Inversión neta = Gastos - Abonos (solo conceptos con 'abono')
+
+   Version: 3.3.0
+   Changelog v3.3.0:
+   - NEW: Balance General v2 con inversión por socio (Marco Delgado, Hugo Vazquez, Antonio Razo)
+   - NEW: Estado de Cuenta por forma de pago (TPV→Mercado Pago, Transferencia→Inbursa, Efectivo→Caja Fuerte)
+   - NEW: Participación Sociedad calculada desde gastos de socios inversores
+   - Usa nuevo endpoint: reportes/balance-general-v2
+
    Version: 3.2.0
    Changelog v3.2.0:
    - FIX: Filtro Tipo ahora afecta el gráfico (Gastos solo muestra salidas, Ingresos solo entradas)
@@ -100,9 +126,9 @@ function adaptGastosReales(backendResponse) {
 }
 
 /**
- * Adapter for reportes/balance-general endpoint
+ * Adapter for reportes/balance-general-v2 endpoint
  * Transforms backend balance data to expected format with investment metrics
- * @param {Object} backendResponse - {success: true, data: {total_ingresos, total_gastos, balance}}
+ * @param {Object} backendResponse - {success: true, data: {inversion_total, numero_socios, saldo_total_cuentas, socios, cuentas_bancarias, ...}}
  * @returns {Object} - {inversion_total, numero_socios, saldo_disponible, ...}
  */
 function adaptBalanceGeneral(backendResponse) {
@@ -110,25 +136,17 @@ function adaptBalanceGeneral(backendResponse) {
         return {
             inversion_total: 0,
             numero_socios: 0,
-            saldo_disponible: 0,
-            total_ingresos: 0,
-            total_gastos: 0,
-            balance: 0,
-            margen_porcentaje: 0
+            saldo_disponible: 0
         };
     }
 
     const data = backendResponse.data;
 
-    // Map backend fields to expected frontend fields
+    // Map backend fields to expected frontend fields (v2 ya tiene la estructura correcta)
     return {
-        inversion_total: data.total_ingresos || 0,
-        numero_socios: data.numero_transacciones_ingresos || 0,
-        saldo_disponible: data.balance || 0,
-        total_ingresos: data.total_ingresos || 0,
-        total_gastos: data.total_gastos || 0,
-        balance: data.balance || 0,
-        margen_porcentaje: data.margen_porcentaje || 0
+        inversion_total: data.inversion_total || 0,
+        numero_socios: data.numero_socios || 0,
+        saldo_disponible: data.saldo_total_cuentas || 0
     };
 }
 
@@ -216,15 +234,15 @@ function setColumnWidth(worksheet, colIndex, width) {
 async function initializeGastosRealesWidget() {
     try {
         console.log('📊 Inicializando widget Gastos Reales...');
-        
-        // Cargar datos iniciales
+
+        // Cargar datos iniciales - Por defecto: todos los filtros vacíos (mostrar todo)
         const filters = {
             empresa: '',
-            ano: '2025',
+            ano: '',
             mes: '',
             tipo: ''
         };
-        
+
         await loadGastosRealesData(filters);
         
         console.log('✅ Widget Gastos Reales inicializado');
@@ -717,14 +735,14 @@ let balanceGeneralData = null;
 async function initializeBalanceGeneralWidget() {
     try {
         console.log('💰 Inicializando widget Balance General...');
-        
-        // Cargar datos iniciales
+
+        // Cargar datos iniciales - Por defecto: todos los filtros vacíos (mostrar todo)
         const filters = {
-            empresa: '',
-            ano: '2025',
-            mes: ''
+            empresa: '',  // Todas las empresas
+            ano: '',      // Todos los años
+            mes: ''       // Todos los meses
         };
-        
+
         await loadBalanceGeneralData(filters);
         
         console.log('✅ Widget Balance General inicializado');
@@ -750,8 +768,8 @@ async function loadBalanceGeneralData(filters = {}) {
         if (filters.ano) params.ano = filters.ano;
         if (filters.mes) params.mes = filters.mes;
 
-        // Llamar al endpoint
-        const data = await window.apiGet('reportes/balance-general', params);
+        // Llamar al endpoint v2 con datos completos de socios y cuentas
+        const data = await window.apiGet('reportes/balance-general-v2', params);
 
         if (!data.success) {
             throw new Error(data.message || 'Error en respuesta del servidor');
@@ -937,14 +955,14 @@ function updateGastosEscuela(gastosEscuela) {
 function updateEstadoCuentas(cuentas) {
     const container = document.getElementById('cuentasBancarias');
     if (!container) return;
-    
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('es-MX', {
             style: 'currency',
             currency: 'MXN'
         }).format(amount);
     };
-    
+
     if (!cuentas || cuentas.length === 0) {
         container.innerHTML = `
             <div class="col-12 text-center text-muted">
@@ -954,16 +972,23 @@ function updateEstadoCuentas(cuentas) {
         `;
         return;
     }
-    
+
     container.innerHTML = '';
-    
+
+    // Iconos por tipo de cuenta
+    const iconos = {
+        'Mercado Pago': 'credit-card',
+        'Inbursa': 'university',
+        'Efectivo': 'money-bill-wave'
+    };
+
     cuentas.forEach(cuenta => {
         const saldoClass = cuenta.saldo >= 0 ? 'text-success' : 'text-danger';
-        const iconoBanco = cuenta.banco === 'Inbursa' ? 'university' : 'credit-card';
-        
+        const iconoBanco = iconos[cuenta.banco] || 'wallet';
+
         const card = `
-            <div class="col-md-6 mb-3">
-                <div class="card" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+            <div class="col-md-4 mb-3">
+                <div class="card h-100" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -974,10 +999,30 @@ function updateEstadoCuentas(cuentas) {
                             </div>
                             <span class="badge bg-primary">${cuenta.banco}</span>
                         </div>
+
+                        <!-- Detalle Ingresos/Gastos -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="text-muted">
+                                    <i class="fas fa-arrow-up text-success me-1"></i>Ingresos
+                                </small>
+                                <small class="text-success">${formatCurrency(cuenta.ingresos || 0)}</small>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">
+                                    <i class="fas fa-arrow-down text-danger me-1"></i>Gastos
+                                </small>
+                                <small class="text-danger">${formatCurrency(cuenta.gastos || 0)}</small>
+                            </div>
+                        </div>
+
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 0.5rem 0;">
+
+                        <!-- Saldo -->
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <small class="text-muted d-block">Saldo Disponible</small>
-                                <h3 class="${saldoClass} mb-0">${formatCurrency(cuenta.saldo)}</h3>
+                                <small class="text-muted d-block">Saldo</small>
+                                <h4 class="${saldoClass} mb-0">${formatCurrency(cuenta.saldo)}</h4>
                             </div>
                             <i class="fas fa-wallet fa-2x text-muted"></i>
                         </div>
@@ -985,7 +1030,7 @@ function updateEstadoCuentas(cuentas) {
                 </div>
             </div>
         `;
-        
+
         container.insertAdjacentHTML('beforeend', card);
     });
 }
