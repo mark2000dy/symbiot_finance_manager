@@ -167,7 +167,8 @@ class TransaccionesController {
                 return;
             }
 
-            $socio = $user['nombre'];
+            // FIX: Use the socio from the input, fallback to the user's name
+            $socio = $input['socio'] ?? $user['nombre'];
             $created_by = $user['id'];
 
             $query = "

@@ -350,7 +350,7 @@ async function updateTransaction(transactionId, transactionData) {
     try {
         console.log(`💰 Actualizando transacción ${transactionId}...`, transactionData);
         
-        const response = await apiPut(`/gastos/api/transacciones/${transactionId}`, transactionData);
+        const response = await apiPut(`transacciones/${transactionId}`, transactionData);
         
         if (response.success) {
             console.log('✅ Transacción actualizada exitosamente');
@@ -372,7 +372,7 @@ async function deleteTransaction(transactionId) {
     try {
         console.log(`💰 Eliminando transacción ${transactionId}...`);
         
-        const response = await apiDelete(`/gastos/api/transacciones/${transactionId}`);
+        const response = await apiDelete(`transacciones/${transactionId}`);
         
         if (response.success) {
             console.log('✅ Transacción eliminada exitosamente');
@@ -467,7 +467,7 @@ async function updateStudent(studentId, studentData) {
     try {
         console.log(`🎓 Actualizando alumno ${studentId} vía API...`, studentData);
         
-        const response = await apiPut(`/gastos/api/alumnos/${studentId}`, studentData);
+        const response = await apiPut(`alumnos/${studentId}`, studentData);
         
         if (response.success) {
             console.log('✅ Alumno actualizado exitosamente vía API');
@@ -489,7 +489,7 @@ async function deleteStudent(studentId) {
     try {
         console.log(`🎓 Eliminando alumno ${studentId} vía API...`);
         
-        const response = await apiDelete(`/gastos/api/alumnos/${studentId}`);
+        const response = await apiDelete(`alumnos/${studentId}`);
         
         if (response.success) {
             console.log('✅ Alumno eliminado exitosamente vía API');
