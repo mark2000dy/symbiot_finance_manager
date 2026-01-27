@@ -155,9 +155,15 @@ function applyEmpresaRestriction() {
         if (empresaId) {
             window.currentCompanyFilter = empresaId;
             localStorage.setItem('dashboardCompanyFilter', empresaId);
-            console.log(`🔧 Empresa forzada por permisos: ${empresaId}`);
             
-            // 🔧 CRÍTICO para Escuela: Asegurar que currentCompanyFilter esté globalmente accesible
+            // 🔧 TAMBIÉN actualizar el SELECT visualmente
+            const companySelect = document.getElementById('companyFilter');
+            if (companySelect) {
+                companySelect.value = empresaId;
+                console.log(`✅ SELECT actualizado en applyEmpresaRestriction: ${empresaId}`);
+            }
+            
+            console.log(`🔧 Empresa forzada por permisos: ${empresaId}`);
             console.log(`📊 window.currentCompanyFilter establecido a: ${window.currentCompanyFilter}`);
         }
     }

@@ -113,6 +113,19 @@ async function initializeDashboard() {
             console.warn('⚠️ loadCompanyFilterFromURL no disponible, omitiendo configuración de URL');
         }
 
+        // 🔧 CRÍTICO: SINCRONIZAR EL SELECT CON window.currentCompanyFilter ANTES DE CARGAR DATOS
+        // Este es el paso que faltaba - el SELECT debe mostrar el valor correcto visualmente
+        console.log('📋 FASE 4.5: Sincronizando selector visual con window.currentCompanyFilter...');
+        const filterValue = window.currentCompanyFilter || '';
+        const companySelect = document.getElementById('companyFilter');
+        if (companySelect) {
+            const oldValue = companySelect.value;
+            companySelect.value = filterValue;
+            console.log(`✅ SELECT sincronizado: "${oldValue}" → "${filterValue}" (window.currentCompanyFilter=${window.currentCompanyFilter})`);
+        } else {
+            console.warn('⚠️ Selector #companyFilter no encontrado en DOM');
+        }
+
         // CORRECCIÓN NAVEGACIÓN: Verificar y recargar datos perdidos
         setTimeout(async () => {
             const balanceElement = document.getElementById('balanceTotal');
