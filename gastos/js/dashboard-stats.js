@@ -42,6 +42,17 @@ if (typeof window.currentStudentFilters === 'undefined') {
  * Cargar datos principales del dashboard
  */
 async function loadDashboardData() {
+    // Permission Check: Abort if the user is a 'viewer'
+    const permissions = window.getUserPermissions && window.getUserPermissions();
+    if (permissions && permissions.role === 'viewer') {
+        console.log('📊 Usuario "viewer" detectado. Omitiendo carga de estadísticas financieras.');
+        const statsRow = document.getElementById('statisticsCardsRow');
+        if (statsRow) statsRow.style.display = 'none';
+        const companySelector = document.getElementById('companySelectorWidget');
+        if (companySelector) companySelector.style.display = 'none';
+        return; // Stop execution for this user
+    }
+
     // 🔥 ASEGURAR que la función sea accesible globalmente
     window.loadDashboardData = loadDashboardData;
     

@@ -311,10 +311,73 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEmpresaFilterInterceptor();
 });
 
-// Fallback: re-aplicar cuando la ventana termine de cargar
+// Fallback: re-aplicar cuando la ventana termine decargar
 window.addEventListener('load', function() {
     if (!_permissionsApplied) {
         applyUserPermissions();
         setupEmpresaFilterInterceptor();
     }
 });
+
+// ====================================================
+// PERMISSION CHECKING FUNCTIONS
+// ====================================================
+
+/**
+ * Checks if the current user has permission for a specific action.
+ * This is the central source of truth for action-level permissions on the frontend.
+ * @param {string} action - The action to check (e.g., 'create_student', 'delete_transaction').
+ * @returns {boolean} - True if the user has permission, false otherwise.
+ */
+function hasPermission(action) {
+    const permissions = getUserPermissions();
+    if (!permissions || !permissions.role) return false;
+
+    const userRole = permissions.role;
+
+    // Defines which roles can perform which actions.
+    const rolePermissions = {
+        // View permissions
+        'view_dashboard': ['admin', 'manager', 'user', 'viewer'],
+        'view_transactions': ['admin', 'manager', 'user', 'viewer'],
+        'view_students': ['admin', 'manager', 'user', 'viewer'],
+
+        // Transaction CRUD
+        'create_transaction': ['admin', 'manager', 'viewer'],
+        'edit_transaction': ['admin', 'manager', 'viewer'],
+        'delete_transaction': ['admin', 'viewer'], // Only admin and viewer as per spec
+
+        // Student CRUD
+        'create_student': ['admin', 'manager', 'viewer'],
+        'edit_student': ['admin', 'manager', 'viewer'],
+        'delete_student': ['admin', 'viewer'], // Only admin and viewer as per spec
+
+        // Other permissions
+        'export_data': ['admin', 'manager'],
+        'bulk_operations': ['admin'],
+        'manage_users': ['admin'],
+        'system_settings': ['admin']
+    };
+
+    const allowedRoles = rolePermissions[action];
+    if (!allowedRoles) {
+        console.warn(`Action not defined in permissions map: ${action}`);
+        return false;
+    }
+
+    return allowedRoles.includes(userRole);
+}
+
+/**
+ * Convenience function to check if the current user is an admin.
+ * @returns {boolean} - True if the user is an admin.
+ */
+function isUserAdmin() {
+    const permissions = getUserPermissions();
+    return permissions.role === 'admin';
+}
+
+// Expose permission functions globally so other modules can use them
+window.hasPermission = hasPermission;
+window.isUserAdmin = isUserAdmin;
+

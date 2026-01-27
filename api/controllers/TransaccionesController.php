@@ -126,6 +126,17 @@ class TransaccionesController {
     public static function createTransaccion() {
         $user = AuthController::requireAuth();
 
+        // Security: Only allow authorized roles to create transactions
+        $authorizedRoles = ['admin', 'editor', 'escuela@rockstarskull.com'];
+        if (!in_array($user['rol'], $authorizedRoles) && $user['email'] !== 'escuela@rockstarskull.com') {
+            http_response_code(403);
+            echo json_encode([
+                'success' => false,
+                'message' => 'No tienes permisos para crear transacciones'
+            ]);
+            return;
+        }
+
         try {
             $input = json_decode(file_get_contents('php://input'), true);
 
@@ -219,11 +230,12 @@ class TransaccionesController {
             $tipo = $input['tipo'] ?? null;
 
             // Verificar que la transacción existe
-            $isAdmin = $user['rol'] === 'admin';
-            $queryCheck = $isAdmin
+            // Allow admin and viewer roles to bypass created_by check
+            $bypassCreatedByCheck = in_array($user['rol'], ['admin', 'viewer']);
+            $queryCheck = $bypassCreatedByCheck
                 ? 'SELECT * FROM transacciones WHERE id = ?'
                 : 'SELECT * FROM transacciones WHERE id = ? AND created_by = ?';
-            $paramsCheck = $isAdmin ? [$id] : [$id, $user['id']];
+            $paramsCheck = $bypassCreatedByCheck ? [$id] : [$id, $user['id']];
 
             $existeTransaccion = executeQuery($queryCheck, $paramsCheck);
 
@@ -236,7 +248,7 @@ class TransaccionesController {
                 return;
             }
 
-            $query = $isAdmin
+            $query = $bypassCreatedByCheck
                 ? "UPDATE transacciones SET
                     fecha = ?, concepto = ?, empresa_id = ?, forma_pago = ?,
                     cantidad = ?, precio_unitario = ?, tipo = ?
@@ -246,7 +258,7 @@ class TransaccionesController {
                     cantidad = ?, precio_unitario = ?, tipo = ?
                 WHERE id = ? AND created_by = ?";
 
-            $queryParams = $isAdmin
+            $queryParams = $bypassCreatedByCheck
                 ? [$fecha, $concepto, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id]
                 : [$fecha, $concepto, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id, $user['id']];
 
@@ -279,11 +291,12 @@ class TransaccionesController {
         $user = AuthController::requireAuth();
 
         try {
-            $isAdmin = $user['rol'] === 'admin';
-            $queryCheck = $isAdmin
+            // Allow admin and viewer roles to bypass created_by check
+            $bypassCreatedByCheck = in_array($user['rol'], ['admin', 'viewer']);
+            $queryCheck = $bypassCreatedByCheck
                 ? 'SELECT concepto, tipo FROM transacciones WHERE id = ?'
                 : 'SELECT concepto, tipo FROM transacciones WHERE id = ? AND created_by = ?';
-            $paramsCheck = $isAdmin ? [$id] : [$id, $user['id']];
+            $paramsCheck = $bypassCreatedByCheck ? [$id] : [$id, $user['id']];
 
             $existeTransaccion = executeQuery($queryCheck, $paramsCheck);
 
@@ -296,10 +309,10 @@ class TransaccionesController {
                 return;
             }
 
-            $deleteQuery = $isAdmin
+            $deleteQuery = $bypassCreatedByCheck
                 ? 'DELETE FROM transacciones WHERE id = ?'
                 : 'DELETE FROM transacciones WHERE id = ? AND created_by = ?';
-            $deleteParams = $isAdmin ? [$id] : [$id, $user['id']];
+            $deleteParams = $bypassCreatedByCheck ? [$id] : [$id, $user['id']];
 
             executeUpdate($deleteQuery, $deleteParams);
 
@@ -531,10 +544,18 @@ class TransaccionesController {
     public static function updateAlumno($id) {
         $user = AuthController::requireAuth();
 
+        // Security: Only admins or escuela@rockstarskull.com can update students
+        $allowedRoles = ['admin', 'escuela@rockstarskull.com'];
+        if (!in_array($user['rol'], $allowedRoles) && $user['email'] !== 'escuela@rockstarskull.com') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'No tienes permisos para actualizar alumnos.']);
+            return;
+        }
+
         try {
             $input = json_decode(file_get_contents('php://input'), true);
 
-            error_log("✏️ Actualizando alumno ID: $id");
+            error_log("✏️ Actualizando alumno ID: $id por usuario: " . $user['email']);
             error_log("📥 Datos recibidos: " . json_encode($input));
 
             // Validar que el alumno existe

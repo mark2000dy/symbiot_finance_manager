@@ -179,6 +179,9 @@
                 });
 
                 if (data.success) {
+                    // FIX: Guardar datos del usuario en localStorage para que los permisos se apliquen en todas las páginas
+                    localStorage.setItem('user_data', JSON.stringify(data.user));
+
                     // Guardar email si "recordarme" está activo
                     if (document.getElementById('rememberMe').checked) {
                         localStorage.setItem('rememberedEmail', email);
