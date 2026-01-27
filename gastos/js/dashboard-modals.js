@@ -412,7 +412,7 @@ async function submitTransaction() {
     try {
         console.log('💾 Iniciando envío de transacción...');
         
-        // Obtener valores del formulario
+        // ... (form data collection and validation remains the same)
         const fecha = document.getElementById('transactionDate')?.value;
         const tipo = document.getElementById('transactionType')?.value;
         const empresa_id = parseInt(document.getElementById('transactionCompany')?.value);
@@ -420,116 +420,60 @@ async function submitTransaction() {
         const concepto = document.getElementById('transactionConcept')?.value;
         const cantidad = parseInt(document.getElementById('transactionQuantity')?.value);
         const precio_unitario = parseFloat(document.getElementById('transactionUnitPrice')?.value);
-        const forma_pago = document.getElementById('transactionPayment')?.value;  // ✅ Corregido: el ID real es transactionPayment (sin Method)
+        const forma_pago = document.getElementById('transactionPayment')?.value;
 
-        console.log('🔍 Forma de pago capturada:', forma_pago, '(tipo:', typeof forma_pago, ')');
-
-        // Validar campos requeridos
-        if (!fecha) {
-            showAlert('warning', 'Por favor selecciona una fecha');
+        if (!fecha || !tipo || !empresa_id || !socio || !concepto || !cantidad || !precio_unitario || !forma_pago) {
+            showAlert('warning', 'Todos los campos son requeridos.');
             return;
         }
         
-        if (!tipo) {
-            showAlert('warning', 'Por favor selecciona el tipo de transacción');
-            return;
-        }
+        const transactionData = { fecha, tipo, empresa_id, socio, concepto, cantidad, precio_unitario, forma_pago };
         
-        if (!empresa_id) {
-            showAlert('warning', 'Por favor selecciona una empresa');
-            return;
-        }
-        
-        if (!socio || socio.trim() === '') {
-            showAlert('warning', 'Por favor ingresa el socio/cliente');
-            return;
-        }
-        
-        if (!concepto || concepto.trim() === '') {
-            showAlert('warning', 'Por favor ingresa el concepto');
-            return;
-        }
-        
-        if (!cantidad || cantidad <= 0) {
-            showAlert('warning', 'Por favor ingresa una cantidad válida');
-            return;
-        }
-        
-        if (!precio_unitario || precio_unitario <= 0) {
-            showAlert('warning', 'Por favor ingresa un precio unitario válido');
-            return;
-        }
-        
-        if (!forma_pago || forma_pago.trim() === '') {
-            showAlert('warning', 'Por favor selecciona una forma de pago');
-            return;
-        }
-        
-        // Preparar datos
-        const transactionData = {
-            fecha,
-            tipo,
-            empresa_id,
-            socio,
-            concepto,
-            cantidad,
-            precio_unitario,
-            forma_pago
-        };
-        
-        console.log('📦 Datos a enviar:', transactionData);
-        
-        // Deshabilitar botón mientras se procesa
         const submitButton = document.querySelector('#addTransactionModal button[onclick="submitTransaction()"]');
         if (submitButton) {
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
         }
-        
-        // Enviar al servidor
-        const response = await window.createTransaction(transactionData);
+
+        const editingId = window.editingTransactionId;
+        let response;
+
+        if (editingId) {
+            // UPDATE existing transaction
+            console.log(`🚀 Enviando UPDATE para ID: ${editingId}`);
+            response = await window.updateTransaction(editingId, transactionData);
+        } else {
+            // CREATE new transaction
+            console.log('🚀 Enviando CREATE');
+            response = await window.createTransaction(transactionData);
+        }
         
         if (response.success) {
-            console.log('✅ Transacción creada exitosamente');
+            const action = editingId ? 'actualizada' : 'registrada';
+            showAlert('success', `Transacción ${action} exitosamente`);
             
-            // Mostrar mensaje de éxito
-            showAlert('success', 'Transacción registrada exitosamente');
-            
-            // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('addTransactionModal'));
-            if (modal) {
-                modal.hide();
-            }
+            if (modal) modal.hide();
             
-            // Limpiar formulario
-            document.getElementById('transactionForm')?.reset();
-            
-            // Refrescar datos del dashboard
-            if (typeof window.loadDashboardData === 'function') {
-                await window.loadDashboardData();
-            }
-            
-            // Refrescar lista de transacciones si existe
-            if (typeof window.loadRecentTransactions === 'function') {
-                await window.loadRecentTransactions(1);
-            }
-            
-            console.log('✅ Dashboard actualizado');
+            if (typeof window.loadDashboardData === 'function') await window.loadDashboardData();
+            if (typeof window.loadRecentTransactions === 'function') await window.loadRecentTransactions(1);
             
         } else {
-            throw new Error(response.message || 'Error guardando transacción');
+            throw new Error(response.error || 'Error guardando la transacción');
         }
         
     } catch (error) {
         console.error('❌ Error en submitTransaction:', error);
         showAlert('danger', `Error: ${error.message}`);
-        
-        // Re-habilitar botón
+    } finally {
+        // Reset button and editing ID
         const submitButton = document.querySelector('#addTransactionModal button[onclick="submitTransaction()"]');
         if (submitButton) {
             submitButton.disabled = false;
             submitButton.innerHTML = '<i class="fas fa-save me-1"></i>Guardar Transacción';
         }
+        window.editingTransactionId = null; // IMPORTANT: Reset ID after operation
+        resetTransactionModal(); // Reset modal to creation mode
     }
 }
 

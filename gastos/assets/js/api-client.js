@@ -117,7 +117,13 @@
         }
 
         // Construir URL completa
-        const cleanEndpoint = endpoint.replace(/^\/+/, '');
+        let finalEndpoint = endpoint;
+        if (finalEndpoint.includes('/api/')) {
+            console.warn(`⚠️ Endpoint "${finalEndpoint}" contiene una ruta absoluta incorrecta. Limpiando...`);
+            const parts = finalEndpoint.split('/api/');
+            finalEndpoint = parts[parts.length - 1] || '';
+        }
+        const cleanEndpoint = finalEndpoint.replace(/^\/+/, '');
         const url = `${API_BASE_URL}/${cleanEndpoint}`;
 
         console.log(`🚀 API Request: ${fetchOptions.method} ${url}`);
