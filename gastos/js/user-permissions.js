@@ -155,8 +155,45 @@ function applyEmpresaRestriction() {
         if (empresaId) {
             window.currentCompanyFilter = empresaId;
             localStorage.setItem('dashboardCompanyFilter', empresaId);
+            console.log(`🔧 Empresa forzada por permisos: ${empresaId}`);
+            
+            // 🔧 CRÍTICO para Escuela: Asegurar que currentCompanyFilter esté globalmente accesible
+            console.log(`📊 window.currentCompanyFilter establecido a: ${window.currentCompanyFilter}`);
         }
     }
+}
+
+/**
+ * Asegurar que los widgets de Escuela sean visibles
+ * 🔧 CRÍTICO: Esta función DEBE llamarse después de que todos los DOM estén cargados
+ */
+function ensureEscuelaWidgetsVisible() {
+    const permissions = getUserPermissions();
+    const userEmail = getCurrentUserEmail();
+    
+    // Verificar si es usuario Escuela
+    if (userEmail === 'escuela@rockstarskull.com' || permissions.role === 'viewer') {
+        console.log('🎓 ESCUELA DETECTADA: Asegurando que widgets sean visibles...');
+        
+        // Forzar currentCompanyFilter a '1'
+        if (!window.currentCompanyFilter || window.currentCompanyFilter !== '1') {
+            window.currentCompanyFilter = '1';
+            console.log('✅ window.currentCompanyFilter forzado a "1" para Escuela');
+        }
+        
+        // Mostrar el div de widgets de RockstarSkull
+        setTimeout(() => {
+            const rockstarWidgets = document.getElementById('rockstarSkullWidgets');
+            if (rockstarWidgets && rockstarWidgets.style.display !== 'block') {
+                rockstarWidgets.style.display = 'block';
+                console.log('✅ rockstarSkullWidgets mostrado para Escuela');
+            }
+        }, 100);
+        
+        return true;
+    }
+    
+    return false;
 }
 
 /**
@@ -411,6 +448,7 @@ function isUserAdmin() {
 window.hasPermission = hasPermission;
 window.isUserAdmin = isUserAdmin;
 window.reapplyUserPermissions = reapplyUserPermissions;
+window.ensureEscuelaWidgetsVisible = ensureEscuelaWidgetsVisible;
 window.getUserPermissions = getUserPermissions;
 window.applyUserPermissions = applyUserPermissions;
 window.applyEmpresaRestriction = applyEmpresaRestriction;

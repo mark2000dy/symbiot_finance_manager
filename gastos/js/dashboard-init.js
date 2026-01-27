@@ -16,16 +16,15 @@ async function initializeDashboard() {
         console.log('🚀 Iniciando Sistema Dashboard - Symbiot Financial Manager');
         console.log('====================================================');
 
-        // CORRECCIÓN: Usar variable global del stats module
-let     currentCompanyFilter = window.currentCompanyFilter || '';
-
+        // 🔧 CRÍTICO: No declarar variable local, usar siempre window.currentCompanyFilter
+        // Esto asegura que los cambios en user-permissions.js se reflejen aquí
+        
         // ✅ NUEVO: Restaurar filtro desde localStorage
         function restoreCompanyFilter() {
             try {
                 const savedFilter = localStorage.getItem('dashboardCompanyFilter');
                 if (savedFilter !== null) {
                     window.currentCompanyFilter = savedFilter;
-                    currentCompanyFilter = savedFilter;
                     
                     const companySelect = document.getElementById('companyFilter');
                     if (companySelect) {
@@ -235,8 +234,8 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
         await initializeSpecificModules();
 
         // ✅ CORRECCIÓN: Cargar lista de alumnos cuando es RockstarSkull
-        if ((currentCompanyFilter === '1' || !currentCompanyFilter) && typeof loadStudentsList === 'function') {
-            console.log('🎓 Cargando lista inicial de alumnos...');
+        if ((window.currentCompanyFilter === '1' || !window.currentCompanyFilter) && typeof loadStudentsList === 'function') {
+            console.log(`🎓 Cargando lista inicial de alumnos... (currentCompanyFilter: ${window.currentCompanyFilter})`);
             await loadStudentsList(1);
         }
         
@@ -534,8 +533,8 @@ async function initializeSpecificModules() {
         await initializeStudentsModule();
 
         // Solo cargar datos si el widget está visible
-        if ((currentCompanyFilter === '1' || !currentCompanyFilter) && document.getElementById('studentsContainer')) {
-            console.log('📊 Widget de alumnos visible, cargando lista...');
+        if ((window.currentCompanyFilter === '1' || !window.currentCompanyFilter) && document.getElementById('studentsContainer')) {
+            console.log(`📊 Widget de alumnos visible (currentCompanyFilter: ${window.currentCompanyFilter}), cargando lista...`);
             // Widget existe, no hacer nada adicional aquí
             // loadStudentsList() se ejecuta desde handleCompanyChange() 
             
@@ -605,6 +604,12 @@ async function finalizeDashboardSetup() {
         // Verificar y mostrar widgets específicos de la empresa
         handleCompanySpecificSetup();
         
+        // 🔧 CRÍTICO para Escuela: Asegurar que sus widgets sean visibles
+        if (typeof window.ensureEscuelaWidgetsVisible === 'function') {
+            console.log('🔍 Verificando si es usuario Escuela para asegurar widgets visibles...');
+            window.ensureEscuelaWidgetsVisible();
+        }
+        
         updateInitProgress('Completado', 100);
         
         console.log('✅ Configuración del dashboard finalizada');
@@ -618,12 +623,18 @@ async function finalizeDashboardSetup() {
  * Configurar elementos específicos según la empresa seleccionada
  */
 function handleCompanySpecificSetup() {
+    // 🔧 CRÍTICO: Usar window.currentCompanyFilter que es la variable global
+    const companyFilter = window.currentCompanyFilter || '';
     const rockstarWidgets = document.getElementById('rockstarSkullWidgets');
     
-    if (currentCompanyFilter === '1') {
+    console.log(`🔍 handleCompanySpecificSetup: window.currentCompanyFilter = "${companyFilter}"`);
+    
+    if (companyFilter === '1') {
         // Mostrar widgets de RockstarSkull
+        console.log('🎸 Mostrando widgets de RockstarSkull/Escuela');
         if (rockstarWidgets) {
             rockstarWidgets.style.display = 'block';
+            console.log('✅ rockstarSkullWidgets mostrado');
         }
         if (typeof showRockstarSkullIndicators === 'function') {
             showRockstarSkullIndicators();
@@ -631,10 +642,12 @@ function handleCompanySpecificSetup() {
         
         // Cargar lista de alumnos solo si existe el contenedor
         if (typeof loadStudentsList === 'function' && document.getElementById('studentsTableContainer')) {
+            console.log('📚 Cargando lista de alumnos para RockstarSkull');
             loadStudentsList(1);
         }
     } else {
         // Ocultar widgets específicos
+        console.log('❌ Ocultando widgets de RockstarSkull (empresa diferente)');
         if (rockstarWidgets) {
             rockstarWidgets.style.display = 'none';
         }
