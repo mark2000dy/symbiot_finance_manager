@@ -16,7 +16,8 @@
 if (typeof window.currentCompanyFilter === 'undefined') {
     window.currentCompanyFilter = '';
 }
-let currentCompanyFilter = window.currentCompanyFilter;
+// ✅ ELIMINADA: Línea que creaba copia local estancada
+// Usar SIEMPRE window.currentCompanyFilter en lugar de currentCompanyFilter local
 
 // Variables globales para almacenamiento de datos
 if (typeof window.storedClassDistribution === 'undefined') {
@@ -42,15 +43,35 @@ if (typeof window.currentStudentFilters === 'undefined') {
  * Cargar datos principales del dashboard
  */
 async function loadDashboardData() {
-    // Permission Check: Abort if the user is a 'viewer'
+    // Permission Check: Abort if the user is a 'viewer' (EXCEPT for Escuela)
     const permissions = window.getUserPermissions && window.getUserPermissions();
-    if (permissions && permissions.role === 'viewer') {
+    
+    // 🔧 EXCEPCIÓN para Escuela: puede cargar datos específicos del dashboard
+    // Obtener email del usuario actual
+    let userEmail = null;
+    try {
+        const userDataStr = localStorage.getItem('user_data');
+        if (userDataStr) {
+            const userData = JSON.parse(userDataStr);
+            userEmail = userData.email;
+        }
+    } catch (e) {
+        console.log('⚠️ No se pudo obtener email del usuario:', e);
+    }
+    
+    // Bloquear SOLO si es viewer y NO es Escuela
+    if (permissions && permissions.role === 'viewer' && userEmail !== 'escuela@rockstarskull.com') {
         console.log('📊 Usuario "viewer" detectado. Omitiendo carga de estadísticas financieras.');
         const statsRow = document.getElementById('statisticsCardsRow');
         if (statsRow) statsRow.style.display = 'none';
         const companySelector = document.getElementById('companySelectorWidget');
         if (companySelector) companySelector.style.display = 'none';
         return; // Stop execution for this user
+    }
+    
+    // ✅ Escuela continúa aquí - puede cargar sus datos específicos
+    if (userEmail === 'escuela@rockstarskull.com') {
+        console.log('🎓 Escuela detectada: Permitiendo carga de datos específicos...');
     }
 
     // 🔥 ASEGURAR que la función sea accesible globalmente
@@ -61,8 +82,8 @@ async function loadDashboardData() {
 
         // v3.1.2: Construir params object para apiGet en lugar de query string
         const params = {};
-        if (currentCompanyFilter) {
-            params.empresa_id = currentCompanyFilter;
+        if (window.currentCompanyFilter) {
+            params.empresa_id = window.currentCompanyFilter;
         }
 
         console.log('📡 Solicitando resumen de transacciones...');
@@ -197,7 +218,7 @@ async function updateCompanyStatsReal(resumen) {
         
         // Alumnos activos (solo para RockstarSkull) - USAR DATOS CORRECTOS
         const studentsElement = document.getElementById('companyStudents');
-        if (studentsElement && currentCompanyFilter === '1') {
+        if (studentsElement && window.currentCompanyFilter === '1') {
             try {
                 // v3.1.3: Usar API Client en lugar de fetch directo
                 const alumnosData = await window.apiGet('dashboard/alumnos', { empresa_id: 1 });
@@ -217,7 +238,7 @@ async function updateCompanyStatsReal(resumen) {
         const currentStudents = document.getElementById('currentStudents');
         const pendingStudents = document.getElementById('pendingStudents');
 
-        if (currentCompanyFilter === '1' && (currentStudents || pendingStudents)) {
+        if (window.currentCompanyFilter === '1' && (currentStudents || pendingStudents)) {
             try {
                 // v3.1.3: Usar API Client en lugar de fetch directo
                 const alertsData = await window.apiGet('dashboard/alertas-pagos', { empresa_id: 1 });
@@ -530,8 +551,7 @@ async function handleCompanyChange() {
         }
         
         const selectedCompany = companySelect.value;
-        currentCompanyFilter = selectedCompany;
-        window.currentCompanyFilter = selectedCompany; // Sincronizar globalmente
+        window.currentCompanyFilter = selectedCompany;
 
         // ✅ NUEVO: Guardar en localStorage para persistencia entre navegaciones
         try {
@@ -874,7 +894,6 @@ function loadCompanyFilterFromURL() {
         const empresaParam = urlParams.get('empresa');
         
         if (empresaParam) {
-            currentCompanyFilter = empresaParam;
             window.currentCompanyFilter = empresaParam;
             
             // Actualizar selector
@@ -945,8 +964,8 @@ async function loadCurrentMonthData() {
             fechaInicio: fechaInicio,
             fechaFin: fechaFin
         };
-        if (currentCompanyFilter) {
-            params.empresa_id = currentCompanyFilter;
+        if (window.currentCompanyFilter) {
+            params.empresa_id = window.currentCompanyFilter;
         }
 
         console.log(`Cargando balance del mes actual: ${fechaInicio} a ${fechaFin}`);
@@ -999,7 +1018,6 @@ function hideRockstarSkullIndicators() {
 window.dashboardStatsLoaded = true;
 
 // Variables globales críticas
-window.currentCompanyFilter = currentCompanyFilter;
 window.storedClassDistribution = storedClassDistribution;
 
 // Funciones principales (CRÍTICAS PARA dashboard-init.js)
