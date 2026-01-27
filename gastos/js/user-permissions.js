@@ -86,6 +86,7 @@ let _permissionsApplied = false;
 
 /**
  * Obtener email del usuario actual desde localStorage
+ * 🔧 FALLBACK: Si localStorage está vacío, intenta obtener desde currentUser global
  */
 function getCurrentUserEmail() {
     try {
@@ -94,8 +95,24 @@ function getCurrentUserEmail() {
             const userData = JSON.parse(userDataStr);
             return userData.email || null;
         }
+        
+        // 🔧 FALLBACK: Si localStorage está vacío, intentar obtener desde currentUser global
+        // (Ocurre cuando se borra localStorage pero hay sesión PHP activa)
+        if (typeof window.currentUser !== 'undefined' && window.currentUser && window.currentUser.email) {
+            console.log('⚠️  Usando currentUser como fallback para email');
+            return window.currentUser.email;
+        }
+        
         return null;
     } catch (e) {
+        console.warn('⚠️  Error obteniendo email del usuario:', e);
+        
+        // 🔧 FALLBACK: Intentar obtener desde currentUser si hay error en JSON
+        if (typeof window.currentUser !== 'undefined' && window.currentUser && window.currentUser.email) {
+            console.log('⚠️  Usando currentUser como fallback después de error');
+            return window.currentUser.email;
+        }
+        
         return null;
     }
 }

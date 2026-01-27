@@ -61,6 +61,22 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
         // FASE 2: Cargar información del usuario
         console.log('📋 FASE 2: Cargando información del usuario...');
         await loadAndDisplayUserInfo();
+        
+        // 🔧 DIAGNÓSTICO: Verificar que user_data fue persistido correctamente
+        const savedUserData = localStorage.getItem('user_data');
+        if (savedUserData) {
+            try {
+                const userData = JSON.parse(savedUserData);
+                console.log('✅ DIAGNÓSTICO: user_data persistido correctamente:', userData.email);
+            } catch (e) {
+                console.error('❌ DIAGNÓSTICO: user_data corrupto en localStorage');
+            }
+        } else {
+            console.warn('⚠️  DIAGNÓSTICO: user_data NO está en localStorage - fallback a currentUser global');
+            if (currentUser && currentUser.email) {
+                console.log('✅ DIAGNÓSTICO: currentUser disponible como fallback:', currentUser.email);
+            }
+        }
 
         // FASE 2.1: Aplicar permisos de usuario ANTES de cargar datos
         console.log('📋 FASE 2.1: Aplicando permisos de usuario...');

@@ -149,6 +149,11 @@ async function verifyAuthenticationForReportes() {
         const data = await window.apiGet('user');
 
         if (data.success && data.user) {
+            // 🔧 CRÍTICO: Persistir datos del usuario en localStorage
+            if (typeof window.setUserData === 'function') {
+                window.setUserData(data.user);
+                console.log('💾 User data persistido en localStorage en verifyAuthenticationForReportes');
+            }
             console.log(`✅ Usuario autenticado: ${data.user.nombre}`);
             return true;
         }
@@ -177,6 +182,12 @@ async function loadUserInfoForReportes() {
 
         if (data.success && data.user) {
             const user = data.user;
+            
+            // 🔧 CRÍTICO: Persistir datos del usuario en localStorage
+            if (typeof window.setUserData === 'function') {
+                window.setUserData(user);
+                console.log('💾 User data persistido en localStorage en loadUserInfoForReportes');
+            }
             
             // Actualizar nombre de usuario en navbar
             const userNameElement = document.getElementById('userName');

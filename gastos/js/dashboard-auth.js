@@ -20,6 +20,13 @@ async function checkAuthentication() {
 
         if (data.success && data.user) {
             currentUser = data.user;
+            
+            // 🔧 CRÍTICO: Persistir datos del usuario en localStorage para que user-permissions.js pueda acceder
+            if (typeof window.setUserData === 'function') {
+                window.setUserData(data.user);
+                console.log('💾 User data persistido en localStorage via checkAuthentication');
+            }
+            
             console.log(`✅ Usuario autenticado: ${currentUser.nombre} (${currentUser.rol})`);
             return true;
         }
@@ -267,7 +274,11 @@ async function validateAndRefreshSession() {
 
         const data = await window.apiGet('user');
 
-        if (data.success) {
+        if (data.success && data.user) {
+            // 🔧 CRÍTICO: Persistir datos del usuario
+            if (typeof window.setUserData === 'function') {
+                window.setUserData(data.user);
+            }
             console.log('✅ Sesión válida');
             return true;
         }
@@ -290,7 +301,11 @@ async function refreshSession() {
 
         const data = await window.apiGet('user');
 
-        if (data.success) {
+        if (data.success && data.user) {
+            // 🔧 CRÍTICO: Persistir datos del usuario
+            if (typeof window.setUserData === 'function') {
+                window.setUserData(data.user);
+            }
             console.log('✅ Sesión válida');
             return true;
         }

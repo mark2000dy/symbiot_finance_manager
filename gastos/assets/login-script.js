@@ -28,6 +28,12 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    // 🔧 CRÍTICO: Guardar datos del usuario en localStorage para que user-permissions.js pueda acceder
+                    if (data.user && typeof data.user === 'object') {
+                        localStorage.setItem('user_data', JSON.stringify(data.user));
+                        console.log('💾 User data guardado en localStorage:', data.user.email);
+                    }
+                    
                     // Guardar email si "recordarme" está marcado
                     if (rememberMe) {
                         localStorage.setItem('rememberedEmail', email);
