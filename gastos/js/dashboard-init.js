@@ -62,6 +62,18 @@ let     currentCompanyFilter = window.currentCompanyFilter || '';
         console.log('📋 FASE 2: Cargando información del usuario...');
         await loadAndDisplayUserInfo();
 
+        // FASE 2.1: Aplicar permisos de usuario ANTES de cargar datos
+        console.log('📋 FASE 2.1: Aplicando permisos de usuario...');
+        if (typeof window.applyEmpresaRestriction === 'function') {
+            window.applyEmpresaRestriction();
+        }
+        if (typeof window.applyUserPermissions === 'function') {
+            window.applyUserPermissions();
+        }
+        if (typeof window.setupEmpresaFilterInterceptor === 'function') {
+            window.setupEmpresaFilterInterceptor();
+        }
+
         // FASE 2.5: Asegurar que stats module esté completamente cargado
         console.log('📋 FASE 2.5: Verificando módulo Stats...');
         let statsRetries = 0;

@@ -74,7 +74,16 @@ async function initializeReportes() {
         // FASE 3: Cargar empresas en filtro
         console.log('📋 FASE 3: Cargando empresas...');
         await loadCompaniesForFilter();
-        
+
+        // FASE 3.1: Aplicar permisos de usuario (después de cargar empresas para filtrar dropdown)
+        console.log('📋 FASE 3.1: Aplicando permisos de usuario...');
+        if (typeof window.applyUserPermissions === 'function') {
+            window.applyUserPermissions();
+        }
+        if (typeof window.setupEmpresaFilterInterceptor === 'function') {
+            window.setupEmpresaFilterInterceptor();
+        }
+
         // FASE 4: Cargar periodo de análisis dinámico
         console.log('📋 FASE 4: Calculando periodo de análisis...');
         await loadPeriodoAnalisis();

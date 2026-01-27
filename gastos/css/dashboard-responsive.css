@@ -111,12 +111,41 @@ body {
     
     /* Tabla responsive en móvil */
     .table-responsive {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
-    
+
     .table th,
     .table td {
-        padding: 0.5rem 0.25rem;
+        padding: 0.4rem 0.25rem;
+        white-space: nowrap;
+    }
+
+    /* Ocultar columnas menos importantes en móvil para tablas del dashboard */
+    #transactionsTable .col-hide-mobile,
+    #studentsTableContainer .col-hide-mobile {
+        display: none;
+    }
+
+    /* Tabla de transacciones: ocultar Socio y Empresa en móvil */
+    #transactionsTable table th:nth-child(3),
+    #transactionsTable table td:nth-child(3),
+    #transactionsTable table th:nth-child(4),
+    #transactionsTable table td:nth-child(4) {
+        display: none;
+    }
+
+    /* Tabla de alumnos: ocultar Maestro y Próximo Pago en móvil */
+    #studentsTableContainer table th:nth-child(3),
+    #studentsTableContainer table td:nth-child(3),
+    #studentsTableContainer table th:nth-child(5),
+    #studentsTableContainer table td:nth-child(5) {
+        display: none;
+    }
+
+    /* Acciones más compactas en móvil */
+    .btn-group-sm .btn {
+        padding: 0.2rem 0.35rem;
+        font-size: 0.7rem;
     }
     
     /* Modales en móvil */

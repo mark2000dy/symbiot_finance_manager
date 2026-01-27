@@ -336,17 +336,17 @@
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" id="navLinkGastos">
                         <a class="nav-link" href="gastos.html">
                             <i class="fas fa-money-bill-wave me-1"></i>Gastos
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" id="navLinkIngresos">
                         <a class="nav-link active" href="ingresos.html">
                             <i class="fas fa-coins me-1"></i>Ingresos
                         </a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item" id="navLinkReportes">
                         <a class="nav-link" href="reportes.html">
                             <i class="fas fa-chart-bar me-1"></i>Reportes
                         </a>
@@ -705,7 +705,28 @@
                                 <label for="transactionPartner" class="form-label">
                                     <i class="fas fa-user me-1"></i>Socio/Cliente
                                 </label>
-                                <input type="text" class="form-control" id="transactionPartner" placeholder="Nombre del socio o cliente" required>
+                                <select class="form-select" id="transactionPartner" required>
+                                    <option value="">Seleccionar socio...</option>
+                                    <optgroup label="Socios">
+                                        <option value="Marco Delgado">Marco Delgado</option>
+                                        <option value="Antonio Razo">Antonio Razo</option>
+                                        <option value="Escuela">Escuela</option>
+                                    </optgroup>
+                                    <optgroup label="Maestros RockstarSkull">
+                                        <option value="Hugo Vazquez">Hugo Vazquez</option>
+                                        <option value="Julio Olvera">Julio Olvera</option>
+                                        <option value="Demian Andrade">Demian Andrade</option>
+                                        <option value="Irwin Hernandez">Irwin Hernandez</option>
+                                        <option value="Nahomy Perez">Nahomy Perez</option>
+                                        <option value="Luis Blanquet">Luis Blanquet</option>
+                                        <option value="Manuel Reyes">Manuel Reyes</option>
+                                        <option value="Harim Lopez">Harim Lopez</option>
+                                    </optgroup>
+                                    <optgroup label="Empresas">
+                                        <option value="Symbiot Technologies">Symbiot Technologies</option>
+                                        <option value="Rockstar Skull">Rockstar Skull</option>
+                                    </optgroup>
+                                </select>
                             </div>
                         </div>
                         
@@ -774,7 +795,8 @@
     <script src="assets/js/api-client.js?v=3.1.4"></script>
 
     <!-- Control de permisos por usuario -->
-    <script src="js/user-permissions.js?v=1.0.0"></script>
+    <script src="js/user-permissions.js?v=1.1.0"></script>
+    <script>if (typeof window.checkPageAccess === 'function') window.checkPageAccess();</script>
 
     <script>
         // ============================================================
@@ -793,6 +815,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Inicializando Gestión de Ingresos...');
             setDefaultIngresosFilter();
+            // Re-aplicar permisos después de defaults (evita que setDefault sobreescriba el filtro)
+            if (typeof window.applyUserPermissions === 'function') {
+                window.applyUserPermissions();
+            }
             loadTransactions();
             loadIngresosChart();
 
@@ -954,6 +980,10 @@
             document.getElementById('filterAno').value = '';
             document.getElementById('filterMes').value = '';
             document.getElementById('filterTipo').value = 'I'; // Mantener solo ingresos
+            // Re-aplicar permisos para restaurar filtro de empresa restringido
+            if (typeof window.applyUserPermissions === 'function') {
+                window.applyUserPermissions();
+            }
             applyFilters();
         }
 
