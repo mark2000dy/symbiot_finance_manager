@@ -143,6 +143,24 @@ function applyEmpresaRestriction() {
 }
 
 /**
+ * Re-aplicar permisos del usuario (llamado después de cambios de contexto)
+ * Útil cuando los datos se recargan o el usuario cambia
+ */
+function reapplyUserPermissions() {
+    console.log('🔄 Re-aplicando permisos del usuario...');
+    applyEmpresaRestriction();
+    applyUserPermissions();
+    setupEmpresaFilterInterceptor();
+    
+    // Si existe la función de permisos específicos del widget, llamarla
+    if (typeof window.applyStudentsWidgetPermissions === 'function') {
+        window.applyStudentsWidgetPermissions();
+    }
+    
+    console.log('✅ Permisos re-aplicados completamente');
+}
+
+/**
  * Aplicar permisos al DOM - Ocultar/mostrar widgets, nav links y filtrar dropdowns
  */
 function applyUserPermissions() {
@@ -293,14 +311,8 @@ function setupEmpresaFilterInterceptor() {
     });
 }
 
-// Exponer funciones globalmente
-window.getUserPermissions = getUserPermissions;
-window.applyUserPermissions = applyUserPermissions;
-window.applyEmpresaRestriction = applyEmpresaRestriction;
-window.canAccessEmpresa = canAccessEmpresa;
-window.getCurrentUserEmail = getCurrentUserEmail;
-window.setupEmpresaFilterInterceptor = setupEmpresaFilterInterceptor;
-window.checkPageAccess = checkPageAccess;
+// ✅ REMOVED: Duplicated window exposure at line 315-322
+// All functions are now exposed at the end of the file
 
 // APLICACIÓN INMEDIATA: Restricción de empresa ANTES de que cargue el DOM
 applyEmpresaRestriction();
@@ -336,21 +348,22 @@ function hasPermission(action) {
     const userRole = permissions.role;
 
     // Defines which roles can perform which actions.
+    // UPDATED: Viewer role (Escuela) can now create and edit both students and transactions
     const rolePermissions = {
         // View permissions
         'view_dashboard': ['admin', 'manager', 'user', 'viewer'],
         'view_transactions': ['admin', 'manager', 'user', 'viewer'],
         'view_students': ['admin', 'manager', 'user', 'viewer'],
 
-        // Transaction CRUD
+        // Transaction CRUD - Viewer can create and edit
         'create_transaction': ['admin', 'manager', 'viewer'],
         'edit_transaction': ['admin', 'manager', 'viewer'],
-        'delete_transaction': ['admin', 'viewer'], // Only admin and viewer as per spec
+        'delete_transaction': ['admin', 'viewer'],
 
-        // Student CRUD
+        // Student CRUD - Viewer can create and edit (Escuela needs this)
         'create_student': ['admin', 'manager', 'viewer'],
         'edit_student': ['admin', 'manager', 'viewer'],
-        'delete_student': ['admin', 'viewer'], // Only admin and viewer as per spec
+        'delete_student': ['admin', 'viewer'],
 
         // Other permissions
         'export_data': ['admin', 'manager'],
@@ -380,4 +393,11 @@ function isUserAdmin() {
 // Expose permission functions globally so other modules can use them
 window.hasPermission = hasPermission;
 window.isUserAdmin = isUserAdmin;
-
+window.reapplyUserPermissions = reapplyUserPermissions;
+window.getUserPermissions = getUserPermissions;
+window.applyUserPermissions = applyUserPermissions;
+window.applyEmpresaRestriction = applyEmpresaRestriction;
+window.canAccessEmpresa = canAccessEmpresa;
+window.getCurrentUserEmail = getCurrentUserEmail;
+window.setupEmpresaFilterInterceptor = setupEmpresaFilterInterceptor;
+window.checkPageAccess = checkPageAccess;

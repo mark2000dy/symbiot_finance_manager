@@ -791,6 +791,9 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Page Loader Module (reutilizable en todas las páginas) -->
+    <script src="js/page-loader.js?v=1.0.0"></script>
+
     <!-- API Client v3.1.4 - Universal API Handler (DEBE CARGARSE PRIMERO) -->
     <script src="assets/js/api-client.js?v=3.1.4"></script>
 
@@ -799,6 +802,10 @@
     <script>if (typeof window.checkPageAccess === 'function') window.checkPageAccess();</script>
 
     <script>
+        // Mostrar loader al inicio
+        if (typeof showPageLoader === 'function') {
+            showPageLoader('Cargando módulo de Gastos...');
+        }
         // ============================================================
         // VARIABLES GLOBALES
         // ============================================================
@@ -1671,9 +1678,17 @@
                 
                 console.log('✅ Página inicializada correctamente');
                 
+                // Ocultar loader después de que la página esté lista
+                if (typeof hidePageLoader === 'function') {
+                    hidePageLoader(500); // Delay pequeño para que el usuario vea que todo está listo
+                }
+                
             } catch (error) {
                 console.error('❌ Error de autenticación:', error);
                 console.log('🔓 Redirigiendo al login...');
+                if (typeof hidePageLoader === 'function') {
+                    hidePageLoader(0);
+                }
                 setTimeout(() => {
                     window.location.href = 'login.html';
                 }, 2000);

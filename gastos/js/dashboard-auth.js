@@ -179,74 +179,18 @@ function configureUserPermissions() {
         }
     });
     
-    // Configurar permisos específicos del módulo de alumnos
-    configureStudentsModulePermissions();
-    
-    // Configurar permisos específicos del módulo de transacciones
-    configureTransactionsModulePermissions();
-    
-    console.log('✅ Permisos configurados según el rol del usuario');
+    // ✅ REMOVED: Permisos específicos ahora manejados por user-permissions.js
+    // Esta función usa hasPermission() que es la fuente única de verdad
+    console.log('✅ Permisos configurados según el rol del usuario (via user-permissions.js)');
 }
 
-/**
- * Configurar permisos específicos del módulo de alumnos
- */
-function configureStudentsModulePermissions() {
-    if (!currentUser) return;
-    
-    const isAdmin = currentUser.rol === 'admin';
-    const isManager = currentUser.rol === 'manager';
-    
-    // Botón de nuevo alumno (managers y admins)
-    const newStudentButton = document.querySelector('button[onclick="showAddStudentModal()"]');
-    if (newStudentButton) {
-        newStudentButton.style.display = (isAdmin || isManager) ? 'inline-block' : 'none';
-    }
-    
-    // Botones de edición en tabla de alumnos (todos pueden ver, pero no editar)
-    const editStudentButtons = document.querySelectorAll('button[onclick*="editStudent"]');
-    editStudentButtons.forEach(button => {
-        if (isAdmin || isManager) {
-            button.disabled = false;
-            button.title = 'Editar alumno';
-        } else {
-            button.disabled = true;
-            button.title = 'Sin permisos para editar';
-        }
-    });
-    
-    console.log('✅ Permisos del módulo de alumnos configurados');
-}
+// ✅ REMOVED: configureStudentsModulePermissions
+// This function was creating conflicts with user-permissions.js
+// All permission checks now use hasPermission() function from user-permissions.js
 
-/**
- * Configurar permisos específicos del módulo de transacciones
- */
-function configureTransactionsModulePermissions() {
-    if (!currentUser) return;
-    
-    const isAdmin = currentUser.rol === 'admin';
-    const isManager = currentUser.rol === 'manager';
-    
-    // Botón de nueva transacción (managers y admins)
-    const newTransactionButton = document.querySelector('button[onclick="showAddTransactionModal()"]');
-    if (newTransactionButton) {
-        newTransactionButton.style.display = (isAdmin || isManager) ? 'inline-block' : 'none';
-    }
-    
-    // Botones de edición de transacciones
-    const editTransactionButtons = document.querySelectorAll('button[onclick*="editTransaction"]');
-    editTransactionButtons.forEach(button => {
-        if (isAdmin || isManager) {
-            button.disabled = false;
-            button.title = 'Editar transacción';
-        } else {
-            button.disabled = true;
-            button.title = 'Sin permisos para editar';
-        }
-    });
-    
-    console.log('✅ Permisos del módulo de transacciones configurados');
-}
+// ✅ REMOVED: configureTransactionsModulePermissions
+// This function was creating conflicts with user-permissions.js
+// All permission checks now use hasPermission() function from user-permissions.js
 
 // ============================================================
 // 🔒 FUNCIONES DE SEGURIDAD Y VALIDACIÓN

@@ -118,10 +118,19 @@ async function initializeReportes() {
         console.log('✅ SISTEMA DE REPORTES INICIALIZADO CORRECTAMENTE');
         console.log('====================================================');
         
+        // Ocultar loader después de que todo esté listo
+        if (typeof hidePageLoader === 'function') {
+            hidePageLoader(500);
+        }
+        
     } catch (error) {
         console.error('❌ Error crítico inicializando reportes:', error);
         if (typeof showAlert === 'function') {
             showAlert('danger', 'Error inicializando reportes: ' + error.message);
+        }
+        // Ocultar loader incluso si hay error
+        if (typeof hidePageLoader === 'function') {
+            hidePageLoader(0);
         }
     }
 }

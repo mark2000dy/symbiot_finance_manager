@@ -714,6 +714,9 @@
     <!-- SheetJS para exportación a Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+    <!-- Page Loader Module (reutilizable en todas las páginas) -->
+    <script src="js/page-loader.js?v=1.0.0"></script>
+
     <!-- API Client v3.1.4 - Universal API Handler -->
     <script src="assets/js/api-client.js?v=3.1.4"></script>
 
@@ -724,6 +727,12 @@
     <script src="js/reportes-widgets.js?v=3.3.4"></script>   <!-- v3.3.4: Estado de Cuenta con reglas específicas por cuenta -->
     <script src="js/user-permissions.js?v=1.1.0"></script>   <!-- v1.1.0: Permisos por página y navegación -->
     <script>if (typeof window.checkPageAccess === 'function') window.checkPageAccess();</script>
+    <script>
+        // Mostrar loader al inicio
+        if (typeof showPageLoader === 'function') {
+            showPageLoader('Cargando módulo de Reportes...');
+        }
+    </script>
     <script src="js/reportes-init.js?v=3.1.6"></script>      <!-- v3.1.6: FIX llamadas API compatibles con api-client v3.1.4 -->
 
 </body>

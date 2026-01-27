@@ -56,6 +56,49 @@ function adaptHistorialPagos(backendResponse) {
 // ============================================================
 
 /**
+ * Aplicar permisos dinámicamente al widget de alumnos
+ * Se llama después de cargar alumnos para habilitar/deshabilitar botones según permisos
+ */
+function applyStudentsWidgetPermissions() {
+    try {
+        // Obtener permisos del usuario actual
+        const hasCreatePermission = typeof hasPermission === 'function' && hasPermission('create_student');
+        const hasEditPermission = typeof hasPermission === 'function' && hasPermission('edit_student');
+        
+        console.log(`🎓 Aplicando permisos widget alumnos: crear=${hasCreatePermission}, editar=${hasEditPermission}`);
+        
+        // Botón de nuevo alumno
+        const newStudentButton = document.querySelector('button[onclick="showAddStudentModal()"]');
+        if (newStudentButton) {
+            if (hasCreatePermission) {
+                newStudentButton.style.display = 'inline-block';
+                newStudentButton.disabled = false;
+                newStudentButton.title = 'Registrar un nuevo alumno';
+                console.log('✅ Botón "Nuevo Alumno" habilitado');
+            } else {
+                newStudentButton.style.display = 'none';
+                newStudentButton.disabled = true;
+                console.log('⛔ Botón "Nuevo Alumno" deshabilitado');
+            }
+        }
+        
+        // Botones de edición en tabla
+        const editStudentButtons = document.querySelectorAll('button[onclick*="editStudent"]');
+        editStudentButtons.forEach(button => {
+            button.disabled = !hasEditPermission;
+            button.title = hasEditPermission ? 'Editar alumno' : 'Sin permisos para editar';
+        });
+        
+        if (editStudentButtons.length > 0) {
+            console.log(`✅ Permisos de edición aplicados a ${editStudentButtons.length} botones`);
+        }
+        
+    } catch (error) {
+        console.warn('⚠️ Error aplicando permisos del widget de alumnos:', error);
+    }
+}
+
+/**
  * Verificar si los elementos del DOM existen para el widget de alumnos
  */
 function verifyStudentsElements() {
@@ -286,6 +329,9 @@ async function loadStudentsList(page = 1) {
             }
             
             updateStudentsFilterSummary();
+            
+            // ✅ NUEVO: Aplicar permisos dinámicamente después de cargar alumnos
+            applyStudentsWidgetPermissions();
             
         } else {
             throw new Error(result.message || 'Error cargando alumnos');
@@ -2121,6 +2167,7 @@ async function showPaymentHistory(studentId, studentName) {
 // ============================================================
 
 // Funciones principales de gestión de alumnos
+window.applyStudentsWidgetPermissions = applyStudentsWidgetPermissions;
 window.loadStudentsList = loadStudentsList;
 window.saveNewStudent = saveNewStudent;
 window.saveStudentChanges = saveStudentChanges;
