@@ -488,7 +488,13 @@ class TransaccionesController {
                     a.tipo_clase,
                     a.horario,
                     a.fecha_inscripcion,
-                    a.fecha_ultimo_pago,
+                    COALESCE(a.fecha_ultimo_pago, (
+                        SELECT MAX(t.fecha)
+                        FROM transacciones t
+                        WHERE t.tipo = 'I'
+                          AND t.empresa_id = a.empresa_id
+                          AND t.concepto LIKE CONCAT('%', a.nombre, '%')
+                    )) as fecha_ultimo_pago,
                     a.promocion,
                     COALESCE(a.precio_mensual, 0) as precio_mensual,
                     a.forma_pago,
@@ -1036,6 +1042,7 @@ class TransaccionesController {
             unset($maestro);
 
             // 4. MÉTRICAS ESPECÍFICAS DE ROCKSTARSKULL
+            // Subquery para obtener fecha_ultimo_pago real (fallback a transacciones si es NULL)
             $metricasQuery = "
                 SELECT
                     SUM(CASE WHEN tipo_clase = 'Grupal' AND estatus = 'Activo' THEN 1 ELSE 0 END) as clases_grupales,
@@ -1043,9 +1050,9 @@ class TransaccionesController {
                     -- Al corriente: pagó este mes o pagó mes anterior y aún no vence periodo actual
                     SUM(CASE
                         WHEN estatus = 'Activo' AND (
-                            DATE_FORMAT(fecha_ultimo_pago, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+                            DATE_FORMAT(fecha_pago_real, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
                             OR (
-                                DATE_FORMAT(fecha_ultimo_pago, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')
+                                DATE_FORMAT(fecha_pago_real, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')
                                 AND CURDATE() <= DATE_ADD(
                                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)),
                                     INTERVAL 5 DAY
@@ -1056,9 +1063,9 @@ class TransaccionesController {
                     -- Pendientes: todos los activos que NO están al corriente
                     SUM(CASE
                         WHEN estatus = 'Activo' AND NOT (
-                            DATE_FORMAT(fecha_ultimo_pago, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+                            DATE_FORMAT(fecha_pago_real, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
                             OR (
-                                DATE_FORMAT(fecha_ultimo_pago, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')
+                                DATE_FORMAT(fecha_pago_real, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')
                                 AND CURDATE() <= DATE_ADD(
                                     LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)),
                                     INTERVAL 5 DAY
@@ -1066,9 +1073,19 @@ class TransaccionesController {
                             )
                         ) THEN 1 ELSE 0 END
                     ) as alumnos_pendientes
-                FROM alumnos
-                WHERE empresa_id = ?
-                    AND nombre NOT LIKE '[ELIMINADO]%'
+                FROM (
+                    SELECT a.*,
+                        COALESCE(a.fecha_ultimo_pago, (
+                            SELECT MAX(t.fecha)
+                            FROM transacciones t
+                            WHERE t.tipo = 'I'
+                              AND t.empresa_id = a.empresa_id
+                              AND t.concepto LIKE CONCAT('%', a.nombre, '%')
+                        )) as fecha_pago_real
+                    FROM alumnos a
+                    WHERE a.empresa_id = ?
+                        AND a.nombre NOT LIKE '[ELIMINADO]%'
+                ) sub
             ";
             $metricas = executeQuery($metricasQuery, [$empresa_id]);
             $metricas_rockstar = [
@@ -1115,19 +1132,26 @@ class TransaccionesController {
             $empresa_id = $_GET['empresa_id'] ?? 1;
 
             // Obtener todos los alumnos activos con información de pagos
+            // COALESCE: usa fecha_ultimo_pago del campo, si es NULL busca el último ingreso en transacciones
             $alumnosQuery = "
                 SELECT
-                    id,
-                    nombre,
-                    clase,
-                    estatus,
-                    fecha_inscripcion,
-                    fecha_ultimo_pago,
-                    precio_mensual
-                FROM alumnos
-                WHERE empresa_id = ?
-                    AND nombre NOT LIKE '[ELIMINADO]%'
-                ORDER BY nombre
+                    a.id,
+                    a.nombre,
+                    a.clase,
+                    a.estatus,
+                    a.fecha_inscripcion,
+                    COALESCE(a.fecha_ultimo_pago, (
+                        SELECT MAX(t.fecha)
+                        FROM transacciones t
+                        WHERE t.tipo = 'I'
+                          AND t.empresa_id = a.empresa_id
+                          AND t.concepto LIKE CONCAT('%', a.nombre, '%')
+                    )) as fecha_ultimo_pago,
+                    a.precio_mensual
+                FROM alumnos a
+                WHERE a.empresa_id = ?
+                    AND a.nombre NOT LIKE '[ELIMINADO]%'
+                ORDER BY a.nombre
             ";
             $alumnos = executeQuery($alumnosQuery, [$empresa_id]);
 
