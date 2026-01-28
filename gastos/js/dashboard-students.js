@@ -1623,18 +1623,14 @@ async function deleteStudent() {
 
         if (result.success) {
             const editModal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
-            editModal.hide();
-            
+            if (editModal) editModal.hide();
+
             showAlert('success', `Alumno "${studentName}" eliminado exitosamente`);
             await loadStudentsList(currentStudentsPage);
-            
+
             console.log(`✅ Alumno eliminado: ${studentName}`);
-        } else if (response.status === 403) {
-            showAlert('warning', 'Solo administradores pueden eliminar alumnos');
-        } else if (response.status === 404) {
-            showAlert('warning', 'Alumno no encontrado');
         } else {
-            throw new Error(result.message || 'Error eliminando alumno');
+            throw new Error(result.error || result.message || 'Error eliminando alumno');
         }
         
     } catch (error) {

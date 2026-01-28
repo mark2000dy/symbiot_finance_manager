@@ -206,10 +206,25 @@ try {
         exit;
     }
 
-    // Actualizar alumno por ID
-    if (preg_match('#^/alumnos/(\d+)$#', $requestUri, $matches) && $requestMethod === 'PUT') {
+    if ($requestUri === '/alumnos' && $requestMethod === 'POST') {
+        TransaccionesController::createAlumno();
+        exit;
+    }
+
+    // Actualizar o eliminar alumno por ID
+    if (preg_match('#^/alumnos/(\d+)$#', $requestUri, $matches)) {
         $id = $matches[1];
-        TransaccionesController::updateAlumno($id);
+        switch ($requestMethod) {
+            case 'PUT':
+                TransaccionesController::updateAlumno($id);
+                break;
+            case 'DELETE':
+                TransaccionesController::deleteAlumno($id);
+                break;
+            default:
+                http_response_code(405);
+                echo json_encode(['success' => false, 'error' => 'Método no permitido']);
+        }
         exit;
     }
 

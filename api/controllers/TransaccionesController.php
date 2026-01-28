@@ -539,6 +539,152 @@ class TransaccionesController {
     }
 
     /**
+     * Crear un nuevo alumno
+     * POST /alumnos
+     */
+    public static function createAlumno() {
+        $user = AuthController::requireAuth();
+
+        // Solo admins o escuela@rockstarskull.com pueden crear alumnos
+        if (!in_array($user['rol'], ['admin']) && $user['email'] !== 'escuela@rockstarskull.com') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'No tienes permisos para crear alumnos.']);
+            return;
+        }
+
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            error_log("➕ Creando nuevo alumno por usuario: " . $user['email']);
+            error_log("📥 Datos recibidos: " . json_encode($input));
+
+            // Validar campo obligatorio
+            if (empty($input['nombre'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'El nombre del alumno es obligatorio']);
+                return;
+            }
+
+            $nombre = trim($input['nombre']);
+            $edad = isset($input['edad']) ? (int)$input['edad'] : null;
+            $telefono = $input['telefono'] ?? null;
+            $email = $input['email'] ?? null;
+            $fecha_inscripcion = $input['fecha_inscripcion'] ?? date('Y-m-d');
+            $clase = $input['clase'] ?? null;
+            $tipo_clase = $input['tipo_clase'] ?? 'Individual';
+            $maestro_id = !empty($input['maestro_id']) ? (int)$input['maestro_id'] : null;
+            $horario = $input['horario'] ?? null;
+            $estatus = $input['estatus'] ?? 'Activo';
+            $promocion = $input['promocion'] ?? null;
+            $precio_mensual = isset($input['precio_mensual']) ? (float)$input['precio_mensual'] : null;
+            $forma_pago = $input['forma_pago'] ?? null;
+            $domiciliado = !empty($input['domiciliado']) ? 1 : 0;
+            $titular_domicilado = $input['titular_domicilado'] ?? null;
+            $empresa_id = $input['empresa_id'] ?? 1;
+
+            executeQuery("
+                INSERT INTO alumnos (
+                    nombre, edad, telefono, email, fecha_inscripcion,
+                    clase, tipo_clase, maestro_id, horario, estatus,
+                    promocion, precio_mensual, forma_pago, domiciliado,
+                    titular_domicilado, empresa_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ", [
+                $nombre, $edad, $telefono, $email, $fecha_inscripcion,
+                $clase, $tipo_clase, $maestro_id, $horario, $estatus,
+                $promocion, $precio_mensual, $forma_pago, $domiciliado,
+                $titular_domicilado, $empresa_id
+            ]);
+
+            // Obtener el alumno recién creado
+            $nuevoAlumno = executeQuery("
+                SELECT
+                    a.id, a.nombre, a.edad, a.telefono, a.email,
+                    a.clase, a.tipo_clase, a.horario, a.fecha_inscripcion,
+                    a.fecha_ultimo_pago, a.promocion, a.precio_mensual,
+                    a.forma_pago, a.domiciliado, a.titular_domicilado,
+                    a.estatus,
+                    COALESCE(m.nombre, 'Sin asignar') as maestro
+                FROM alumnos a
+                LEFT JOIN maestros m ON a.maestro_id = m.id
+                WHERE a.id = LAST_INSERT_ID()
+            ");
+
+            error_log("✅ Alumno creado: $nombre");
+
+            http_response_code(201);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Alumno registrado exitosamente',
+                'data' => !empty($nuevoAlumno) ? $nuevoAlumno[0] : null
+            ]);
+
+        } catch (Exception $e) {
+            error_log("❌ Error creando alumno: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar (soft delete) un alumno
+     * DELETE /alumnos/{id}
+     */
+    public static function deleteAlumno($id) {
+        $user = AuthController::requireAuth();
+
+        // Solo admins o escuela@rockstarskull.com pueden eliminar alumnos
+        if ($user['rol'] !== 'admin' && $user['email'] !== 'escuela@rockstarskull.com') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'No tienes permisos para eliminar alumnos']);
+            return;
+        }
+
+        try {
+            error_log("🗑️ Eliminando alumno ID: $id por usuario: " . $user['email']);
+
+            // Verificar que el alumno existe
+            $alumno = executeQuery("SELECT id, nombre FROM alumnos WHERE id = ?", [$id]);
+
+            if (empty($alumno)) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Alumno no encontrado']);
+                return;
+            }
+
+            $nombreOriginal = $alumno[0]['nombre'];
+
+            // Soft delete: renombrar con prefijo [ELIMINADO]
+            executeQuery("
+                UPDATE alumnos SET
+                    nombre = CONCAT('[ELIMINADO] ', nombre),
+                    estatus = 'Baja'
+                WHERE id = ?
+            ", [$id]);
+
+            error_log("✅ Alumno eliminado (soft): $nombreOriginal (ID: $id)");
+
+            echo json_encode([
+                'success' => true,
+                'message' => "Alumno \"$nombreOriginal\" eliminado exitosamente"
+            ]);
+
+        } catch (Exception $e) {
+            error_log("❌ Error eliminando alumno: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Actualizar datos de un alumno
      * PUT /alumnos/{id}
      */
