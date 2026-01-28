@@ -269,7 +269,7 @@ body {
 
 .table-responsive {
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
 }
 
 /* ========================================= */

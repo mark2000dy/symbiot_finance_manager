@@ -253,7 +253,7 @@ small.text-muted,
 .students-table-container {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .student-status-badge.active {

@@ -109,37 +109,22 @@ body {
         padding: 0.375rem 0.5rem;
     }
     
-    /* Tabla responsive en móvil */
+    /* Tabla responsive en móvil - scroll horizontal como gastos.html */
     .table-responsive {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
+        overflow-x: auto !important;
     }
 
     .table th,
     .table td {
-        padding: 0.4rem 0.25rem;
+        padding: 0.5rem 0.5rem;
         white-space: nowrap;
     }
 
-    /* Ocultar columnas menos importantes en móvil para tablas del dashboard */
-    #transactionsTable .col-hide-mobile,
-    #studentsTableContainer .col-hide-mobile {
-        display: none;
-    }
-
-    /* Tabla de transacciones: ocultar Socio y Empresa en móvil */
-    #transactionsTable table th:nth-child(3),
-    #transactionsTable table td:nth-child(3),
-    #transactionsTable table th:nth-child(4),
-    #transactionsTable table td:nth-child(4) {
-        display: none;
-    }
-
-    /* Tabla de alumnos: ocultar Maestro y Próximo Pago en móvil */
-    #studentsTableContainer table th:nth-child(3),
-    #studentsTableContainer table td:nth-child(3),
-    #studentsTableContainer table th:nth-child(5),
-    #studentsTableContainer table td:nth-child(5) {
-        display: none;
+    /* Min-width para forzar scroll horizontal en tablas del dashboard */
+    #transactionsTable table,
+    #studentsTableContainer table {
+        min-width: 700px;
     }
 
     /* Acciones más compactas en móvil */

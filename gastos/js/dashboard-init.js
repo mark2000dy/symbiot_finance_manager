@@ -61,24 +61,8 @@ async function initializeDashboard() {
         console.log('📋 FASE 2: Cargando información del usuario...');
         await loadAndDisplayUserInfo();
         
-        // 🔧 DIAGNÓSTICO: Verificar que user_data fue persistido correctamente
-        const savedUserData = localStorage.getItem('user_data');
-        if (savedUserData) {
-            try {
-                const userData = JSON.parse(savedUserData);
-                console.log('✅ DIAGNÓSTICO: user_data persistido correctamente:', userData.email);
-            } catch (e) {
-                console.error('❌ DIAGNÓSTICO: user_data corrupto en localStorage');
-            }
-        } else {
-            console.warn('⚠️  DIAGNÓSTICO: user_data NO está en localStorage - fallback a currentUser global');
-            if (currentUser && currentUser.email) {
-                console.log('✅ DIAGNÓSTICO: currentUser disponible como fallback:', currentUser.email);
-            }
-        }
-
-        // FASE 2.1: Aplicar permisos de usuario ANTES de cargar datos
-        console.log('📋 FASE 2.1: Aplicando permisos de usuario...');
+        // FASE 3: Aplicar permisos de usuario ANTES de cargar datos
+        console.log('📋 FASE 3: Aplicando permisos de usuario...');
         if (typeof window.applyEmpresaRestriction === 'function') {
             window.applyEmpresaRestriction();
         }
@@ -89,59 +73,26 @@ async function initializeDashboard() {
             window.setupEmpresaFilterInterceptor();
         }
 
-        // FASE 2.5: Asegurar que stats module esté completamente cargado
-        console.log('📋 FASE 2.5: Verificando módulo Stats...');
+        // FASE 4: Configurar filtros de empresa
+        console.log('📋 FASE 4: Configurando filtros de empresa...');
         let statsRetries = 0;
         while (typeof window.loadCompanyFilterFromURL !== 'function' && statsRetries < 10) {
-            console.log(`⏳ Esperando módulo Stats... (intento ${statsRetries + 1})`);
             await new Promise(resolve => setTimeout(resolve, 100));
             statsRetries++;
         }
-
-        if (typeof window.loadCompanyFilterFromURL !== 'function') {
-            console.warn('⚠️ loadCompanyFilterFromURL no disponible después de esperar');
-        }
-
-        // FASE 3: Inicializar selector de empresa
-        //console.log('📋 FASE 3: Inicializando selector de empresa...');
-        //initializeCompanySelector();
-        
-        // FASE 4: Configurar filtros desde URL (con verificación)
         if (typeof window.loadCompanyFilterFromURL === 'function') {
             window.loadCompanyFilterFromURL();
-        } else {
-            console.warn('⚠️ loadCompanyFilterFromURL no disponible, omitiendo configuración de URL');
         }
 
-        // 🔧 CRÍTICO: SINCRONIZAR EL SELECT CON window.currentCompanyFilter ANTES DE CARGAR DATOS
-        // Este es el paso que faltaba - el SELECT debe mostrar el valor correcto visualmente
-        console.log('📋 FASE 4.5: Sincronizando selector visual con window.currentCompanyFilter...');
+        // Sincronizar SELECT visual con window.currentCompanyFilter
         const filterValue = window.currentCompanyFilter || '';
         const companySelect = document.getElementById('companyFilter');
         if (companySelect) {
-            const oldValue = companySelect.value;
             companySelect.value = filterValue;
-            console.log(`✅ SELECT sincronizado: "${oldValue}" → "${filterValue}" (window.currentCompanyFilter=${window.currentCompanyFilter})`);
-        } else {
-            console.warn('⚠️ Selector #companyFilter no encontrado en DOM');
+            console.log(`✅ Filtro de empresa sincronizado: "${filterValue || 'Todas'}"`);
         }
 
-        // CORRECCIÓN NAVEGACIÓN: Verificar y recargar datos perdidos
-        setTimeout(async () => {
-            const balanceElement = document.getElementById('balanceTotal');
-            if (balanceElement && balanceElement.textContent === '$0.00') {
-                console.log('🔄 Datos perdidos por navegación, recargando...');
-                await window.loadDashboardData();
-                
-                if (window.currentCompanyFilter === '1') {
-                    if (typeof window.loadRockstarSkullDataReal === 'function') {
-                        await window.loadRockstarSkullDataReal();
-                    }
-                }
-            }
-        }, 2000);
-
-        // FASE 5: Cargar datos del dashboard con verificación
+        // FASE 5: Cargar datos del dashboard
         console.log('📋 FASE 5: Cargando datos del dashboard...');
         let dataLoadRetries = 0;
         while (dataLoadRetries < 5) {
@@ -164,123 +115,49 @@ async function initializeDashboard() {
             }
         }
         
-        // FASE 5: Inicializar modales y UI
-        console.log('📋 FASE 4: Inicializando interfaz de usuario...');
+        // FASE 6: Inicializar modales y UI
+        console.log('📋 FASE 6: Inicializando interfaz de usuario...');
         initializeModals();
         setupEventListeners();
-        
-       // FASE 6: Cargar datos principales
-        console.log('📋 FASE 5: Cargando datos del dashboard...');
-        await loadDashboardData();
 
-        // ✅ NUEVO: Si es RockstarSkull, cargar sus datos específicos
+        // FASE 7: Cargar datos específicos de RockstarSkull (si aplica)
         if (window.currentCompanyFilter === '1') {
-            console.log('🎸 Detectado filtro RockstarSkull, cargando datos específicos...');
-            
+            console.log('🎸 FASE 7: Cargando datos específicos de RockstarSkull...');
+
             if (typeof window.loadRockstarSkullDataReal === 'function') {
                 await window.loadRockstarSkullDataReal();
             }
-            
+
             if (typeof window.refreshPaymentAlerts === 'function') {
                 await window.refreshPaymentAlerts();
             }
-            
+
             if (typeof loadStudentsList === 'function') {
                 await loadStudentsList(1);
             }
-            
-            console.log('✅ Datos de RockstarSkull cargados tras navegación');
+
+            console.log('✅ Datos de RockstarSkull cargados');
         }
-
-        // CORRECCIÓN NAVEGACIÓN: Verificar si los datos se cargaron correctamente
-        setTimeout(async () => {
-            const balanceElement = document.getElementById('balanceTotal');
-            if (balanceElement && (balanceElement.textContent === '$0.00' || balanceElement.innerHTML.includes('spinner'))) {
-                console.log('🔄 Datos no cargados correctamente, reintentando...');
-                await loadDashboardData();
-                
-                // Si sigue siendo RockstarSkull, forzar carga de datos específicos
-                if (window.currentCompanyFilter === '1') {
-                    if (typeof window.loadRockstarSkullDataReal === 'function') {
-                        await window.loadRockstarSkullDataReal();
-                    }
-                }
-            }
-        }, 1500);
-
-        // FASE 7: FORZAR CARGA INICIAL DE DATOS
-        console.log('🔋 FASE 7: Cargando datos iniciales...');
-        await forcedDataInitialization();
-
-        // FASE 8: VERIFICACIÓN FINAL DE DATOS
-        setTimeout(async () => {
-            console.log('🔄 Verificación final de datos...');
-            await verifyDataIntegrity();
-        }, 2000);
         
-        // FASE 9: Cargar transacciones recientes
-        console.log('📋 FASE 6: Cargando transacciones recientes...');
+        // FASE 8: Cargar transacciones recientes
+        console.log('📋 FASE 8: Cargando transacciones recientes...');
         if (typeof loadRecentTransactions === 'function') {
             await loadRecentTransactions(1);
-            // CORRECCIÓN: Debug de elementos DOM de transacciones
-            const transactionsElements = {
-                tbody: document.getElementById('transactionsBody') || document.getElementById('tableBody'),
-                table: document.getElementById('transactionsTable') || document.querySelector('.table-responsive'),
-                empty: document.getElementById('emptyState')
-            };
-
-            console.log('🔍 Elementos de transacciones encontrados:', {
-                tbody: !!transactionsElements.tbody,
-                table: !!transactionsElements.table,
-                empty: !!transactionsElements.empty
-            });
-
-            if (!transactionsElements.tbody) {
-                console.error('❌ CRÍTICO: Elemento tbody de transacciones no encontrado');
-            }
-        } else {
-            console.warn('⚠️ Función loadRecentTransactions no disponible');
         }
-        
-        // FASE 10: Inicializar módulos específicos
-        console.log('📋 FASE 7: Inicializando módulos específicos...');
+
+        // FASE 9: Inicializar módulos específicos
+        console.log('📋 FASE 9: Inicializando módulos específicos...');
         await initializeSpecificModules();
 
-        // ✅ CORRECCIÓN: Cargar lista de alumnos cuando es RockstarSkull
-        if ((window.currentCompanyFilter === '1' || !window.currentCompanyFilter) && typeof loadStudentsList === 'function') {
-            console.log(`🎓 Cargando lista inicial de alumnos... (currentCompanyFilter: ${window.currentCompanyFilter})`);
-            await loadStudentsList(1);
-        }
-        
-        // FASE 11: Configurar actualizaciones automáticas
-        console.log('📋 FASE 8: Configurando actualizaciones automáticas...');
+        // FASE 10: Configurar sistemas
+        console.log('📋 FASE 10: Configurando actualizaciones y monitoreo...');
         setupAutoRefreshSystems();
-        
-        // FASE 12: Configurar monitoreo de sesión
-        console.log('📋 FASE 9: Iniciando monitoreo de sesión...');
         startSessionMonitoring();
-        
-        // FASE 13: Finalización
-        console.log('📋 FASE 10: Finalizando inicialización...');
+
+        // FASE 11: Finalización
+        console.log('📋 FASE 11: Finalizando inicialización...');
         await finalizeDashboardSetup();
 
-        // CORRECCIÓN CRÍTICA: Forzar carga inicial de datos
-        console.log('🔄 Ejecutando carga forzada inicial...');
-        try {
-            await window.loadDashboardData();
-            console.log('✅ Datos iniciales cargados exitosamente');
-        } catch (error) {
-            console.error('❌ Error carga inicial:', error);
-            // Reintentar una vez más después de 1 segundo
-            setTimeout(async () => {
-                try {
-                    await window.loadDashboardData();
-                } catch (retryError) {
-                    console.error('❌ Error en reintento:', retryError);
-                }
-            }, 1000);
-        }
-        
         // Ocultar loader y mostrar dashboard
         hideInitializationLoader();
         
@@ -418,14 +295,14 @@ async function forcedDataInitialization() {
             retries = 0;
             while (retries < 3) {
                 try {
-                    if (typeof window.loadRockstarSkullData === 'function') {
-                        await window.loadRockstarSkullData();
-                        console.log('✅ loadRockstarSkullData() ejecutado exitosamente');
+                    if (typeof window.loadRockstarSkullDataReal === 'function') {
+                        await window.loadRockstarSkullDataReal();
+                        console.log('✅ loadRockstarSkullDataReal() ejecutado exitosamente');
                     }
                     break;
                 } catch (error) {
                     retries++;
-                    console.warn(`⚠️ Reintento ${retries} de loadRockstarSkullData():`, error);
+                    console.warn(`⚠️ Reintento ${retries} de loadRockstarSkullDataReal():`, error);
                     if (retries < 3) await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
@@ -489,37 +366,6 @@ function updateInitProgress(phase, percentage) {
         progressElement.style.width = `${percentage}%`;
     }
 }
-
-/**
- * Configurar event listeners globales
- 
-function setupEventListeners() {
-    console.log('🎧 Configurando event listeners...');
-    
-    try {
-        // Listener para actualizar fecha actual cada minuto
-        setInterval(updateCurrentDate, 60000);
-        
-        // Listener para detectar cambios de visibilidad de la página
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        
-        // Listener para detectar cambios de conexión
-        window.addEventListener('online', handleConnectionChange);
-        window.addEventListener('offline', handleConnectionChange);
-        
-        // Listener para manejar errores no capturados
-        window.addEventListener('error', handleGlobalError);
-        window.addEventListener('unhandledrejection', handleUnhandledRejection);
-        
-        // Listener para shortcuts de teclado
-        document.addEventListener('keydown', handleKeyboardShortcuts);
-        
-        console.log('✅ Event listeners configurados');
-        
-    } catch (error) {
-        console.error('❌ Error configurando event listeners:', error);
-    }
-}*/
 
 /**
  * Inicializar módulos específicos según la empresa
@@ -778,9 +624,9 @@ function loadUserPreferences() {
         if (savedPreferences) {
             const preferences = JSON.parse(savedPreferences);
             
-            // Aplicar filtro de empresa guardado
-            if (preferences.companyFilter && !currentCompanyFilter) {
-                currentCompanyFilter = preferences.companyFilter;
+            // Aplicar filtro de empresa guardado (solo si no hay filtro activo)
+            if (preferences.companyFilter && !window.currentCompanyFilter) {
+                window.currentCompanyFilter = preferences.companyFilter;
                 const companySelect = document.getElementById('companyFilter');
                 if (companySelect) {
                     companySelect.value = preferences.companyFilter;
@@ -801,7 +647,7 @@ function loadUserPreferences() {
 function saveUserPreferences() {
     try {
         const preferences = {
-            companyFilter: currentCompanyFilter,
+            companyFilter: window.currentCompanyFilter || '',
             lastUpdate: new Date().toISOString()
         };
         
