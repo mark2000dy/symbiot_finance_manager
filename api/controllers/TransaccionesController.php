@@ -1240,9 +1240,43 @@ class TransaccionesController {
             }
 
             // REGLA 2: Si NO pagó mes anterior → VENCIDO
+            // CORRECCIÓN: Calcular días desde cuando realmente venció (no desde el mes actual)
             if (!$pagoMesAnterior) {
-                $diasDiff = $hoy->diff($finPeriodoGracia)->days;
-                $diasVencido = $hoy > $finPeriodoGracia ? $diasDiff : -$diasDiff;
+                $diasVencido = 0;
+
+                if ($fechaUltimoPago) {
+                    // Calcular el mes siguiente al último pago (cuando debió pagar)
+                    $mesSiguienteAlPago = clone $fechaUltimoPago;
+                    $mesSiguienteAlPago->modify('+1 month');
+
+                    // Fecha de corte del mes donde debió pagar
+                    $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-') . str_pad($diaCorte, 2, '0', STR_PAD_LEFT));
+                    $fechaCorteDeuda->setTime(0, 0, 0);
+
+                    // Ajustar si el día no existe en ese mes
+                    if ((int)$fechaCorteDeuda->format('d') !== $diaCorte) {
+                        $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-t'));
+                        $fechaCorteDeuda->setTime(0, 0, 0);
+                    }
+
+                    // Fin de gracia de cuando debió pagar (+5 días)
+                    $finGraciaDeuda = clone $fechaCorteDeuda;
+                    $finGraciaDeuda->modify('+5 days');
+
+                    // Días vencidos desde el fin de gracia real
+                    if ($hoy > $finGraciaDeuda) {
+                        $diasVencido = $hoy->diff($finGraciaDeuda)->days;
+                    }
+                } else {
+                    // Sin pagos registrados, calcular desde inscripción + 1 mes + 5 días gracia
+                    $primerVencimiento = clone $fechaInscripcion;
+                    $primerVencimiento->modify('+1 month +5 days');
+
+                    if ($hoy > $primerVencimiento) {
+                        $diasVencido = $hoy->diff($primerVencimiento)->days;
+                    }
+                }
+
                 return [
                     'status' => 'overdue',
                     'dias' => $diasVencido,
