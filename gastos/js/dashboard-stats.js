@@ -416,6 +416,17 @@ async function updatePaymentMetrics() {
  * ✅ FUNCIÓN FINAL CORREGIDA: Estado de pago homologado
  * Lógica: El periodo de gracia SOLO aplica si pagó el mes anterior
  */
+/**
+ * Parsear fecha 'YYYY-MM-DD' como fecha LOCAL (evita desfase UTC)
+ * new Date('2025-11-12') → UTC midnight → Nov 11 en MX. Esta función corrige eso.
+ */
+function parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    const parts = String(dateStr).split('-');
+    if (parts.length !== 3) return new Date(dateStr);
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+}
+
 function getPaymentStatusHomologado(student) {
     try {
         // Alumnos dados de baja no generan alertas
@@ -423,40 +434,40 @@ function getPaymentStatusHomologado(student) {
 
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Normalizar a medianoche
-        
-        const fechaInscripcion = new Date(student.fecha_inscripcion);
+
+        const fechaInscripcion = parseLocalDate(student.fecha_inscripcion);
         const diaCorte = fechaInscripcion.getDate();
-        
+
         // Calcular fecha de corte del mes ACTUAL
         let fechaCorteActual = new Date(today.getFullYear(), today.getMonth(), diaCorte);
         fechaCorteActual.setHours(0, 0, 0, 0);
-        
+
         // Si el día no existe en el mes (ej: 31 en febrero), usar último día del mes
         if (fechaCorteActual.getDate() !== diaCorte) {
             fechaCorteActual = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             fechaCorteActual.setHours(0, 0, 0, 0);
         }
-        
+
         // Calcular inicio y fin del periodo de pago del mes ACTUAL
         const inicioPeriodoPago = new Date(fechaCorteActual);
         inicioPeriodoPago.setDate(inicioPeriodoPago.getDate() - 3); // 3 días antes
-        
+
         const finPeriodoGracia = new Date(fechaCorteActual);
         finPeriodoGracia.setDate(finPeriodoGracia.getDate() + 5); // 5 días después
-        
+
         // Verificar si estamos en el periodo de pago del mes actual
         const enPeriodoPago = today >= inicioPeriodoPago && today <= finPeriodoGracia;
-        
+
         // Verificar pagos
-        const fechaUltimoPago = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
-        
-        const pagoEsteMes = fechaUltimoPago && 
-            fechaUltimoPago.getMonth() === today.getMonth() && 
+        const fechaUltimoPago = parseLocalDate(student.fecha_ultimo_pago);
+
+        const pagoEsteMes = fechaUltimoPago &&
+            fechaUltimoPago.getMonth() === today.getMonth() &&
             fechaUltimoPago.getFullYear() === today.getFullYear();
-        
-        const pagoMesAnterior = fechaUltimoPago && 
-            fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12 && 
-            (fechaUltimoPago.getFullYear() === today.getFullYear() || 
+
+        const pagoMesAnterior = fechaUltimoPago &&
+            fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12 &&
+            (fechaUltimoPago.getFullYear() === today.getFullYear() ||
              (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
 
         // ✅ REGLA 1: Si pagó ESTE MES → Al corriente (siempre)
@@ -1036,7 +1047,8 @@ window.refreshMaestrosData = refreshMaestrosData;
 window.loadRockstarSkullDataReal = loadRockstarSkullDataReal;
 window.updatePaymentMetrics = updatePaymentMetrics; 
 
-// ✅ EXPORTAR función homologada
+// ✅ EXPORTAR funciones homologadas
+window.parseLocalDate = parseLocalDate;
 window.getPaymentStatusHomologado = getPaymentStatusHomologado;
 
 // Funciones auxiliares

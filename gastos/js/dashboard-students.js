@@ -134,7 +134,9 @@ function getFormattedNextPaymentDate(student) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const fechaInscripcion = new Date(student.fecha_inscripcion);
+        // Usar parseLocalDate para evitar desfase UTC → timezone local
+        const pld = typeof window.parseLocalDate === 'function' ? window.parseLocalDate : (d) => new Date(d);
+        const fechaInscripcion = pld(student.fecha_inscripcion);
         const diaCorte = fechaInscripcion.getDate();
 
         // Fecha de corte del mes ACTUAL (día de inscripción)
@@ -150,7 +152,7 @@ function getFormattedNextPaymentDate(student) {
         finPeriodoGracia.setDate(finPeriodoGracia.getDate() + 5);
 
         // Verificar pagos (misma lógica que getPaymentStatusHomologado)
-        const fechaUltimoPago = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
+        const fechaUltimoPago = student.fecha_ultimo_pago ? pld(student.fecha_ultimo_pago) : null;
 
         const pagoEsteMes = fechaUltimoPago &&
             fechaUltimoPago.getMonth() === today.getMonth() &&
@@ -246,17 +248,18 @@ function getPaymentStatus(student) {
         if (student.estatus === 'Baja') return 'inactive';
 
         const today = new Date();
-        const fechaInscripcion = new Date(student.fecha_inscripcion);
+        const pld2 = typeof window.parseLocalDate === 'function' ? window.parseLocalDate : (d) => new Date(d);
+        const fechaInscripcion = pld2(student.fecha_inscripcion);
         const diaCorte = fechaInscripcion.getDate();
-        
+
         let fechaCorte = new Date(today.getFullYear(), today.getMonth(), diaCorte);
         if (fechaCorte.getDate() !== diaCorte) {
             fechaCorte = new Date(today.getFullYear(), today.getMonth() + 1, 0);
         }
-        
+
         const diasHastaCorte = Math.floor((fechaCorte.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
-        const fechaUltimoPago = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
+
+        const fechaUltimoPago = student.fecha_ultimo_pago ? pld2(student.fecha_ultimo_pago) : null;
         const pagoEsteMes = fechaUltimoPago && 
             fechaUltimoPago.getMonth() === today.getMonth() && 
             fechaUltimoPago.getFullYear() === today.getFullYear();
