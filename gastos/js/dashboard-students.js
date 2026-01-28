@@ -126,47 +126,84 @@ function getFormattedNextPaymentDate(student) {
         if (student.estatus === 'Baja') {
             return '<span class="text-muted">No aplica</span>';
         }
-        
-        // ⭐ CALCULAR próximo pago basado en fecha de inscripción
-        let nextPaymentDate;
-        
-        if (student.proximo_pago && student.proximo_pago !== null) {
-            nextPaymentDate = new Date(student.proximo_pago);
-        } else if (student.fecha_ultimo_pago && student.fecha_ultimo_pago !== null) {
-            nextPaymentDate = new Date(student.fecha_ultimo_pago);
-        } else if (student.fecha_inscripcion) {
-            // ⭐ CÁLCULO BASADO EN FECHA DE INSCRIPCIÓN
-            const inscripcion = new Date(student.fecha_inscripcion);
-            const today = new Date();
-            const dayOfMonth = inscripcion.getDate();
-            
-            // Crear fecha para el mes actual con el día de inscripción
-            nextPaymentDate = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
-            
-            // Si ya pasó este mes, usar el siguiente
-            if (nextPaymentDate <= today) {
-                nextPaymentDate = new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth);
-            }
-        } else {
+
+        if (!student.fecha_inscripcion) {
             return '<span class="text-muted">Sin fecha</span>';
         }
-        
-        // Validar que la fecha sea válida
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const fechaInscripcion = new Date(student.fecha_inscripcion);
+        const diaCorte = fechaInscripcion.getDate();
+
+        // Fecha de corte del mes ACTUAL (día de inscripción)
+        let fechaCorteActual = new Date(today.getFullYear(), today.getMonth(), diaCorte);
+        fechaCorteActual.setHours(0, 0, 0, 0);
+        if (fechaCorteActual.getDate() !== diaCorte) {
+            fechaCorteActual = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            fechaCorteActual.setHours(0, 0, 0, 0);
+        }
+
+        // Periodo de pago: -3 días a +5 días desde fecha de corte
+        const finPeriodoGracia = new Date(fechaCorteActual);
+        finPeriodoGracia.setDate(finPeriodoGracia.getDate() + 5);
+
+        // Verificar pagos (misma lógica que getPaymentStatusHomologado)
+        const fechaUltimoPago = student.fecha_ultimo_pago ? new Date(student.fecha_ultimo_pago) : null;
+
+        const pagoEsteMes = fechaUltimoPago &&
+            fechaUltimoPago.getMonth() === today.getMonth() &&
+            fechaUltimoPago.getFullYear() === today.getFullYear();
+
+        const pagoMesAnterior = fechaUltimoPago &&
+            fechaUltimoPago.getMonth() === (today.getMonth() - 1 + 12) % 12 &&
+            (fechaUltimoPago.getFullYear() === today.getFullYear() ||
+             (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
+
+        // Determinar próxima fecha de pago según estado
+        let nextPaymentDate;
+
+        if (pagoEsteMes) {
+            // Pagó este mes → próximo pago es el mes siguiente
+            nextPaymentDate = new Date(today.getFullYear(), today.getMonth() + 1, diaCorte);
+            if (nextPaymentDate.getDate() !== diaCorte) {
+                nextPaymentDate = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+            }
+        } else if (pagoMesAnterior) {
+            // Pagó mes anterior → próximo pago es este mes
+            nextPaymentDate = new Date(fechaCorteActual);
+        } else if (fechaUltimoPago) {
+            // No pagó mes anterior → vencido, mostrar cuando debió pagar
+            const mesSiguiente = new Date(fechaUltimoPago);
+            mesSiguiente.setMonth(mesSiguiente.getMonth() + 1);
+            nextPaymentDate = new Date(mesSiguiente.getFullYear(), mesSiguiente.getMonth(), diaCorte);
+            if (nextPaymentDate.getDate() !== diaCorte) {
+                nextPaymentDate = new Date(mesSiguiente.getFullYear(), mesSiguiente.getMonth() + 1, 0);
+            }
+        } else {
+            // Sin pagos → primer pago era inscripción + 1 mes
+            nextPaymentDate = new Date(fechaInscripcion);
+            nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+        }
+
+        nextPaymentDate.setHours(0, 0, 0, 0);
+
         if (isNaN(nextPaymentDate.getTime())) {
             return '<span class="text-muted">Sin fecha</span>';
         }
-        
-        const today = new Date();
-        const daysDiff = Math.ceil((nextPaymentDate - today) / (1000 * 60 * 60 * 24));
-        
-        // Formato dd mmm aa del original
+
+        const daysDiff = Math.round((nextPaymentDate - today) / (1000 * 60 * 60 * 24));
+
         const formattedDate = nextPaymentDate.toLocaleDateString('es-ES', {
             day: '2-digit',
             month: 'short',
             year: '2-digit'
         });
-        
-        if (daysDiff === 0) {
+
+        if (pagoEsteMes) {
+            return `${formattedDate} <small class="text-success">(en ${daysDiff} días)</small>`;
+        } else if (daysDiff === 0) {
             return `${formattedDate} <small class="text-warning">(HOY)</small>`;
         } else if (daysDiff > 0) {
             return `${formattedDate} <small class="text-info">(en ${daysDiff} días)</small>`;
