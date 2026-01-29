@@ -3,6 +3,11 @@
    Archivo: public/js/reportes-init.js
    Inicialización de la página de reportes
 
+   Version: 3.2.0
+   Changelog v3.2.0:
+   - NEW: Widget Altas/Bajas visible solo al seleccionar Rockstar Skull
+   - Compatible con reportes-widgets.js v3.4.0
+
    Version: 3.1.6
    Changelog v3.1.6:
    - FIX: Correcciones en llamadas a API (apiGet en lugar de apiFetch)
@@ -380,23 +385,51 @@ function enableExportButton() {
  */
 async function applyFilters() {
     console.log('🔍 Aplicando filtros...');
-    
+
     // Obtener valores actuales de filtros
     currentFilters.empresa = document.getElementById('filterEmpresa')?.value || '';
     currentFilters.ano = document.getElementById('filterAno')?.value || '';
     currentFilters.mes = document.getElementById('filterMes')?.value || '';
     currentFilters.tipo = document.getElementById('filterTipo')?.value || '';
-    
+
     console.log('Filtros aplicados:', currentFilters);
-    
+
     // Actualizar widget de Gastos Reales
     if (typeof loadGastosRealesData === 'function') {
         await loadGastosRealesData(currentFilters);
     }
-    
+
     // Actualizar widget de Balance General
     if (typeof loadBalanceGeneralData === 'function') {
         await loadBalanceGeneralData(currentFilters);
+    }
+
+    // Widget Altas/Bajas: solo visible cuando se selecciona Rockstar Skull
+    toggleAltasBajasWidget(currentFilters);
+}
+
+/**
+ * Mostrar/ocultar widget Altas y Bajas según empresa seleccionada
+ */
+async function toggleAltasBajasWidget(filters) {
+    const widget = document.getElementById('widgetAltasBajas');
+    if (!widget) return;
+
+    const selectEmpresa = document.getElementById('filterEmpresa');
+    if (!selectEmpresa) return;
+
+    // Obtener el texto de la opción seleccionada
+    const selectedText = selectEmpresa.options[selectEmpresa.selectedIndex]?.text || '';
+    const isRockstar = selectedText.toLowerCase().includes('rockstar');
+
+    if (isRockstar && filters.empresa) {
+        widget.style.display = 'block';
+        console.log('👥 Mostrando widget Altas y Bajas para Rockstar Skull');
+        if (typeof loadAltasBajasData === 'function') {
+            await loadAltasBajasData(filters);
+        }
+    } else {
+        widget.style.display = 'none';
     }
 }
 
@@ -405,12 +438,27 @@ async function applyFilters() {
  */
 async function refreshBalanceGeneral() {
     console.log('🔄 Refrescando widget Balance General...');
-    
+
     if (typeof loadBalanceGeneralData === 'function') {
         await loadBalanceGeneralData(currentFilters);
-        
+
         if (typeof showAlert === 'function') {
             showAlert('success', 'Balance General actualizado correctamente', 2000);
+        }
+    }
+}
+
+/**
+ * Refrescar widget de Altas y Bajas
+ */
+async function refreshAltasBajas() {
+    console.log('🔄 Refrescando widget Altas y Bajas...');
+
+    if (typeof loadAltasBajasData === 'function') {
+        await loadAltasBajasData(currentFilters);
+
+        if (typeof showAlert === 'function') {
+            showAlert('success', 'Altas y Bajas actualizado correctamente', 2000);
         }
     }
 }
@@ -476,10 +524,12 @@ window.initializeReportes = initializeReportes;
 window.applyFilters = applyFilters;
 window.refreshGastosReales = refreshGastosReales;
 window.refreshBalanceGeneral = refreshBalanceGeneral;
+window.refreshAltasBajas = refreshAltasBajas;
 window.exportCurrentReport = exportCurrentReport;
 window.getCurrentFilters = getCurrentFilters;
 window.loadUserInfoForReportes = loadUserInfoForReportes;
 window.updateCurrentDate = updateCurrentDate;
+window.toggleAltasBajasWidget = toggleAltasBajasWidget;
 
 // ============================================================
 // 🚀 AUTO-INICIALIZACIÓN

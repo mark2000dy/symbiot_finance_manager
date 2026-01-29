@@ -3,6 +3,11 @@
    Archivo: public/js/reportes-widgets.js
    Widgets específicos para reportes
 
+   Version: 3.4.0
+   Changelog v3.4.0:
+   - NEW: Gráfica Flujo de Efectivo se agrupa por trimestre en móvil (<768px)
+   - NEW: Widget Altas y Bajas de Alumnos (visible solo con Rockstar Skull)
+
    Version: 3.3.4
    Changelog v3.3.4:
    - FIX: Estado de Cuenta con reglas específicas por cuenta
@@ -148,6 +153,43 @@ function adaptBalanceGeneral(backendResponse) {
         numero_socios: data.numero_socios || 0,
         saldo_disponible: data.saldo_total_cuentas || 0
     };
+}
+
+// ============================================================
+// 📱 MOBILE HELPERS - Agrupación trimestral para pantallas pequeñas
+// ============================================================
+
+/**
+ * Agrupa datos mensuales en trimestres para mejor visualización en móvil
+ * @param {Array} detalleMensual - [{mes: "2025-01", entradas, salidas, flujo}, ...]
+ * @returns {Array} - [{mes: "2025-Q1", entradas, salidas, flujo}, ...]
+ */
+function aggregateByTrimester(detalleMensual) {
+    const trimestres = {};
+
+    detalleMensual.forEach(item => {
+        const [year, month] = item.mes.split('-');
+        const q = Math.ceil(parseInt(month) / 3);
+        const key = `${year}-T${q}`;
+
+        if (!trimestres[key]) {
+            trimestres[key] = { mes: key, entradas: 0, salidas: 0, flujo: 0 };
+        }
+        trimestres[key].entradas += item.entradas;
+        trimestres[key].salidas += item.salidas;
+    });
+
+    return Object.values(trimestres).map(t => {
+        t.flujo = t.entradas - t.salidas;
+        return t;
+    }).sort((a, b) => a.mes.localeCompare(b.mes));
+}
+
+/**
+ * Detecta si la pantalla es móvil
+ */
+function isMobileViewport() {
+    return window.innerWidth < 768;
 }
 
 // ============================================================
@@ -361,10 +403,14 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
         gastosRealesChart.destroy();
     }
 
-    const meses = detalleMensual.map(d => d.mes);
-    const entradas = detalleMensual.map(d => d.entradas);
-    const salidas = detalleMensual.map(d => d.salidas);
-    const flujos = detalleMensual.map(d => d.flujo);
+    // En móvil, agrupar por trimestre para mejor legibilidad
+    const mobile = isMobileViewport();
+    const chartData = mobile ? aggregateByTrimester(detalleMensual) : detalleMensual;
+
+    const meses = chartData.map(d => d.mes);
+    const entradas = chartData.map(d => d.entradas);
+    const salidas = chartData.map(d => d.salidas);
+    const flujos = chartData.map(d => d.flujo);
 
     // Construir datasets según el filtro de tipo
     const datasets = [];
@@ -414,7 +460,8 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
             plugins: {
                 legend: {
                     labels: {
-                        color: '#E4E6EA'
+                        color: '#E4E6EA',
+                        font: { size: mobile ? 10 : 12 }
                     }
                 }
             },
@@ -423,7 +470,9 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
                     beginAtZero: true,
                     ticks: {
                         color: '#E4E6EA',
+                        font: { size: mobile ? 9 : 12 },
                         callback: function(value) {
+                            if (mobile) return '$' + (value / 1000).toFixed(0) + 'k';
                             return '$' + value.toLocaleString('es-MX');
                         }
                     },
@@ -433,7 +482,9 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
                 },
                 x: {
                     ticks: {
-                        color: '#E4E6EA'
+                        color: '#E4E6EA',
+                        maxRotation: mobile ? 0 : 50,
+                        font: { size: mobile ? 10 : 12 }
                     },
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
@@ -1332,6 +1383,237 @@ function exportBalanceGeneralExcel() {
 }
 
 // ============================================================
+// 📊 WIDGET: ALTAS Y BAJAS DE ALUMNOS
+// ============================================================
+
+let altasBajasChart = null;
+let altasBajasData = null;
+
+/**
+ * Inicializar widget de Altas y Bajas
+ */
+async function initializeAltasBajasWidget(filters = {}) {
+    try {
+        console.log('👥 Inicializando widget Altas y Bajas...');
+        await loadAltasBajasData(filters);
+        console.log('✅ Widget Altas y Bajas inicializado');
+    } catch (error) {
+        console.error('❌ Error inicializando widget Altas y Bajas:', error);
+        if (typeof showAlert === 'function') {
+            showAlert('danger', 'Error inicializando reporte de Altas y Bajas');
+        }
+    }
+}
+
+/**
+ * Cargar datos del reporte de Altas y Bajas
+ */
+async function loadAltasBajasData(filters = {}) {
+    try {
+        const params = {};
+        if (filters.empresa) params.empresa = filters.empresa;
+        if (filters.ano) params.ano = filters.ano;
+
+        const data = await window.apiGet('reportes/altas-bajas', params);
+
+        if (!data.success) {
+            throw new Error(data.error || 'Error en respuesta del servidor');
+        }
+
+        // Actualizar indicadores
+        updateAltasBajasIndicators(data.data.resumen);
+
+        // Actualizar gráfico
+        updateAltasBajasChart(data.data.meses);
+
+        // Actualizar tabla
+        updateAltasBajasTable(data.data.meses);
+
+        // Guardar datos
+        altasBajasData = data.data;
+
+    } catch (error) {
+        console.error('❌ Error cargando datos de Altas y Bajas:', error);
+        if (typeof showAlert === 'function') {
+            showAlert('danger', 'Error cargando datos de Altas y Bajas: ' + error.message);
+        }
+
+        const tbody = document.getElementById('tablaAltasBajas');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error cargando datos: ${error.message}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
+/**
+ * Actualizar indicadores de Altas y Bajas
+ */
+function updateAltasBajasIndicators(resumen) {
+    const totalAltasEl = document.getElementById('totalAltas');
+    if (totalAltasEl) totalAltasEl.textContent = resumen.total_altas || 0;
+
+    const totalBajasEl = document.getElementById('totalBajas');
+    if (totalBajasEl) totalBajasEl.textContent = resumen.total_bajas || 0;
+
+    const netoEl = document.getElementById('netoAltasBajas');
+    if (netoEl) {
+        const neto = resumen.neto || 0;
+        netoEl.textContent = (neto > 0 ? '+' : '') + neto;
+        netoEl.className = neto >= 0 ? 'text-success mb-0' : 'text-danger mb-0';
+    }
+
+    const totalAlumnosEl = document.getElementById('totalAlumnosRegistrados');
+    if (totalAlumnosEl) totalAlumnosEl.textContent = resumen.total_alumnos || 0;
+}
+
+/**
+ * Actualizar gráfico de Altas y Bajas (barras agrupadas)
+ */
+function updateAltasBajasChart(meses) {
+    const ctx = document.getElementById('chartAltasBajas');
+    if (!ctx) return;
+
+    if (altasBajasChart) {
+        altasBajasChart.destroy();
+    }
+
+    if (!meses || meses.length === 0) {
+        return;
+    }
+
+    const labels = meses.map(d => d.mes);
+    const altas = meses.map(d => d.altas);
+    const bajas = meses.map(d => d.bajas);
+
+    const mobile = isMobileViewport();
+
+    altasBajasChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Altas',
+                    data: altas,
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: 'rgb(25, 135, 84)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Bajas',
+                    data: bajas,
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                    borderColor: 'rgb(220, 53, 69)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#E4E6EA',
+                        font: { size: mobile ? 10 : 12 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#E4E6EA',
+                        stepSize: 1,
+                        font: { size: mobile ? 9 : 12 }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#E4E6EA',
+                        maxRotation: mobile ? 45 : 0,
+                        font: { size: mobile ? 9 : 12 }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Actualizar tabla de Altas y Bajas
+ */
+function updateAltasBajasTable(meses) {
+    const tbody = document.getElementById('tablaAltasBajas');
+    if (!tbody) return;
+
+    if (!meses || meses.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-muted">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay datos disponibles para los filtros seleccionados
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = '';
+
+    // Ordenar de más reciente a más antiguo
+    const sortedData = [...meses].sort((a, b) => b.mes.localeCompare(a.mes));
+
+    sortedData.forEach(item => {
+        const netoClass = item.neto >= 0 ? 'text-success' : 'text-danger';
+        const netoIcon = item.neto >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+        const netoPrefix = item.neto > 0 ? '+' : '';
+
+        const row = `
+            <tr>
+                <td>
+                    <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                    ${item.mes}
+                </td>
+                <td class="text-end text-success">
+                    <i class="fas fa-user-plus me-1"></i>
+                    ${item.altas}
+                </td>
+                <td class="text-end text-danger">
+                    <i class="fas fa-user-minus me-1"></i>
+                    ${item.bajas}
+                </td>
+                <td class="text-end ${netoClass}">
+                    <i class="fas ${netoIcon} me-1"></i>
+                    <strong>${netoPrefix}${item.neto}</strong>
+                </td>
+                <td class="text-end text-warning">
+                    <i class="fas fa-users me-1"></i>
+                    ${item.alumnos_activos}
+                </td>
+            </tr>
+        `;
+
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+
+    console.log(`✅ Tabla Altas/Bajas actualizada con ${sortedData.length} registros`);
+}
+
+// ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
 
@@ -1348,5 +1630,9 @@ window.loadBalanceGeneralData = loadBalanceGeneralData;
 window.exportBalanceGeneralExcel = exportBalanceGeneralExcel;
 window.updateChartParticipacion = updateChartParticipacion;
 window.updateTablaParticipacion = updateTablaParticipacion;
+
+// Altas y Bajas
+window.initializeAltasBajasWidget = initializeAltasBajasWidget;
+window.loadAltasBajasData = loadAltasBajasData;
 
 console.log('✅ Reportes Widgets Module cargado');

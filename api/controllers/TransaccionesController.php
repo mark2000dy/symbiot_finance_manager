@@ -1937,4 +1937,238 @@ class TransaccionesController {
             ]);
         }
     }
+
+    /**
+     * Reporte de Altas y Bajas de Alumnos
+     * GET /reportes/altas-bajas?empresa=X&ano=Y
+     *
+     * Enfoque HÍBRIDO: transacciones para presencia histórica + estatus para proyección
+     *
+     * Un alumno está "activo" en un mes si:
+     *   1. Tiene transacción ese mes (presencia comprobada), O
+     *   2. El mes es >= su última transacción, estatus='Activo' y precio > 0
+     *      (sigue inscrito, simplemente no ha pagado ese mes aún)
+     *
+     * Esto detecta GAPS como el caso de Fanny Ieraldini:
+     *   - Activa meses 1-5 (transacciones), ausente meses 6-8 (sin tx), regresa mes 9
+     *   - En meses 6-8 NO se cuenta como activa (gap real)
+     *   - Desde su última tx hasta hoy: activa (estatus=Activo, precio > 0)
+     *
+     * Alta = activo en mes M, NO activo en mes M-1
+     * Baja = NO activo en mes M, activo en mes M-1
+     *
+     * Excluye alumnos con nombre LIKE '[ELIMINADO]%'
+     */
+    public static function getReporteAltasBajas() {
+        AuthController::requireAuth();
+
+        try {
+            $empresa = $_GET['empresa'] ?? '';
+            $ano = $_GET['ano'] ?? '';
+
+            if (empty($empresa)) {
+                echo json_encode(['success' => false, 'error' => 'Se requiere filtro de empresa']);
+                return;
+            }
+
+            // 1. Obtener todos los alumnos de la empresa (excluir eliminados)
+            $alumnosQuery = "
+                SELECT id, nombre, estatus, precio_mensual, fecha_inscripcion
+                FROM alumnos
+                WHERE empresa_id = ?
+                  AND nombre NOT LIKE '[ELIMINADO]%'
+                ORDER BY nombre
+            ";
+            $alumnos = executeQuery($alumnosQuery, [(int)$empresa]);
+
+            if (empty($alumnos)) {
+                echo json_encode([
+                    'success' => true,
+                    'data' => ['meses' => [], 'resumen' => ['total_altas' => 0, 'total_bajas' => 0, 'neto' => 0, 'total_alumnos' => 0]]
+                ]);
+                return;
+            }
+
+            // 2. Obtener TODAS las transacciones de ingresos (sin filtro de año, necesitamos historial completo)
+            $txQuery = "
+                SELECT t.concepto, DATE_FORMAT(t.fecha, '%Y-%m') as mes
+                FROM transacciones t
+                WHERE t.empresa_id = ? AND t.tipo = 'I'
+                ORDER BY t.fecha
+            ";
+            $transacciones = executeQuery($txQuery, [(int)$empresa]);
+
+            // 3. Mapear meses con transacción por alumno + último mes de transacción
+            $alumnoMeses = [];   // id => ['2023-08' => true, '2023-09' => true, ...]
+            $alumnoLastTx = [];  // id => '2025-11'
+
+            foreach ($alumnos as $alumno) {
+                $alumnoMeses[$alumno['id']] = [];
+            }
+
+            foreach ($transacciones as $tx) {
+                $conceptoLower = mb_strtolower(trim($tx['concepto']));
+                foreach ($alumnos as $alumno) {
+                    $nombreLower = mb_strtolower(trim($alumno['nombre']));
+                    if (strpos($conceptoLower, $nombreLower) !== false) {
+                        $alumnoMeses[$alumno['id']][$tx['mes']] = true;
+                        if (!isset($alumnoLastTx[$alumno['id']]) || $tx['mes'] > $alumnoLastTx[$alumno['id']]) {
+                            $alumnoLastTx[$alumno['id']] = $tx['mes'];
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // 4. Generar rango continuo de meses a analizar
+            $mesActual = date('Y-m');
+            $allMeses = [];
+
+            // Incluir meses de inscripción
+            foreach ($alumnos as $alumno) {
+                if (!empty($alumno['fecha_inscripcion'])) {
+                    $allMeses[date('Y-m', strtotime($alumno['fecha_inscripcion']))] = true;
+                }
+            }
+            // Incluir meses de transacciones
+            foreach ($transacciones as $tx) {
+                $allMeses[$tx['mes']] = true;
+            }
+            // Incluir mes actual
+            $allMeses[$mesActual] = true;
+
+            if (empty($allMeses)) {
+                echo json_encode([
+                    'success' => true,
+                    'data' => ['meses' => [], 'resumen' => ['total_altas' => 0, 'total_bajas' => 0, 'neto' => 0, 'total_alumnos' => count($alumnos)]]
+                ]);
+                return;
+            }
+
+            ksort($allMeses);
+            $monthKeys = array_keys($allMeses);
+            $primerMes = reset($monthKeys);
+            $ultimoMes = end($monthKeys);
+
+            $mesesContinuos = [];
+            $cur = $primerMes;
+            while ($cur <= $ultimoMes) {
+                $mesesContinuos[] = $cur;
+                $cur = date('Y-m', strtotime($cur . '-01 +1 month'));
+            }
+
+            // Filtrar por año si se especificó
+            if (!empty($ano)) {
+                $mesesContinuos = array_values(array_filter($mesesContinuos, function($m) use ($ano) {
+                    return strpos($m, $ano) === 0;
+                }));
+            }
+
+            // 5. Para cada alumno y cada mes, determinar si está activo
+            // Pre-calcular mapa de actividad: alumno_id => mes => bool
+            // Esto es más eficiente que recalcular en cada iteración
+            $alumnoActivoEnMes = [];
+
+            foreach ($alumnos as $alumno) {
+                $id = $alumno['id'];
+                if (empty($alumno['fecha_inscripcion'])) continue;
+
+                $inscMes = date('Y-m', strtotime($alumno['fecha_inscripcion']));
+                $esBaja = $alumno['estatus'] === 'Baja';
+                $esActivoPrecioPositivo = !$esBaja && floatval($alumno['precio_mensual']) > 0;
+                $lastTx = isset($alumnoLastTx[$id]) ? $alumnoLastTx[$id] : null;
+
+                foreach ($mesesContinuos as $mes) {
+                    // Antes de inscripción: no activo
+                    if ($mes < $inscMes) {
+                        $alumnoActivoEnMes[$id][$mes] = false;
+                        continue;
+                    }
+
+                    // Tiene transacción este mes: activo
+                    if (isset($alumnoMeses[$id][$mes])) {
+                        $alumnoActivoEnMes[$id][$mes] = true;
+                        continue;
+                    }
+
+                    // Sin transacción este mes:
+                    // Si es Activo con precio > 0 Y el mes es >= última transacción → activo
+                    // (sigue inscrito, no ha pagado aún o es mes actual/futuro)
+                    if ($esActivoPrecioPositivo && $lastTx !== null && $mes >= $lastTx) {
+                        $alumnoActivoEnMes[$id][$mes] = true;
+                        continue;
+                    }
+
+                    // Cualquier otro caso: no activo en este mes
+                    // (gap histórico, baja, baja temporal, etc.)
+                    $alumnoActivoEnMes[$id][$mes] = false;
+                }
+            }
+
+            // 6. Calcular altas, bajas y activos por mes
+            $resultado = [];
+            $totalAltas = 0;
+            $totalBajas = 0;
+
+            foreach ($mesesContinuos as $idx => $mes) {
+                $altas = 0;
+                $bajas = 0;
+                $activos = 0;
+
+                $mesAnterior = date('Y-m', strtotime($mes . '-01 -1 month'));
+
+                foreach ($alumnoActivoEnMes as $id => $mesesMap) {
+                    $activoEsteMes = isset($mesesMap[$mes]) && $mesesMap[$mes];
+                    $activoMesAnterior = isset($mesesMap[$mesAnterior]) && $mesesMap[$mesAnterior];
+
+                    if ($activoEsteMes) {
+                        $activos++;
+                    }
+
+                    // Alta: activo este mes, no activo el anterior
+                    if ($activoEsteMes && !$activoMesAnterior) {
+                        $altas++;
+                    }
+
+                    // Baja: no activo este mes, activo el anterior
+                    if (!$activoEsteMes && $activoMesAnterior) {
+                        $bajas++;
+                    }
+                }
+
+                $resultado[] = [
+                    'mes' => $mes,
+                    'altas' => $altas,
+                    'bajas' => $bajas,
+                    'neto' => $altas - $bajas,
+                    'alumnos_activos' => $activos
+                ];
+
+                $totalAltas += $altas;
+                $totalBajas += $bajas;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'meses' => $resultado,
+                    'resumen' => [
+                        'total_altas' => $totalAltas,
+                        'total_bajas' => $totalBajas,
+                        'neto' => $totalAltas - $totalBajas,
+                        'total_alumnos' => count($alumnos)
+                    ]
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en reporte altas/bajas: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error generando reporte de altas y bajas',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }

@@ -706,6 +706,106 @@
                 </div>
             </div>
         </div>
+
+        <!-- Widget: Altas y Bajas de Alumnos (solo visible con Rockstar Skull) -->
+        <div class="row mb-4" id="widgetAltasBajas" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-graduate me-2"></i>Reporte: Altas y Bajas de Alumnos
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2" onclick="refreshAltasBajas()">
+                                <i class="fas fa-sync-alt me-1"></i>Actualizar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Indicadores -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card" style="background: rgba(25, 135, 84, 0.1); border: 1px solid rgba(25, 135, 84, 0.3);">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-plus fa-2x text-success mb-2"></i>
+                                        <h6 class="text-muted">Total Altas</h6>
+                                        <h3 class="text-success mb-0" id="totalAltas">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card" style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3);">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-minus fa-2x text-danger mb-2"></i>
+                                        <h6 class="text-muted">Total Bajas</h6>
+                                        <h3 class="text-danger mb-0" id="totalBajas">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card" style="background: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                                        <h6 class="text-muted">Neto</h6>
+                                        <h3 class="text-info mb-0" id="netoAltasBajas">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card" style="background: rgba(255, 165, 0, 0.1); border: 1px solid rgba(255, 165, 0, 0.3);">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-users fa-2x text-orange mb-2"></i>
+                                        <h6 class="text-muted">Alumnos Registrados</h6>
+                                        <h3 class="text-orange mb-0" id="totalAlumnosRegistrados">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Barras -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card" style="background: rgba(0, 0, 0, 0.2);">
+                                    <div class="card-body">
+                                        <h6 class="text-white mb-3">
+                                            <i class="fas fa-chart-bar me-2"></i>Altas y Bajas Mensuales
+                                        </h6>
+                                        <canvas id="chartAltasBajas" height="80"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla Resumen -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th><i class="fas fa-calendar me-1"></i>Mes</th>
+                                                <th class="text-end"><i class="fas fa-user-plus me-1 text-success"></i>Altas</th>
+                                                <th class="text-end"><i class="fas fa-user-minus me-1 text-danger"></i>Bajas</th>
+                                                <th class="text-end"><i class="fas fa-chart-line me-1 text-info"></i>Neto</th>
+                                                <th class="text-end"><i class="fas fa-users me-1 text-warning"></i>Activos</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaAltasBajas">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    Selecciona la empresa Rockstar Skull para ver este reporte
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
    <!-- Bootstrap JS -->
@@ -725,7 +825,7 @@
     <script src="js/dashboard-core.js?v=3.1.3"></script>
     <script src="js/dashboard-auth.js?v=3.1.3"></script>
     <script src="js/dashboard-api.js?v=3.1.3"></script>
-    <script src="js/reportes-widgets.js?v=3.3.4"></script>   <!-- v3.3.4: Estado de Cuenta con reglas específicas por cuenta -->
+    <script src="js/reportes-widgets.js?v=3.5.0"></script>   <!-- v3.5.0: Gráfica trimestral móvil + Widget Altas/Bajas -->
     <script src="js/user-permissions.js?v=1.1.0"></script>   <!-- v1.1.0: Permisos por página y navegación -->
     <script>if (typeof window.checkPageAccess === 'function') window.checkPageAccess();</script>
     <script>
@@ -734,7 +834,7 @@
             showPageLoader('Cargando módulo de Reportes...');
         }
     </script>
-    <script src="js/reportes-init.js?v=3.1.6"></script>      <!-- v3.1.6: FIX llamadas API compatibles con api-client v3.1.4 -->
+    <script src="js/reportes-init.js?v=3.3.0"></script>      <!-- v3.3.0: Widget Altas/Bajas condicional -->
 
 </body>
 </html>

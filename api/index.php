@@ -281,6 +281,11 @@ try {
         exit;
     }
 
+    if ($requestUri === '/reportes/altas-bajas' && $requestMethod === 'GET') {
+        TransaccionesController::getReporteAltasBajas();
+        exit;
+    }
+
     // ============================================================
     // RUTAS DE DASHBOARD
     // ============================================================
