@@ -2075,7 +2075,6 @@ class TransaccionesController {
 
                 $inscMes = date('Y-m', strtotime($alumno['fecha_inscripcion']));
                 $esBaja = $alumno['estatus'] === 'Baja';
-                $esActivoPrecioPositivo = !$esBaja && floatval($alumno['precio_mensual']) > 0;
                 $lastTx = isset($alumnoLastTx[$id]) ? $alumnoLastTx[$id] : null;
 
                 foreach ($mesesContinuos as $mes) {
@@ -2092,15 +2091,16 @@ class TransaccionesController {
                     }
 
                     // Sin transacción este mes:
-                    // Si es Activo con precio > 0 Y el mes es >= última transacción → activo
-                    // (sigue inscrito, no ha pagado aún o es mes actual/futuro)
-                    if ($esActivoPrecioPositivo && $lastTx !== null && $mes >= $lastTx) {
+                    // Si NO es Baja y el mes es >= última transacción → sigue activo
+                    // (no ha pagado aún pero sigue inscrito)
+                    if (!$esBaja && $lastTx !== null && $mes >= $lastTx) {
                         $alumnoActivoEnMes[$id][$mes] = true;
                         continue;
                     }
 
-                    // Cualquier otro caso: no activo en este mes
-                    // (gap histórico, baja, baja temporal, etc.)
+                    // Cualquier otro caso: no activo
+                    // - Gap histórico entre transacciones (baja temporal)
+                    // - Estatus Baja después de última transacción (baja definitiva)
                     $alumnoActivoEnMes[$id][$mes] = false;
                 }
             }
