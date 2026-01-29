@@ -437,8 +437,8 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
         });
     }
 
-    // Flujo Neto solo si no hay filtro de tipo (mostrar ambos)
-    if (tipoFiltro === '') {
+    // Flujo Neto: si filtro es '' (Todos) o 'F' (Flujo Neto)
+    if (tipoFiltro === '' || tipoFiltro === 'F') {
         datasets.push({
             label: 'Flujo Neto',
             data: flujos,
