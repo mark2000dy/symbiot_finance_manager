@@ -120,11 +120,10 @@ function createEditStudentModalHTML() {
                                 </label>
                                 <select class="form-select" id="editStudentPaymentMethod">
                                     <option value="">Selecciona forma de pago</option>
-                                    <option value="Efectivo">💵 Efectivo</option>
                                     <option value="Transferencia">🏦 Transferencia</option>
-                                    <option value="TDC">💳 Tarjeta de Crédito</option>
-                                    <option value="TDD">💳 Tarjeta de Débito</option>
+                                    <option value="Efectivo">💵 Efectivo</option>
                                     <option value="TPV">📱 TPV</option>
+                                    <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -263,11 +262,10 @@ function createAddStudentModalHTML() {
                                     <i class="fas fa-credit-card me-1"></i>Forma de Pago
                                 </label>
                                 <select class="form-select" id="newStudentPaymentMethod">
-                                    <option value="Efectivo">💵 Efectivo</option>
                                     <option value="Transferencia">🏦 Transferencia</option>
-                                    <option value="TDC">💳 Tarjeta de Crédito</option>
-                                    <option value="TDD">💳 Tarjeta de Débito</option>
+                                    <option value="Efectivo">💵 Efectivo</option>
                                     <option value="TPV">📱 TPV</option>
+                                    <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
                                 </select>
                             </div>
                         </div>
@@ -451,12 +449,14 @@ async function submitTransaction() {
         if (response.success) {
             const action = editingId ? 'actualizada' : 'registrada';
             showAlert('success', `Transacción ${action} exitosamente`);
-            
+
             const modal = bootstrap.Modal.getInstance(document.getElementById('addTransactionModal'));
             if (modal) modal.hide();
-            
+
+            const scrollPos = window.scrollY;
             if (typeof window.loadDashboardData === 'function') await window.loadDashboardData();
             if (typeof window.loadRecentTransactions === 'function') await window.loadRecentTransactions(1);
+            requestAnimationFrame(() => window.scrollTo(0, scrollPos));
             
         } else {
             throw new Error(response.error || 'Error guardando la transacción');

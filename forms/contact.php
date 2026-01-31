@@ -1,12 +1,35 @@
 <?php
 /**
- * ====================================================
+ * ==================================================== 
+ * DEBUGGING CODE - SYMBIOT TECHNOLOGIES
+ * This block logs incoming request data to a file.
+ * ==================================================== 
+ */
+$log_file = __DIR__ . '/_debug_log.txt';
+$log_data = "---" . date('Y-m-d H:i:s') . " ---\
+";
+$log_data .= "CONTENT_TYPE: " . (isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : 'Not set') . "\
+";
+$log_data .= "POST DATA: " . print_r($_POST, true) . "\
+";
+$log_data .= "RAW INPUT: " . file_get_contents('php://input') . "\
+\
+";
+file_put_contents($log_file, $log_data, FILE_APPEND);
+/**
+ * ==================================================== 
+ * END DEBUGGING CODE
+ * ==================================================== 
+ */
+
+/**
+ * ==================================================== 
  * FORMULARIO DE CONTACTO - SYMBIOT TECHNOLOGIES
  * Archivo: forms/contact.php
  * 
  * Procesa y envía emails del formulario de contacto
  * Compatible con PHP 7.3+
- * ====================================================
+ * ==================================================== 
  */
 
 // Configuración
@@ -117,19 +140,29 @@ $_SESSION[$rate_limit_key] = $current_time;
 $email_subject = "[Contacto Web] " . $subject;
 
 $email_body = "Has recibido un nuevo mensaje desde el formulario de contacto de Symbiot Technologies.\n\n";
-$email_body .= "=================================================\n\n";
+$email_body .= "=================================================\
+\n";
 $email_body .= "DATOS DEL REMITENTE:\n";
-$email_body .= "Nombre: " . $name . "\n";
-$email_body .= "Email: " . $email . "\n";
-$email_body .= "Asunto: " . $subject . "\n\n";
-$email_body .= "=================================================\n\n";
+$email_body .= "Nombre: " . $name . "\
+";
+$email_body .= "Email: " . $email . "\
+";
+$email_body .= "Asunto: " . $subject . "\
+\n";
+$email_body .= "=================================================\
+\n";
 $email_body .= "MENSAJE:\n\n";
-$email_body .= $message . "\n\n";
-$email_body .= "=================================================\n\n";
+$email_body .= $message . "\
+\n";
+$email_body .= "=================================================\
+\n";
 $email_body .= "Información adicional:\n";
-$email_body .= "IP: " . $ip . "\n";
-$email_body .= "Fecha: " . date('Y-m-d H:i:s') . "\n";
-$email_body .= "User Agent: " . $_SERVER['HTTP_USER_AGENT'] . "\n";
+$email_body .= "IP: " . $ip . "\
+";
+$email_body .= "Fecha: " . date('Y-m-d H:i:s') . "\
+";
+$email_body .= "User Agent: " . $_SERVER['HTTP_USER_AGENT'] . "\
+";
 
 // Headers del email
 $headers = array();

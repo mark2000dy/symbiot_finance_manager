@@ -87,8 +87,11 @@ function adaptGastosReales(backendResponse) {
     // Group transactions by month
     transacciones.forEach(tx => {
         if (tx.fecha && tx.total && tx.tipo) {
-            const fecha = new Date(tx.fecha);
-            const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+            // Parsear como fecha local para evitar desfase UTC
+            const fechaParts = String(tx.fecha).split('T')[0].split('-');
+            const fechaYear = parseInt(fechaParts[0]);
+            const fechaMonth = parseInt(fechaParts[1]);
+            const mesKey = `${fechaYear}-${String(fechaMonth).padStart(2, '0')}`;
 
             if (!monthlyData[mesKey]) {
                 monthlyData[mesKey] = {
@@ -307,7 +310,8 @@ async function loadGastosRealesData(filters = {}) {
         if (filters.empresa) params.empresa = filters.empresa;
         if (filters.ano) params.ano = filters.ano;
         if (filters.mes) params.mes = filters.mes;
-        if (filters.tipo) params.tipo = filters.tipo;
+        // 'F' (Flujo Neto) es filtro visual del chart, no de API - necesita ambos tipos (I y G)
+        if (filters.tipo && filters.tipo !== 'F') params.tipo = filters.tipo;
 
         // Llamar al endpoint
         const data = await window.apiGet('reportes/gastos-reales', params);
@@ -918,8 +922,12 @@ function updateTablaSocios(socios, totalInversion) {
     
     const formatDate = (dateStr) => {
         if (!dateStr) return 'N/A';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('es-MX');
+        const parts = String(dateStr).split('T')[0].split('-');
+        if (parts.length === 3) {
+            const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            return date.toLocaleDateString('es-MX');
+        }
+        return new Date(dateStr).toLocaleDateString('es-MX');
     };
     
     if (!socios || socios.length === 0) {
@@ -1491,6 +1499,7 @@ function updateAltasBajasChart(meses) {
     const labels = meses.map(d => d.mes);
     const altas = meses.map(d => d.altas);
     const bajas = meses.map(d => d.bajas);
+    const netos = meses.map(d => d.neto);
 
     const mobile = isMobileViewport();
 
@@ -1512,6 +1521,17 @@ function updateAltasBajasChart(meses) {
                     backgroundColor: 'rgba(220, 53, 69, 0.7)',
                     borderColor: 'rgb(220, 53, 69)',
                     borderWidth: 1
+                },
+                {
+                    label: 'Flujo Neto',
+                    data: netos,
+                    type: 'line',
+                    borderColor: 'rgb(255, 206, 86)',
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    tension: 0.1,
+                    fill: false
                 }
             ]
         },

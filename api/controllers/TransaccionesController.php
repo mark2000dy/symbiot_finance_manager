@@ -488,13 +488,19 @@ class TransaccionesController {
                     a.tipo_clase,
                     a.horario,
                     a.fecha_inscripcion,
-                    COALESCE(a.fecha_ultimo_pago, (
-                        SELECT MAX(t.fecha)
-                        FROM transacciones t
-                        WHERE t.tipo = 'I'
-                          AND t.empresa_id = a.empresa_id
-                          AND t.concepto LIKE CONCAT('%', a.nombre, '%')
-                    )) as fecha_ultimo_pago,
+                    NULLIF(
+                        GREATEST(
+                            COALESCE(a.fecha_ultimo_pago, '1900-01-01'),
+                            COALESCE((
+                                SELECT MAX(t.fecha)
+                                FROM transacciones t
+                                WHERE t.tipo = 'I'
+                                  AND t.empresa_id = a.empresa_id
+                                  AND t.concepto LIKE CONCAT('%', a.nombre, '%')
+                            ), '1900-01-01')
+                        ),
+                        '1900-01-01'
+                    ) as fecha_ultimo_pago,
                     a.promocion,
                     COALESCE(a.precio_mensual, 0) as precio_mensual,
                     a.forma_pago,
@@ -860,10 +866,13 @@ class TransaccionesController {
         try {
             error_log("💰 Intentando actualizar fecha_ultimo_pago...");
 
+            $alumnoEncontrado = null;
+
+            // Estrategia 1: Extraer nombre con regex original
             $match = [];
             if (preg_match('/(?:Mensualidad\s+clase\s+de\s+\w+\s+)?[GI]\s+(.+?)(?:\s*,|$)/i', $concepto, $match)) {
                 $nombreExtraido = trim($match[1]);
-                error_log("👤 Nombre extraído: $nombreExtraido");
+                error_log("👤 Nombre extraído por regex: $nombreExtraido");
 
                 $alumnos = executeQuery("
                     SELECT id, nombre
@@ -893,19 +902,49 @@ class TransaccionesController {
                 }
 
                 if (!empty($alumnos)) {
-                    $alumnoId = $alumnos[0]['id'];
-                    $alumnoNombre = $alumnos[0]['nombre'];
-
-                    executeUpdate("
-                        UPDATE alumnos
-                        SET fecha_ultimo_pago = ?
-                        WHERE id = ?
-                    ", [$fecha, $alumnoId]);
-
-                    error_log("✅ fecha_ultimo_pago actualizada para: $alumnoNombre -> $fecha");
-                } else {
-                    error_log("⚠️ No se encontró alumno con nombre: \"$nombreExtraido\"");
+                    $alumnoEncontrado = $alumnos[0];
                 }
+            }
+
+            // Estrategia 2 (fallback): Buscar cualquier alumno activo cuyo nombre aparezca en el concepto
+            if (!$alumnoEncontrado) {
+                error_log("🔍 Regex no coincidió, buscando nombre de alumno en concepto...");
+                $todosAlumnos = executeQuery("
+                    SELECT id, nombre
+                    FROM alumnos
+                    WHERE empresa_id = 1
+                        AND nombre NOT LIKE '[ELIMINADO]%'
+                        AND estatus != 'Baja'
+                    ORDER BY CHAR_LENGTH(nombre) DESC
+                ");
+
+                foreach ($todosAlumnos as $alumno) {
+                    if (mb_stripos($concepto, $alumno['nombre']) !== false) {
+                        $alumnoEncontrado = $alumno;
+                        error_log("👤 Alumno encontrado por búsqueda directa: " . $alumno['nombre']);
+                        break;
+                    }
+                }
+            }
+
+            if ($alumnoEncontrado) {
+                $alumnoId = $alumnoEncontrado['id'];
+                $alumnoNombre = $alumnoEncontrado['nombre'];
+
+                // Solo actualizar si la nueva fecha es más reciente que la existente
+                executeUpdate("
+                    UPDATE alumnos
+                    SET fecha_ultimo_pago = CASE
+                        WHEN fecha_ultimo_pago IS NULL THEN ?
+                        WHEN ? > fecha_ultimo_pago THEN ?
+                        ELSE fecha_ultimo_pago
+                    END
+                    WHERE id = ?
+                ", [$fecha, $fecha, $fecha, $alumnoId]);
+
+                error_log("✅ fecha_ultimo_pago actualizada para: $alumnoNombre -> $fecha");
+            } else {
+                error_log("⚠️ No se encontró alumno en concepto: \"$concepto\"");
             }
         } catch (Exception $e) {
             error_log("❌ Error actualizando fecha_ultimo_pago: " . $e->getMessage());
@@ -1075,13 +1114,19 @@ class TransaccionesController {
                     ) as alumnos_pendientes
                 FROM (
                     SELECT a.*,
-                        COALESCE(a.fecha_ultimo_pago, (
-                            SELECT MAX(t.fecha)
-                            FROM transacciones t
-                            WHERE t.tipo = 'I'
-                              AND t.empresa_id = a.empresa_id
-                              AND t.concepto LIKE CONCAT('%', a.nombre, '%')
-                        )) as fecha_pago_real
+                        NULLIF(
+                            GREATEST(
+                                COALESCE(a.fecha_ultimo_pago, '1900-01-01'),
+                                COALESCE((
+                                    SELECT MAX(t.fecha)
+                                    FROM transacciones t
+                                    WHERE t.tipo = 'I'
+                                      AND t.empresa_id = a.empresa_id
+                                      AND t.concepto LIKE CONCAT('%', a.nombre, '%')
+                                ), '1900-01-01')
+                            ),
+                            '1900-01-01'
+                        ) as fecha_pago_real
                     FROM alumnos a
                     WHERE a.empresa_id = ?
                         AND a.nombre NOT LIKE '[ELIMINADO]%'
@@ -1132,7 +1177,7 @@ class TransaccionesController {
             $empresa_id = $_GET['empresa_id'] ?? 1;
 
             // Obtener todos los alumnos activos con información de pagos
-            // COALESCE: usa fecha_ultimo_pago del campo, si es NULL busca el último ingreso en transacciones
+            // GREATEST + COALESCE: usa la fecha más reciente entre el campo y la última transacción
             $alumnosQuery = "
                 SELECT
                     a.id,
@@ -1140,13 +1185,19 @@ class TransaccionesController {
                     a.clase,
                     a.estatus,
                     a.fecha_inscripcion,
-                    COALESCE(a.fecha_ultimo_pago, (
-                        SELECT MAX(t.fecha)
-                        FROM transacciones t
-                        WHERE t.tipo = 'I'
-                          AND t.empresa_id = a.empresa_id
-                          AND t.concepto LIKE CONCAT('%', a.nombre, '%')
-                    )) as fecha_ultimo_pago,
+                    NULLIF(
+                        GREATEST(
+                            COALESCE(a.fecha_ultimo_pago, '1900-01-01'),
+                            COALESCE((
+                                SELECT MAX(t.fecha)
+                                FROM transacciones t
+                                WHERE t.tipo = 'I'
+                                  AND t.empresa_id = a.empresa_id
+                                  AND t.concepto LIKE CONCAT('%', a.nombre, '%')
+                            ), '1900-01-01')
+                        ),
+                        '1900-01-01'
+                    ) as fecha_ultimo_pago,
                     a.precio_mensual
                 FROM alumnos a
                 WHERE a.empresa_id = ?
@@ -1789,7 +1840,7 @@ class TransaccionesController {
 
                 if ($tipo === 'I') {
                     // INGRESOS
-                    if ($formaPago === 'TPV' || $formaPago === 'Mercado Pago') {
+                    if ($formaPago === 'TPV' || $formaPago === 'TPV Domiciliado' || $formaPago === 'Mercado Pago') {
                         $mercadoPago['ingresos'] += $monto;
                     } elseif ($formaPago === 'Transferencia' || $formaPago === 'CTIM') {
                         $inbursa['ingresos'] += $monto;
@@ -1807,7 +1858,7 @@ class TransaccionesController {
                     }
 
                     // Reglas para RockstarSkull (empresa_id=1)
-                    if ($formaPago === 'TPV' || $formaPago === 'Mercado Pago') {
+                    if ($formaPago === 'TPV' || $formaPago === 'TPV Domiciliado' || $formaPago === 'Mercado Pago') {
                         // Gastos TPV/Mercado Pago van a Mercado Pago
                         $mercadoPago['gastos'] += $monto;
                     } elseif ($formaPago === 'Transferencia') {

@@ -490,7 +490,7 @@
             <div class="card-body">
                 <div class="row g-3">
                     <!-- Filtro de Empresa -->
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="filterEmpresa" class="form-label">
                             <i class="fas fa-building me-1"></i>Empresa
                         </label>
@@ -500,7 +500,7 @@
                             <option value="2">🤖 Symbiot Technologies</option>
                         </select>
                     </div>
-                    
+
                     <!-- Filtro de Año -->
                     <div class="col-md-2">
                         <label for="filterAno" class="form-label">
@@ -514,7 +514,7 @@
                             <option value="2023">2023</option>
                         </select>
                     </div>
-                    
+
                     <!-- Filtro de Mes -->
                     <div class="col-md-2">
                         <label for="filterMes" class="form-label">
@@ -536,7 +536,7 @@
                             <option value="12">Diciembre</option>
                         </select>
                     </div>
-                    
+
                     <!-- Filtro de Tipo -->
                     <div class="col-md-2">
                         <label for="filterTipo" class="form-label">
@@ -548,9 +548,19 @@
                             <option value="G" disabled>💸 Gastos (Solo en sección Gastos)</option>
                         </select>
                     </div>
-                    
+
+                    <!-- Filtro de Socio -->
+                    <div class="col-md-2">
+                        <label for="filterSocio" class="form-label">
+                            <i class="fas fa-user me-1"></i>Socio
+                        </label>
+                        <select class="form-select" id="filterSocio" onchange="applySocioFilter()">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+
                     <!-- Botones de Acción -->
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-flex gap-2">
                             <button class="btn btn-outline-secondary" onclick="clearFilters()">
@@ -634,7 +644,7 @@
                         </div>
                         <ul class="pagination pagination-sm mb-0">
                             <li class="page-item" id="prevPage">
-                                <a class="page-link" href="#" onclick="changePage('prev')">
+                                <a class="page-link" href="#" onclick="event.preventDefault(); changePage('prev')">
                                     <i class="fas fa-chevron-left"></i> Anterior
                                 </a>
                             </li>
@@ -642,7 +652,7 @@
                                 <span class="page-link" id="currentPageSpan">1</span>
                             </li>
                             <li class="page-item" id="nextPage">
-                                <a class="page-link" href="#" onclick="changePage('next')">
+                                <a class="page-link" href="#" onclick="event.preventDefault(); changePage('next')">
                                     Siguiente <i class="fas fa-chevron-right"></i>
                                 </a>
                             </li>
@@ -765,11 +775,10 @@
                             </label>
                             <select class="form-select" id="transactionPaymentMethod" required>
                                 <option value="">Seleccionar forma de pago</option>
+                                <option value="Transferencia">🏦 Transferencia</option>
                                 <option value="Efectivo">💵 Efectivo</option>
-                                <option value="TDC">💳 Tarjeta de Crédito</option>
-                                <option value="Transferencia">🏦Transferencia</option>
-                                <option value="TPV">📱 Terminal TPV</option>
-                                <option value="Cheque">📝 Cheque</option>
+                                <option value="TPV">📱 TPV</option>
+                                <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
                             </select>
                         </div>
                     </form>
@@ -811,11 +820,17 @@
         // VARIABLES GLOBALES
         // ============================================================
         let transactionsData = [];
+        let allTransactionsData = [];
         let currentPage = 1;
         const recordsPerPage = 10;
         let totalTransactions = 0;
         let currentChart = null;
         let currentChartView = 'month';
+
+        // Preservar scroll en page refresh (F5)
+        window.addEventListener('beforeunload', () => {
+            sessionStorage.setItem('scrollPos_ingresos', window.scrollY);
+        });
 
         // ============================================================
         // INICIALIZACIÓN
@@ -827,7 +842,14 @@
             if (typeof window.applyUserPermissions === 'function') {
                 window.applyUserPermissions();
             }
-            loadTransactions();
+            loadTransactions().then(() => {
+                // Restaurar scroll de sessionStorage tras recarga de página (F5)
+                const savedScroll = sessionStorage.getItem('scrollPos_ingresos');
+                if (savedScroll) {
+                    requestAnimationFrame(() => window.scrollTo(0, parseInt(savedScroll)));
+                    sessionStorage.removeItem('scrollPos_ingresos');
+                }
+            });
             loadIngresosChart();
 
             if (typeof getCurrentUser === 'function') {
@@ -845,6 +867,7 @@
 
         // Cargar transacciones desde API
         async function loadTransactions() {
+            const scrollPos = window.scrollY;
             try {
                 showLoadingState(true);
 
@@ -871,21 +894,24 @@
 
                 // v3.1.2: Usar API Client en lugar de fetch directo
                 const result = await window.apiGet('transacciones', params);
-                
+
                 if (!result.success) {
                     throw new Error(result.message || 'Error cargando datos');
                 }
-                
-                transactionsData = result.data || [];
-                totalTransactions = transactionsData.length;
-                currentPage = 1;
-                
+
+                allTransactionsData = result.data || [];
+                populateSocioFilter(allTransactionsData);
+                applySocioFilterToData();
+
                 console.log(`✅ ${totalTransactions} ingresos cargados`);
-                
+
                 renderCurrentPage();
                 updateFilterSummary();
                 updatePaginationControls();
-                
+
+                // Restaurar posición de scroll
+                requestAnimationFrame(() => window.scrollTo(0, scrollPos));
+
             } catch (error) {
                 console.error('❌ Error cargando ingresos:', error);
                 showAlert('error', `Error cargando datos: ${error.message}`);
@@ -914,7 +940,7 @@
             const html = pageData.map(transaction => `
                 <tr>
                     <td>${formatDate(transaction.fecha)}</td>
-                    <td class="text-truncate" style="max-width: 200px;" title="${transaction.concepto}">
+                    <td style="word-break: break-word; white-space: normal;" title="${transaction.concepto}">
                         ${transaction.concepto}
                     </td>
                     <td>${transaction.socio}</td>
@@ -988,6 +1014,7 @@
             document.getElementById('filterAno').value = '';
             document.getElementById('filterMes').value = '';
             document.getElementById('filterTipo').value = 'I'; // Mantener solo ingresos
+            document.getElementById('filterSocio').value = '';
             // Re-aplicar permisos para restaurar filtro de empresa restringido
             if (typeof window.applyUserPermissions === 'function') {
                 window.applyUserPermissions();
@@ -1003,14 +1030,54 @@
             document.getElementById('filterTipo').value = 'I'; // Solo ingresos por defecto
         }
 
+        // Poblar filtro Socio con valores únicos de las transacciones cargadas
+        function populateSocioFilter(data) {
+            const socioSelect = document.getElementById('filterSocio');
+            const currentValue = socioSelect.value;
+            const socios = [...new Set(data.map(t => t.socio).filter(Boolean))].sort();
+            socioSelect.innerHTML = '<option value="">Todos</option>';
+            socios.forEach(socio => {
+                const option = document.createElement('option');
+                option.value = socio;
+                option.textContent = socio;
+                socioSelect.appendChild(option);
+            });
+            if (currentValue && socios.includes(currentValue)) {
+                socioSelect.value = currentValue;
+            }
+        }
+
+        // Aplicar filtro Socio sobre los datos ya cargados (client-side)
+        function applySocioFilterToData() {
+            const socio = document.getElementById('filterSocio').value;
+            if (socio) {
+                transactionsData = allTransactionsData.filter(t => t.socio === socio);
+            } else {
+                transactionsData = [...allTransactionsData];
+            }
+            totalTransactions = transactionsData.length;
+            currentPage = 1;
+        }
+
+        // Handler del filtro Socio (sin re-llamar la API)
+        function applySocioFilter() {
+            const scrollPos = window.scrollY;
+            applySocioFilterToData();
+            renderCurrentPage();
+            updateFilterSummary();
+            updatePaginationControls();
+            requestAnimationFrame(() => window.scrollTo(0, scrollPos));
+        }
+
         // Actualizar resumen de filtros
         function updateFilterSummary() {
             const empresa = document.getElementById('filterEmpresa').value;
             const ano = document.getElementById('filterAno').value;
             const mes = document.getElementById('filterMes').value;
-            
+            const socio = document.getElementById('filterSocio').value;
+
             let summary = 'Mostrando 💰 ingresos';
-            
+
             const filters = [];
             if (empresa) {
                 const empresaNombre = empresa == '1' ? '🎸 Rockstar Skull' : '🤖 Symbiot Technologies';
@@ -1022,11 +1089,12 @@
                               'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
                 filters.push(`mes: ${meses[parseInt(mes)]}`);
             }
-            
+            if (socio) filters.push(`socio: ${socio}`);
+
             if (filters.length > 0) {
                 summary += ` - ${filters.join(', ')}`;
             }
-            
+
             document.getElementById('filterSummary').textContent = summary;
             document.getElementById('totalRegistros').textContent = totalTransactions;
         }
@@ -1450,55 +1518,59 @@
         // Procesar datos por mes
         function processMonthlyData(data) {
             const monthlyData = {};
-            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            
+
             data.forEach(transaction => {
-                const date = new Date(transaction.fecha);
-                const year = date.getFullYear();
-                const month = date.getMonth(); // 0-11
-                const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+                const parts = String(transaction.fecha).split('T')[0].split('-');
+                const year = parseInt(parts[0]);
+                const month = parseInt(parts[1]) - 1; // 0-11
+                const monthKey = `${year}-${String(month).padStart(2, '0')}`;
                 const monthLabel = `${months[month]} ${year}`;
-                
+
                 if (!monthlyData[monthKey]) {
-                    monthlyData[monthKey] = { 
-                        label: monthLabel, 
+                    monthlyData[monthKey] = {
+                        label: monthLabel,
                         total: 0,
-                        sortDate: new Date(year, month, 1) // Para ordenamiento correcto
+                        sortDate: new Date(year, month, 1)
                     };
                 }
-                
+
                 monthlyData[monthKey].total += (transaction.cantidad || 1) * (transaction.precio_unitario || 0);
             });
-            
-            // ✅ ORDENAMIENTO CRONOLÓGICO CORRECTO
+
             const sortedEntries = Object.entries(monthlyData)
-                .sort(([, a], [, b]) => a.sortDate - b.sortDate) // Ordenar por fecha real
-                .slice(-12); // Últimos 12 meses
-            
+                .sort(([, a], [, b]) => a.sortDate - b.sortDate);
+
+            // Solo limitar a 12 meses si hay un año específico seleccionado
+            // Cuando se selecciona "Todos", mostrar todos los meses
+            const ano = document.getElementById('filterAno').value;
+            const finalEntries = ano ? sortedEntries.slice(-12) : sortedEntries;
+
             return {
-                labels: sortedEntries.map(([_, data]) => data.label),
-                values: sortedEntries.map(([_, data]) => data.total)
+                labels: finalEntries.map(([_, data]) => data.label),
+                values: finalEntries.map(([_, data]) => data.total)
             };
         }
 
         // Procesar datos por año
         function processYearlyData(data) {
             const yearlyData = {};
-            
+
             data.forEach(transaction => {
-                const year = new Date(transaction.fecha).getFullYear();
-                
+                const parts = String(transaction.fecha).split('T')[0].split('-');
+                const year = parseInt(parts[0]);
+
                 if (!yearlyData[year]) {
                     yearlyData[year] = 0;
                 }
-                
+
                 yearlyData[year] += (transaction.cantidad || 1) * (transaction.precio_unitario || 0);
             });
-            
+
             const sortedEntries = Object.entries(yearlyData)
                 .sort(([a], [b]) => parseInt(a) - parseInt(b));
-            
+
             return {
                 labels: sortedEntries.map(([year]) => year),
                 values: sortedEntries.map(([_, total]) => total)
@@ -1537,12 +1609,21 @@
         // FUNCIONES DE UTILIDAD
         // ============================================================
 
-        // Formatear fecha
+        // Formatear fecha (parseando como local para evitar desfase UTC)
         function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES', {
+            if (!dateString) return 'Sin fecha';
+            const parts = String(dateString).split('T')[0].split('-');
+            if (parts.length === 3) {
+                const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                return date.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            }
+            return new Date(dateString).toLocaleDateString('es-ES', {
                 day: '2-digit',
-                month: '2-digit', 
+                month: '2-digit',
                 year: 'numeric'
             });
         }

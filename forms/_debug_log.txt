@@ -1,0 +1,12 @@
+---2026-01-30 21:10:38 ---\
+CONTENT_TYPE: multipart/form-data; boundary=----WebKitFormBoundaryoSxA6LhuSCDIgWIW\
+POST DATA: Array
+(
+    [name] => Marco Antonio Delgado Yáñez
+    [email] => mark2000dk@gmail.com
+    [subject] => Test
+    [message] => Test
+)
+\
+RAW INPUT: \
+\

@@ -304,10 +304,11 @@ async function loadPeriodoAnalisis() {
             const { fecha_minima, fecha_maxima } = data.data;
             
             if (fecha_minima && fecha_maxima) {
-                const fechaMin = new Date(fecha_minima);
-                const fechaMax = new Date(fecha_maxima);
-                
-                const periodoText = `${fechaMin.getFullYear()} - ${fechaMax.getFullYear()}`;
+                // Parseo local para evitar desfase UTC
+                const minParts = String(fecha_minima).split('T')[0].split('-');
+                const maxParts = String(fecha_maxima).split('T')[0].split('-');
+
+                const periodoText = `${minParts[0]} - ${maxParts[0]}`;
                 
                 const periodoElement = document.getElementById('periodoAnalisis');
                 if (periodoElement) {
@@ -385,6 +386,7 @@ function enableExportButton() {
  */
 async function applyFilters() {
     console.log('🔍 Aplicando filtros...');
+    const scrollPos = window.scrollY;
 
     // Obtener valores actuales de filtros
     currentFilters.empresa = document.getElementById('filterEmpresa')?.value || '';
@@ -406,6 +408,9 @@ async function applyFilters() {
 
     // Widget Altas/Bajas: solo visible cuando se selecciona Rockstar Skull
     toggleAltasBajasWidget(currentFilters);
+
+    // Restaurar posición de scroll
+    requestAnimationFrame(() => window.scrollTo(0, scrollPos));
 }
 
 /**

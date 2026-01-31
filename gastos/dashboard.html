@@ -591,9 +591,10 @@
                                     </label>
                                     <select class="form-select" id="transactionPayment" required>
                                         <option value="">Seleccionar...</option>
-                                        <option value="Efectivo">💵 Efectivo</option>
                                         <option value="Transferencia">🏦 Transferencia</option>
+                                        <option value="Efectivo">💵 Efectivo</option>
                                         <option value="TPV">📱 TPV</option>
+                                        <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4 mb-3">
@@ -677,16 +678,16 @@
     <script src="assets/js/api-client.js?v=3.1.3"></script>
 
     <!-- JAVASCRIPT MODULAR - ORDEN DE CARGA CRÍTICO -->
-    <script src="js/dashboard-core.js?v=3.1.3"></script>           <!-- v3.1.3: Rutas dinámicas buildPageUrl -->
+    <script src="js/dashboard-core.js?v=3.4.0"></script>           <!-- v3.4.0: Fix formatDate UTC desfase + homologar formas de pago -->
     <script src="js/dashboard-auth.js?v=3.1.3"></script>           <!-- v3.1.3: Rutas dinámicas buildPageUrl -->
     <script src="js/dashboard-api.js?v=3.1.3"></script>            <!-- v3.1.3: Rutas dinámicas buildPageUrl -->
     <script src="js/dashboard-stats.js?v=3.3.0"></script>          <!-- v3.3.0: parseLocalDate helper, fix timezone UTC en fechas -->
-    <script src="js/dashboard-payments.js?v=3.1.5"></script>       <!-- v3.1.5: Fix rutas API hardcodeadas alertas -->
-    <script src="js/dashboard-transactions.js?v=3.1.6"></script>   <!-- v3.1.6: Fix filtro empresa con window.currentCompanyFilter -->
-    <script src="js/dashboard-modals.js?v=3.1.9"></script>         <!-- v3.1.9: Fix transactionPayment field ID (correcto) -->
-    <script src="js/dashboard-students.js?v=3.3.0"></script>       <!-- v3.3.0: Fix Próximo Pago congruente + parseLocalDate timezone -->
+    <script src="js/dashboard-payments.js?v=3.4.0"></script>       <!-- v3.4.0: Fix getNextPaymentDate UTC desfase -->
+    <script src="js/dashboard-transactions.js?v=3.4.0"></script>   <!-- v3.4.0: Cache-bust para formatDate corregido -->
+    <script src="js/dashboard-modals.js?v=3.4.0"></script>         <!-- v3.4.0: Homologar formas de pago + scroll preserve -->
+    <script src="js/dashboard-students.js?v=3.4.0"></script>       <!-- v3.4.0: Fix UTC desfase en pagos y fecha inscripción -->
     <script src="js/user-permissions.js?v=1.1.0"></script>        <!-- v1.1.0: Permisos por página y navegación -->
-    <script src="js/dashboard-init.js?v=3.2.0"></script>           <!-- v3.2.0: Cleanup redundancias, fix window.currentCompanyFilter, widgets Escuela -->
+    <script src="js/dashboard-init.js?v=3.4.0"></script>           <!-- v3.4.0: Scroll preserve en visibility change -->
 
 </body>
 </html>

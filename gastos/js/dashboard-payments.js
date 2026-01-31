@@ -159,15 +159,22 @@ function getNextPaymentDate(alumno) {
     }
     
     try {
-        const enrollment = new Date(fechaInscripcion);
+        // Parsear como fecha local para evitar desfase UTC
+        let enrollment;
+        const parts = String(fechaInscripcion).split('T')[0].split('-');
+        if (parts.length === 3) {
+            enrollment = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        } else {
+            enrollment = new Date(fechaInscripcion);
+        }
         const today = new Date();
-        
+
         // Validar fecha
         if (isNaN(enrollment.getTime())) {
             console.warn('⚠️ Fecha de inscripción inválida:', fechaInscripcion);
             return null;
         }
-        
+
         // Obtener día del mes de inscripción (día de corte mensual)
         const enrollmentDay = enrollment.getDate();
         

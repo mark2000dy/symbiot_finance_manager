@@ -31,9 +31,9 @@ function adaptHistorialPagos(backendResponse) {
     // Group payments by month (YYYY-MM format)
     pagos.forEach(pago => {
         if (pago.fecha && pago.total) {
-            // Extract YYYY-MM from fecha
-            const fecha = new Date(pago.fecha);
-            const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+            // Extract YYYY-MM from fecha (parseo local para evitar desfase UTC)
+            const partesFecha = String(pago.fecha).split('T')[0].split('-');
+            const mesKey = `${partesFecha[0]}-${partesFecha[1]}`;
 
             // Sum totals by month
             if (!pagosPorMes[mesKey]) {
@@ -932,7 +932,9 @@ function calculateStudentPaymentInfo(student) {
 function getNextPaymentDate(student) {
     if (!student.fecha_inscripcion) return null;
     
-    const enrollmentDate = new Date(student.fecha_inscripcion);
+    // Parseo local para evitar desfase UTC
+    const eParts = String(student.fecha_inscripcion).split('T')[0].split('-');
+    const enrollmentDate = new Date(parseInt(eParts[0]), parseInt(eParts[1]) - 1, parseInt(eParts[2]));
     const today = new Date();
     
     // Calcular cuántos meses han pasado desde la inscripción
@@ -1061,9 +1063,10 @@ function createAddStudentModalHTML() {
                                 </label>
                                 <select class="form-select" id="newStudentPaymentMethod">
                                     <option value="">Seleccionar...</option>
-                                    <option value="Efectivo">💵 Efectivo</option>
                                     <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="Efectivo">💵 Efectivo</option>
                                     <option value="TPV">📱 TPV</option>
+                                    <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -1314,9 +1317,10 @@ function createEditStudentModalHTML() {
                                 </label>
                                 <select class="form-select" id="editStudentPaymentMethod">
                                     <option value="">Seleccionar...</option>
-                                    <option value="Efectivo">💵 Efectivo</option>
                                     <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="Efectivo">💵 Efectivo</option>
                                     <option value="TPV">📱 TPV</option>
+                                    <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
                                 </select>
                             </div>
                         </div>
@@ -1433,12 +1437,10 @@ async function editStudent(id) {
         let fechaInscripcion = '';
         if (student.fecha_inscripcion) {
             try {
-                const fecha = new Date(student.fecha_inscripcion);
-                if (!isNaN(fecha.getTime())) {
-                    const year = fecha.getFullYear();
-                    const month = String(fecha.getMonth() + 1).padStart(2, '0');
-                    const day = String(fecha.getDate()).padStart(2, '0');
-                    fechaInscripcion = `${year}-${month}-${day}`;
+                // Parseo local para evitar desfase UTC
+                const parts = String(student.fecha_inscripcion).split('T')[0].split('-');
+                if (parts.length === 3) {
+                    fechaInscripcion = `${parts[0]}-${parts[1]}-${parts[2]}`;
                 }
             } catch (e) {
                 console.warn('Error parseando fecha de inscripción:', e);

@@ -526,12 +526,14 @@ function handleCompanySpecificSetup() {
 function handleVisibilityChange() {
     if (document.visibilityState === 'visible') {
         console.log('👁️ Página visible - Verificando actualizaciones...');
-        
+
         // Actualizar datos cuando la página vuelve a ser visible
+        const scrollPos = window.scrollY;
         setTimeout(async () => {
             try {
                 await loadDashboardData();
                 await loadRecentTransactions(currentPage);
+                requestAnimationFrame(() => window.scrollTo(0, scrollPos));
             } catch (error) {
                 console.error('❌ Error actualizando datos al volver a la página:', error);
             }

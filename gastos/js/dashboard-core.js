@@ -199,11 +199,22 @@ function formatCurrency(amount) {
  */
 function formatDate(date) {
     if (!date) return 'Sin fecha';
-    
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    
+
+    let dateObj;
+    if (typeof date === 'string') {
+        // Parsear como fecha local para evitar desfase UTC
+        const parts = date.split('T')[0].split('-');
+        if (parts.length === 3) {
+            dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        } else {
+            dateObj = new Date(date);
+        }
+    } else {
+        dateObj = date;
+    }
+
     if (isNaN(dateObj.getTime())) return 'Fecha inválida';
-    
+
     return dateObj.toLocaleDateString('es-MX', {
         year: 'numeric',
         month: 'long',
