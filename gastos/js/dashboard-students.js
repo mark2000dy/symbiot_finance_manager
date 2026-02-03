@@ -2077,17 +2077,18 @@ async function loadPaymentHistory(studentId, studentName) {
 
 /**
  * Mostrar historial de pagos real en el modal de detalle
+ * v3.4.0: Muestra transacciones individuales con link a modal de detalle
  */
 async function showPaymentHistory(studentId, studentName) {
     try {
         console.log(`📊 Cargando historial COMPLETO de pagos para: ${studentName}`);
-        
+
         const historyContainer = document.getElementById('studentPaymentHistory');
         if (!historyContainer) {
             console.warn('⚠️ Contenedor de historial no encontrado');
             return;
         }
-        
+
         // Mostrar estado de carga
         historyContainer.innerHTML = `
             <h6 class="text-white">
@@ -2097,7 +2098,7 @@ async function showPaymentHistory(studentId, studentName) {
                 <i class="fas fa-spinner fa-spin"></i> Cargando historial completo...
             </div>
         `;
-        
+
         // ✅ CRÍTICO: Sin parámetro meses para obtener TODO
         const data = await window.apiFetch(`alumnos/${encodeURIComponent(studentName)}/historial-pagos`, {
             method: 'GET'
@@ -2105,55 +2106,66 @@ async function showPaymentHistory(studentId, studentName) {
 
         console.log('📥 Datos recibidos del backend:', data);
 
-        // 🔄 Transform backend response to expected format
-        const adaptedData = adaptHistorialPagos(data);
+        if (data.success && data.data) {
+            const pagos = Array.isArray(data.data) ? data.data : [];
 
-        if (data.success && adaptedData) {
+            // Calcular totales
+            let totalPagado = 0;
+            pagos.forEach(pago => {
+                totalPagado += parseFloat(pago.total) || 0;
+            });
+
             let html = `
                 <h6 class="text-white">
                     <i class="fas fa-chart-line me-2"></i>Historial Completo de Pagos
                 </h6>
             `;
 
-            const pagosPorMes = adaptedData.pagosPorMes || {};
-            const totalPagado = parseFloat(adaptedData.totalPagado) || 0;
-            const totalTransacciones = adaptedData.totalTransacciones || 0;
-            
-            const mesesConPagos = Object.entries(pagosPorMes).filter(([_, monto]) => parseFloat(monto) > 0);
-            
-            console.log('💰 Total pagado (calculado con reduce):', totalPagado, 'Transacciones:', totalTransacciones);
-            
-            if (mesesConPagos.length > 0 || totalPagado > 0) {
+            console.log('💰 Total pagado:', totalPagado, 'Transacciones:', pagos.length);
+
+            if (pagos.length > 0) {
                 html += '<div class="table-responsive" style="max-height: 300px; overflow-y: auto;">';
-                html += '<table class="table table-dark table-sm table-striped">';
-                html += '<thead class="sticky-top" style="background: #191C24;"><tr><th>Mes/Año</th><th class="text-end">Monto</th></tr></thead>';
+                html += '<table class="table table-dark table-sm table-striped table-hover">';
+                html += '<thead class="sticky-top" style="background: #191C24;"><tr><th>Fecha</th><th>Concepto</th><th class="text-end">Monto</th><th></th></tr></thead>';
                 html += '<tbody>';
-                
+
                 // Ordenar del más reciente al más antiguo
-                mesesConPagos.sort((a, b) => {
-                    const [yearA, monthA] = a[0].split('-');
-                    const [yearB, monthB] = b[0].split('-');
-                    return (yearB - yearA) || (monthB - monthA);
+                pagos.sort((a, b) => {
+                    const fechaA = new Date(a.fecha);
+                    const fechaB = new Date(b.fecha);
+                    return fechaB - fechaA;
                 });
-                
-                mesesConPagos.forEach(([mes, monto]) => {
-                    const [year, month] = mes.split('-');
-                    const fecha = new Date(year, month - 1);
-                    const mesNombre = fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-                    const montoNum = parseFloat(monto);
-                    
+
+                pagos.forEach(pago => {
+                    // Formatear fecha (parseo local para evitar desfase UTC)
+                    const partesFecha = String(pago.fecha).split('T')[0].split('-');
+                    const fechaObj = new Date(parseInt(partesFecha[0]), parseInt(partesFecha[1]) - 1, parseInt(partesFecha[2]));
+                    const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                    const montoNum = parseFloat(pago.total) || 0;
+                    const conceptoCorto = (pago.concepto || 'Sin concepto').length > 25
+                        ? (pago.concepto || 'Sin concepto').substring(0, 25) + '...'
+                        : (pago.concepto || 'Sin concepto');
+
                     html += `
                         <tr>
-                            <td class="text-capitalize">${mesNombre}</td>
-                            <td class="text-end text-success">
+                            <td class="text-nowrap">${fechaFormateada}</td>
+                            <td title="${pago.concepto || 'Sin concepto'}">${conceptoCorto}</td>
+                            <td class="text-end text-success text-nowrap">
                                 <strong>${formatCurrency(montoNum)}</strong>
+                            </td>
+                            <td class="text-center">
+                                <a href="javascript:void(0)" onclick="viewPaymentTransactionDetail(${pago.id})"
+                                   class="text-info" title="Ver detalle de transacción">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                             </td>
                         </tr>
                     `;
                 });
-                
+
                 html += '</tbody></table></div>';
-                
+
                 // Resumen total
                 html += `
                     <div class="alert alert-success mt-3 mb-0">
@@ -2163,7 +2175,7 @@ async function showPaymentHistory(studentId, studentName) {
                                 <strong>Total Pagado:</strong> ${formatCurrency(totalPagado)}
                             </div>
                             <div class="text-end">
-                                <small class="text-muted">${totalTransacciones} transacciones</small>
+                                <small class="text-muted">${pagos.length} transacciones</small>
                             </div>
                         </div>
                     </div>
@@ -2176,13 +2188,13 @@ async function showPaymentHistory(studentId, studentName) {
                     </div>
                 `;
             }
-            
+
             historyContainer.innerHTML = html;
-            
+
         } else {
             throw new Error(data.message || 'Error al obtener historial');
         }
-        
+
     } catch (error) {
         console.error('❌ Error cargando historial:', error);
         const historyContainer = document.getElementById('studentPaymentHistory');
@@ -2197,6 +2209,132 @@ async function showPaymentHistory(studentId, studentName) {
                 </div>
             `;
         }
+    }
+}
+
+/**
+ * Ver detalle de una transacción de pago desde el historial
+ * Carga la transacción desde la API y muestra modal de solo lectura
+ */
+async function viewPaymentTransactionDetail(transactionId) {
+    try {
+        console.log(`👁️ Viendo detalle de transacción de pago ID: ${transactionId}`);
+
+        // Cargar transacción desde API
+        const response = await window.apiGet(`transacciones/${transactionId}`);
+
+        if (!response.success || !response.data) {
+            throw new Error('Transacción no encontrada');
+        }
+
+        const transaction = response.data;
+
+        // Crear modal de solo lectura
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal fade';
+        modalDiv.tabIndex = -1;
+        modalDiv.id = 'paymentTransactionDetailModal';
+
+        const formattedDate = transaction.fecha ? formatDate(transaction.fecha) : 'Sin fecha';
+        const formattedTotal = formatCurrency(parseFloat(transaction.total) || 0);
+        const transactionType = transaction.tipo === 'I' ? 'Ingreso' : 'Gasto';
+        const typeClass = transaction.tipo === 'I' ? 'success' : 'danger';
+        const empresaName = transaction.empresa_id == 1 ? 'Rockstar Skull' : 'Symbiot Technologies';
+
+        modalDiv.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-receipt me-2"></i>
+                            Detalle de Transacción
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle me-2"></i>Información General</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr>
+                                        <td><strong>ID:</strong></td>
+                                        <td>#${transaction.id}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Fecha:</strong></td>
+                                        <td>${formattedDate}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tipo:</strong></td>
+                                        <td><span class="badge bg-${typeClass}">${transactionType}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Empresa:</strong></td>
+                                        <td>${empresaName}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Socio/Cliente:</strong></td>
+                                        <td>${transaction.socio || 'No especificado'}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-dollar-sign me-2"></i>Información Financiera</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr>
+                                        <td><strong>Cantidad:</strong></td>
+                                        <td>${transaction.cantidad || 1}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Precio Unitario:</strong></td>
+                                        <td>${formatCurrency(parseFloat(transaction.precio_unitario) || 0)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total:</strong></td>
+                                        <td class="text-${typeClass}"><strong>${formattedTotal}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Forma de Pago:</strong></td>
+                                        <td>${transaction.forma_pago || 'No especificada'}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6><i class="fas fa-file-alt me-2"></i>Concepto</h6>
+                                <div class="p-3 bg-dark rounded">
+                                    ${transaction.concepto || 'Sin concepto especificado'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Agregar modal al DOM
+        document.body.appendChild(modalDiv);
+
+        // Mostrar modal
+        const modalInstance = new bootstrap.Modal(modalDiv);
+        modalInstance.show();
+
+        // Remover modal del DOM cuando se cierre
+        modalDiv.addEventListener('hidden.bs.modal', () => {
+            document.body.removeChild(modalDiv);
+        });
+
+        console.log('✅ Modal de detalle de pago mostrado');
+
+    } catch (error) {
+        console.error('❌ Error mostrando detalle de transacción:', error);
+        showAlert('danger', 'Error cargando detalle de la transacción');
     }
 }
 
@@ -2230,6 +2368,7 @@ window.exportStudentsList = exportStudentsList;
 // Funciones de visualización y reportes
 window.loadPaymentHistory = loadPaymentHistory;
 window.showPaymentHistory = showPaymentHistory;
+window.viewPaymentTransactionDetail = viewPaymentTransactionDetail;
 window.renderTransactionsTable = renderTransactionsTable;
 
 // Exponer funciones globalmente

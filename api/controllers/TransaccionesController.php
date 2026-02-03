@@ -122,6 +122,46 @@ class TransaccionesController {
         }
     }
 
+    // Obtener transacción por ID
+    public static function getTransaccionById($id) {
+        AuthController::requireAuth();
+
+        try {
+            $query = "
+                SELECT
+                    t.*,
+                    e.nombre as nombre_empresa
+                FROM transacciones t
+                LEFT JOIN empresas e ON t.empresa_id = e.id
+                WHERE t.id = ?
+            ";
+
+            $transaccion = executeQuery($query, [$id]);
+
+            if (empty($transaccion)) {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Transacción no encontrada'
+                ]);
+                return;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => $transaccion[0]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error al obtener transacción: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno del servidor'
+            ]);
+        }
+    }
+
     // Crear nueva transacción
     public static function createTransaccion() {
         $user = AuthController::requireAuth();
@@ -249,19 +289,22 @@ class TransaccionesController {
                 return;
             }
 
+            // FIX: Incluir campo socio en el UPDATE
+            $socio = $input['socio'] ?? null;
+
             $query = $bypassCreatedByCheck
                 ? "UPDATE transacciones SET
-                    fecha = ?, concepto = ?, empresa_id = ?, forma_pago = ?,
+                    fecha = ?, concepto = ?, socio = ?, empresa_id = ?, forma_pago = ?,
                     cantidad = ?, precio_unitario = ?, tipo = ?
                 WHERE id = ?"
                 : "UPDATE transacciones SET
-                    fecha = ?, concepto = ?, empresa_id = ?, forma_pago = ?,
+                    fecha = ?, concepto = ?, socio = ?, empresa_id = ?, forma_pago = ?,
                     cantidad = ?, precio_unitario = ?, tipo = ?
                 WHERE id = ? AND created_by = ?";
 
             $queryParams = $bypassCreatedByCheck
-                ? [$fecha, $concepto, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id]
-                : [$fecha, $concepto, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id, $user['id']];
+                ? [$fecha, $concepto, $socio, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id]
+                : [$fecha, $concepto, $socio, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id, $user['id']];
 
             executeUpdate($query, $queryParams);
 
@@ -2024,13 +2067,16 @@ class TransaccionesController {
 
             // 1. Obtener todos los alumnos de la empresa (excluir eliminados)
             $alumnosQuery = "
-                SELECT id, nombre, estatus, precio_mensual, fecha_inscripcion
+                SELECT id, nombre, estatus, precio_mensual, fecha_inscripcion, tipo_clase
                 FROM alumnos
                 WHERE empresa_id = ?
                   AND nombre NOT LIKE '[ELIMINADO]%'
                 ORDER BY nombre
             ";
             $alumnos = executeQuery($alumnosQuery, [(int)$empresa]);
+            
+            // DEBUG: Log total de alumnos obtenidos
+            error_log("👥 Reporte Altas/Bajas - Empresa: {$empresa} - Total alumnos cargados: " . count($alumnos));
 
             if (empty($alumnos)) {
                 echo json_encode([
@@ -2211,6 +2257,9 @@ class TransaccionesController {
                     ]
                 ]
             ]);
+            
+            // DEBUG: Log resultado final
+            error_log("✅ Reporte generado - Total alumnos retornados: " . count($alumnos));
 
         } catch (Exception $e) {
             error_log("Error en reporte altas/bajas: " . $e->getMessage());

@@ -146,6 +146,9 @@ try {
     if (preg_match('#^/transacciones/(\d+)$#', $requestUri, $matches)) {
         $id = $matches[1];
         switch ($requestMethod) {
+            case 'GET':
+                TransaccionesController::getTransaccionById($id);
+                break;
             case 'PUT':
                 TransaccionesController::updateTransaccion($id);
                 break;

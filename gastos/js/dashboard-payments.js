@@ -57,10 +57,10 @@ async function refreshPaymentAlerts() {
             `;
             
             if (proximos_vencer.length > 0) {
-                proximos_vencer.slice(0, 10).forEach(alumno => {
+                proximos_vencer.forEach(alumno => {
                     // Usar datos directos del backend
                     const diasRestantes = alumno.dias_restantes !== undefined ? alumno.dias_restantes : 'N/A';
-                    
+
                     alertsHTML += `
                         <div class="alert-item d-flex justify-content-between align-items-center mb-2">
                             <div>
@@ -73,10 +73,6 @@ async function refreshPaymentAlerts() {
                         </div>
                     `;
                 });
-                
-                if (proximos_vencer.length > 10) {
-                    alertsHTML += `<small class="text-muted">... y ${proximos_vencer.length - 10} más</small>`;
-                }
             } else {
                 alertsHTML += '<div class="text-center text-muted py-3">✅ No hay pagos próximos a vencer</div>';
             }
@@ -97,10 +93,10 @@ async function refreshPaymentAlerts() {
             `;
             
             if (vencidos.length > 0) {
-                vencidos.slice(0, 10).forEach(alumno => {
+                vencidos.forEach(alumno => {
                     // Usar datos directos del backend
                     const diasVencidos = alumno.dias_vencido !== undefined ? alumno.dias_vencido : 'N/A';
-                    
+
                     alertsHTML += `
                         <div class="alert-item d-flex justify-content-between align-items-center mb-2">
                             <div>
@@ -113,10 +109,6 @@ async function refreshPaymentAlerts() {
                         </div>
                     `;
                 });
-                
-                if (vencidos.length > 10) {
-                    alertsHTML += `<small class="text-muted">... y ${vencidos.length - 10} más</small>`;
-                }
             } else {
                 alertsHTML += '<div class="text-center text-muted py-3">✅ No hay pagos vencidos</div>';
             }
