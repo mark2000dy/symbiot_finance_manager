@@ -20,7 +20,12 @@
       "Bash(else echo \"No .env file\")",
       "Bash(fi)",
       "Bash(php:*)",
-      "Bash(ls \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\gastos\\\\logo\"\" 2>nul || echo \"Directory does not exist \")"
+      "Bash(ls \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\gastos\\\\logo\"\" 2>nul || echo \"Directory does not exist \")",
+      "Bash(powershell:*)",
+      "Bash(pip install:*)",
+      "Bash(curl:*)",
+      "Bash(del /f \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\forms\\\\nul\")",
+      "Bash(del /f \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\nul\")"
     ],
     "deny": [],
     "ask": []
