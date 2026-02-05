@@ -436,11 +436,11 @@ function showUserProfile() {
 }
 
 /**
- * Mostrar configuración
+ * Mostrar configuración - Redirigir a página de configuración
  */
 function showSettings() {
-    console.log('⚙️ Mostrando configuración...');
-    showAlert('info', 'Configuración en desarrollo');
+    console.log('⚙️ Redirigiendo a configuración...');
+    window.location.href = window.buildPageUrl ? window.buildPageUrl('configuracion.html') : 'configuracion.html';
 }
 
 // ============================================================

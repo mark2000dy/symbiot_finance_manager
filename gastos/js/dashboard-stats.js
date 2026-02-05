@@ -255,16 +255,9 @@ async function updateCompanyStatsReal(resumen) {
                     const alumnosData = await window.apiGet('dashboard/alumnos', { empresa_id: 1 });
                     const totalActivos = alumnosData.success ? (alumnosData.data.total_alumnos || 0) : 0;
 
-                    const alCorriente = totalActivos - totalPendientes;
-
-                    if (currentStudents) {
-                        currentStudents.textContent = alCorriente;
-                    }
-                    if (pendingStudents) {
-                        pendingStudents.textContent = totalPendientes;
-                    }
-
-                    console.log(`Selector: ${alCorriente} al corriente, ${totalPendientes} pendientes`);
+                    // v3.6.0: Eliminado - updatePaymentMetrics() es la única fuente de verdad
+                    // Los valores se calculan con getPaymentStatusHomologado() para consistencia
+                    console.log(`Selector: alertas cargadas (${proximos.length} próximos, ${vencidos.length} vencidos)`);
                 }
             } catch (error) {
                 console.error('Error calculando pendientes:', error);
@@ -321,9 +314,9 @@ async function loadRockstarSkullDataReal() {
             if (metricas) {
                 updateElement('groupClasses', metricas.clases_grupales || 0);
                 updateElement('individualClasses', metricas.clases_individuales || 0);
-                updateElement('currentStudents', metricas.alumnos_corriente || 0);
-                updateElement('pendingStudents', metricas.alumnos_pendientes || 0);
-                
+                // v3.6.0: currentStudents y pendingStudents se actualizan en updatePaymentMetrics()
+                // para usar getPaymentStatusHomologado() como única fuente de verdad
+
                 // Mostrar indicadores específicos
                 const indicators = document.getElementById('rockstarSpecificIndicators');
                 if (indicators) indicators.style.display = 'block';

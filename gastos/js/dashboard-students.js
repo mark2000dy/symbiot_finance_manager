@@ -1765,28 +1765,28 @@ function filterStudentsByStatus(status) {
         case 'active':
             filteredClasses = distributionData.map(clase => ({
                 ...clase,
-                total_alumnos: clase.activos,
-                percentage: clase.total_alumnos > 0 ? 
-                    Math.round((clase.activos / clase.total_alumnos) * 100) : 0
+                total_alumnos: parseInt(clase.activos) || 0,
+                percentage: parseInt(clase.total_alumnos) > 0 ?
+                    Math.round((parseInt(clase.activos) / parseInt(clase.total_alumnos)) * 100) : 0
             }));
-            totalStudents = distributionData.reduce((sum, clase) => sum + (clase.activos || 0), 0);
+            totalStudents = distributionData.reduce((sum, clase) => sum + (parseInt(clase.activos) || 0), 0);
             break;
         case 'inactive':
             filteredClasses = distributionData.map(clase => ({
                 ...clase,
-                total_alumnos: clase.inactivos || clase.bajas || 0,
-                percentage: clase.total_alumnos > 0 ? 
-                    Math.round(((clase.inactivos || clase.bajas || 0) / clase.total_alumnos) * 100) : 0
+                total_alumnos: parseInt(clase.inactivos || clase.bajas) || 0,
+                percentage: parseInt(clase.total_alumnos) > 0 ?
+                    Math.round((parseInt(clase.inactivos || clase.bajas || 0) / parseInt(clase.total_alumnos)) * 100) : 0
             }));
-            totalStudents = distributionData.reduce((sum, clase) => sum + (clase.inactivos || clase.bajas || 0), 0);
+            totalStudents = distributionData.reduce((sum, clase) => sum + (parseInt(clase.inactivos || clase.bajas) || 0), 0);
             break;
         default: // 'all'
             filteredClasses = distributionData.map(clase => ({
                 ...clase,
-                percentage: clase.total_alumnos > 0 ? 
-                    Math.round((clase.activos / clase.total_alumnos) * 100) : 0
+                percentage: parseInt(clase.total_alumnos) > 0 ?
+                    Math.round((parseInt(clase.activos) / parseInt(clase.total_alumnos)) * 100) : 0
             }));
-            totalStudents = distributionData.reduce((sum, clase) => sum + (clase.total_alumnos || 0), 0);
+            totalStudents = distributionData.reduce((sum, clase) => sum + (parseInt(clase.total_alumnos) || 0), 0);
             break;
     }
     
@@ -1911,7 +1911,7 @@ function updateClassDistributionOriginal(classes) {
         }
     }
     
-    const totalStudents = classes.reduce((sum, clase) => sum + (clase.total_alumnos || 0), 0);
+    const totalStudents = classes.reduce((sum, clase) => sum + (parseInt(clase.total_alumnos) || 0), 0);
     
     // Función helper para obtener color del badge
     const getClassColor = (clase) => {

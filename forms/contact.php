@@ -1,44 +1,37 @@
 <?php
 /**
- * ==================================================== 
- * DEBUGGING CODE - SYMBIOT TECHNOLOGIES
- * This block logs incoming request data to a file.
- * ==================================================== 
- */
-$log_file = __DIR__ . '/_debug_log.txt';
-$log_data = "---" . date('Y-m-d H:i:s') . " ---\
-";
-$log_data .= "CONTENT_TYPE: " . (isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : 'Not set') . "\
-";
-$log_data .= "POST DATA: " . print_r($_POST, true) . "\
-";
-$log_data .= "RAW INPUT: " . file_get_contents('php://input') . "\
-\
-";
-file_put_contents($log_file, $log_data, FILE_APPEND);
-/**
- * ==================================================== 
- * END DEBUGGING CODE
- * ==================================================== 
- */
-
-/**
- * ==================================================== 
+ * ====================================================
  * FORMULARIO DE CONTACTO - SYMBIOT TECHNOLOGIES
  * Archivo: forms/contact.php
- * 
- * Procesa y envía emails del formulario de contacto
+ *
+ * Procesa y envía emails usando PHPMailer con SMTP
  * Compatible con PHP 7.3+
- * ==================================================== 
+ * ====================================================
  */
 
-// Configuración
-$receiving_email_address = 'contacto@symbiot.com.mx'; // ⚠️ CAMBIAR por tu email real
-$from_name = 'Formulario Web Symbiot';
-$from_email = 'contacto@symbiot.com.mx'; // ⚠️ CAMBIAR por un email válido de tu dominio
+// Cargar PHPMailer
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
+require_once __DIR__ . '/PHPMailer/Exception.php';
+require_once __DIR__ . '/PHPMailer/PHPMailer.php';
+require_once __DIR__ . '/PHPMailer/SMTP.php';
+
+// ============================================
+// CONFIGURACIÓN SMTP - MODIFICAR ESTOS VALORES
+// ============================================
+define('SMTP_HOST', 'symbiot.com.mx');
+define('SMTP_PORT', 465);
+define('SMTP_USER', 'contacto@symbiot.com.mx');
+define('SMTP_PASS', 'Symb10t2026$'); // ⚠️ CAMBIAR por la contraseña real
+define('SMTP_FROM_EMAIL', 'contacto@symbiot.com.mx');
+define('SMTP_FROM_NAME', 'Formulario Web Symbiot');
+define('RECEIVING_EMAIL', 'contacto@symbiot.com.mx');
+// ============================================
 
 // Headers de seguridad
-header('Content-Type: application/json');
+header('Content-Type: text/plain; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('X-XSS-Protection: 1; mode=block');
@@ -46,7 +39,7 @@ header('X-XSS-Protection: 1; mode=block');
 // Solo permitir POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'error' => 'Método no permitido']);
+    echo 'Método no permitido';
     exit;
 }
 
@@ -96,21 +89,15 @@ if (empty($message)) {
 // Si hay errores, retornar
 if (!empty($errors)) {
     http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'error' => implode(', ', $errors)
-    ]);
+    echo implode(', ', $errors);
     exit;
 }
 
-// Protección anti-spam simple
+// Protección anti-spam simple (honeypot)
 $honeypot = isset($_POST['website']) ? $_POST['website'] : '';
 if (!empty($honeypot)) {
     // Es un bot, simular éxito pero no enviar
-    echo json_encode([
-        'success' => true,
-        'message' => 'Mensaje enviado correctamente'
-    ]);
+    echo 'OK';
     exit;
 }
 
@@ -125,10 +112,7 @@ if (isset($_SESSION[$rate_limit_key])) {
     $last_submit = $_SESSION[$rate_limit_key];
     if (($current_time - $last_submit) < $rate_limit_time) {
         http_response_code(429);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Por favor espera un momento antes de enviar otro mensaje'
-        ]);
+        echo 'Por favor espera un momento antes de enviar otro mensaje';
         exit;
     }
 }
@@ -136,65 +120,93 @@ if (isset($_SESSION[$rate_limit_key])) {
 // Actualizar timestamp
 $_SESSION[$rate_limit_key] = $current_time;
 
-// Preparar el email
+// Preparar el contenido del email
 $email_subject = "[Contacto Web] " . $subject;
 
-$email_body = "Has recibido un nuevo mensaje desde el formulario de contacto de Symbiot Technologies.\n\n";
-$email_body .= "=================================================\
-\n";
-$email_body .= "DATOS DEL REMITENTE:\n";
-$email_body .= "Nombre: " . $name . "\
-";
-$email_body .= "Email: " . $email . "\
-";
-$email_body .= "Asunto: " . $subject . "\
-\n";
-$email_body .= "=================================================\
-\n";
-$email_body .= "MENSAJE:\n\n";
-$email_body .= $message . "\
-\n";
-$email_body .= "=================================================\
-\n";
-$email_body .= "Información adicional:\n";
-$email_body .= "IP: " . $ip . "\
-";
-$email_body .= "Fecha: " . date('Y-m-d H:i:s') . "\
-";
-$email_body .= "User Agent: " . $_SERVER['HTTP_USER_AGENT'] . "\
+$email_body = "
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #1a1a2e; color: white; padding: 20px; text-align: center; }
+        .content { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
+        .field { margin-bottom: 15px; }
+        .label { font-weight: bold; color: #1a1a2e; }
+        .message-box { background: white; padding: 15px; border-left: 4px solid #4CAF50; margin-top: 15px; }
+        .footer { font-size: 12px; color: #666; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h2>Nuevo Mensaje de Contacto</h2>
+            <p>Symbiot Technologies</p>
+        </div>
+        <div class='content'>
+            <div class='field'>
+                <span class='label'>Nombre:</span> {$name}
+            </div>
+            <div class='field'>
+                <span class='label'>Email:</span> <a href='mailto:{$email}'>{$email}</a>
+            </div>
+            <div class='field'>
+                <span class='label'>Asunto:</span> {$subject}
+            </div>
+            <div class='message-box'>
+                <span class='label'>Mensaje:</span><br><br>
+                " . nl2br($message) . "
+            </div>
+            <div class='footer'>
+                <strong>Información adicional:</strong><br>
+                IP: {$ip}<br>
+                Fecha: " . date('Y-m-d H:i:s') . "<br>
+                User Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'No disponible') . "
+            </div>
+        </div>
+    </div>
+</body>
+</html>
 ";
 
-// Headers del email
-$headers = array();
-$headers[] = "From: " . $from_name . " <" . $from_email . ">";
-$headers[] = "Reply-To: " . $name . " <" . $email . ">";
-$headers[] = "X-Mailer: PHP/" . phpversion();
-$headers[] = "MIME-Version: 1.0";
-$headers[] = "Content-Type: text/plain; charset=UTF-8";
+// Enviar usando PHPMailer
+try {
+    $mail = new PHPMailer(true);
 
-// Intentar enviar el email
-$mail_sent = @mail($receiving_email_address, $email_subject, $email_body, implode("\r\n", $headers));
+    // Configuración del servidor SMTP
+    $mail->isSMTP();
+    $mail->Host       = SMTP_HOST;
+    $mail->SMTPAuth   = true;
+    $mail->Username   = SMTP_USER;
+    $mail->Password   = SMTP_PASS;
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL para puerto 465
+    $mail->Port       = SMTP_PORT;
+    $mail->CharSet    = 'UTF-8';
 
-if ($mail_sent) {
-    // Email enviado exitosamente
-    
-    // Log opcional (comentar en producción)
+    // Remitente y destinatario
+    $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
+    $mail->addAddress(RECEIVING_EMAIL);
+    $mail->addReplyTo($email, $name);
+
+    // Contenido del email
+    $mail->isHTML(true);
+    $mail->Subject = $email_subject;
+    $mail->Body    = $email_body;
+    $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $email_body));
+
+    $mail->send();
+
     error_log("✅ Email de contacto enviado desde: " . $email);
-    
-    // Respuesta exitosa
-    echo json_encode([
-        'success' => true,
-        'message' => 'Tu mensaje ha sido enviado exitosamente. Te contactaremos pronto.'
-    ]);
-} else {
-    // Error al enviar
-    error_log("❌ Error enviando email de contacto desde: " . $email);
-    
+
+    // El validate.js de php-email-form espera "OK" como respuesta exitosa
+    echo 'OK';
+
+} catch (Exception $e) {
+    error_log("❌ Error enviando email: " . $mail->ErrorInfo);
+
     http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Hubo un error al enviar tu mensaje. Por favor intenta de nuevo o contáctanos directamente a info@symbiot.com.mx'
-    ]);
+    // El validate.js muestra directamente este texto como error
+    echo 'Hubo un error al enviar tu mensaje. Por favor intenta de nuevo o contáctanos directamente a contacto@symbiot.com.mx';
 }
 
 // Cerrar sesión

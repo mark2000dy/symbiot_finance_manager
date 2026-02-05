@@ -169,4 +169,207 @@ class AuthController {
 
         return $_SESSION['user'];
     }
+
+    // Obtener perfil completo del usuario
+    public static function getProfile() {
+        try {
+            session_start();
+
+            if (!isset($_SESSION['user'])) {
+                http_response_code(401);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'No hay sesión activa'
+                ]);
+                return;
+            }
+
+            $userId = $_SESSION['user']['id'];
+
+            // Obtener datos completos del usuario
+            $users = executeQuery(
+                'SELECT id, nombre, apellidos, email, rol, empresa, puesto, celular FROM usuarios WHERE id = ?',
+                [$userId]
+            );
+
+            if (empty($users)) {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Usuario no encontrado'
+                ]);
+                return;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'user' => $users[0]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error obteniendo perfil: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error interno del servidor'
+            ]);
+        }
+    }
+
+    // Actualizar perfil del usuario
+    public static function updateProfile() {
+        try {
+            session_start();
+
+            if (!isset($_SESSION['user'])) {
+                http_response_code(401);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'No hay sesión activa'
+                ]);
+                return;
+            }
+
+            $userId = $_SESSION['user']['id'];
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            // Campos actualizables
+            $fields = [];
+            $params = [];
+
+            if (isset($input['nombre']) && !empty(trim($input['nombre']))) {
+                $fields[] = 'nombre = ?';
+                $params[] = trim($input['nombre']);
+            }
+
+            if (isset($input['apellidos'])) {
+                $fields[] = 'apellidos = ?';
+                $params[] = trim($input['apellidos']);
+            }
+
+            if (isset($input['puesto'])) {
+                $fields[] = 'puesto = ?';
+                $params[] = trim($input['puesto']);
+            }
+
+            if (isset($input['celular'])) {
+                $fields[] = 'celular = ?';
+                $params[] = trim($input['celular']);
+            }
+
+            // Email requiere validación especial
+            if (isset($input['email']) && !empty(trim($input['email']))) {
+                $newEmail = trim($input['email']);
+
+                // Validar formato de email
+                if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'El formato del email no es válido'
+                    ]);
+                    return;
+                }
+
+                // Verificar que el email no esté en uso por otro usuario
+                $existing = executeQuery(
+                    'SELECT id FROM usuarios WHERE email = ? AND id != ?',
+                    [$newEmail, $userId]
+                );
+
+                if (!empty($existing)) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'El email ya está en uso por otro usuario'
+                    ]);
+                    return;
+                }
+
+                $fields[] = 'email = ?';
+                $params[] = $newEmail;
+            }
+
+            // Cambio de contraseña
+            if (isset($input['password']) && !empty($input['password'])) {
+                $newPassword = $input['password'];
+
+                // Validar longitud mínima
+                if (strlen($newPassword) < 6) {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'La contraseña debe tener al menos 6 caracteres'
+                    ]);
+                    return;
+                }
+
+                // Si se proporciona contraseña actual, verificarla
+                if (isset($input['current_password']) && !empty($input['current_password'])) {
+                    $users = executeQuery(
+                        'SELECT password_hash FROM usuarios WHERE id = ?',
+                        [$userId]
+                    );
+
+                    if (!empty($users) && !password_verify($input['current_password'], $users[0]['password_hash'])) {
+                        http_response_code(400);
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'La contraseña actual es incorrecta'
+                        ]);
+                        return;
+                    }
+                }
+
+                $fields[] = 'password_hash = ?';
+                $params[] = password_hash($newPassword, PASSWORD_DEFAULT);
+            }
+
+            if (empty($fields)) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'No hay campos para actualizar'
+                ]);
+                return;
+            }
+
+            // Ejecutar actualización
+            $params[] = $userId;
+            $query = 'UPDATE usuarios SET ' . implode(', ', $fields) . ' WHERE id = ?';
+            executeUpdate($query, $params);
+
+            // Actualizar sesión con los nuevos datos
+            $updatedUser = executeQuery(
+                'SELECT id, nombre, apellidos, email, rol, empresa, puesto, celular FROM usuarios WHERE id = ?',
+                [$userId]
+            );
+
+            if (!empty($updatedUser)) {
+                $_SESSION['user'] = [
+                    'id' => $updatedUser[0]['id'],
+                    'nombre' => $updatedUser[0]['nombre'],
+                    'email' => $updatedUser[0]['email'],
+                    'rol' => $updatedUser[0]['rol'],
+                    'empresa' => $updatedUser[0]['empresa']
+                ];
+            }
+
+            error_log("✅ Perfil actualizado para usuario ID: {$userId}");
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Perfil actualizado correctamente',
+                'user' => $updatedUser[0] ?? null
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error actualizando perfil: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error interno del servidor'
+            ]);
+        }
+    }
 }

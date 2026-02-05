@@ -1,0 +1,931 @@
+/* ====================================================
+   THEME TOGGLE STYLES - SYMBIOT FINANCIAL MANAGER
+   Archivo: gastos/css/theme-toggle.css
+   Soporte para modo claro/oscuro
+   ==================================================== */
+
+/* ========================================= */
+/* CSS VARIABLES - TEMA OSCURO (DEFAULT) */
+/* ========================================= */
+:root {
+    /* Colores de fondo */
+    --bg-primary: #000;
+    --bg-secondary: #191C24;
+    --bg-card: rgba(25, 28, 36, 0.8);
+    --bg-navbar: rgba(25, 28, 36, 0.95);
+    --bg-input: rgba(255, 255, 255, 0.05);
+    --bg-hover: rgba(255, 255, 255, 0.1);
+
+    /* Colores de texto */
+    --text-primary: #ffffff;
+    --text-secondary: #E4E6EA;
+    --text-muted: #B0B3B8;
+    --text-dark: #000000;
+
+    /* Bordes */
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-light: rgba(255, 255, 255, 0.2);
+
+    /* Colores de acento (se mantienen iguales en ambos temas) */
+    --accent-primary: #EB1616;
+    --accent-info: #0DCAF0;
+    --accent-success: #4ac711;
+    --accent-danger: #dc3545;
+    --accent-warning: #ffc107;
+
+    /* Sombras */
+    --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.4);
+
+    /* Tabla */
+    --table-bg: transparent;
+    --table-stripe: rgba(255, 255, 255, 0.05);
+    --table-hover: rgba(255, 255, 255, 0.1);
+}
+
+/* ========================================= */
+/* CSS VARIABLES - TEMA CLARO */
+/* ========================================= */
+[data-theme="light"] {
+    /* Colores de fondo */
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-card: rgba(255, 255, 255, 0.98);
+    --bg-navbar: rgba(255, 255, 255, 0.98);
+    --bg-input: rgba(0, 0, 0, 0.03);
+    --bg-hover: rgba(0, 0, 0, 0.06);
+
+    /* Colores de texto - MÁS OSCUROS para mejor contraste */
+    --text-primary: #1a1a1a;
+    --text-secondary: #2d2d2d;
+    --text-muted: #4a4a4a;
+    --text-dark: #000000;
+
+    /* Bordes */
+    --border-color: rgba(0, 0, 0, 0.12);
+    --border-light: rgba(0, 0, 0, 0.18);
+
+    /* Sombras */
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+    /* Tabla */
+    --table-bg: #ffffff;
+    --table-stripe: rgba(0, 0, 0, 0.02);
+    --table-hover: rgba(0, 0, 0, 0.05);
+}
+
+/* ========================================= */
+/* APLICACIÓN DE VARIABLES AL TEMA */
+/* ========================================= */
+
+/* Body */
+[data-theme="light"] body {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Navbar */
+[data-theme="light"] .navbar {
+    background: var(--bg-navbar) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .navbar-nav .nav-link {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="light"] .navbar-nav .nav-link:hover {
+    color: var(--accent-primary) !important;
+}
+
+[data-theme="light"] .navbar-nav .nav-link.active {
+    color: var(--accent-primary) !important;
+}
+
+[data-theme="light"] .dropdown-menu {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-card);
+}
+
+[data-theme="light"] .dropdown-item {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="light"] .dropdown-item:hover {
+    background: var(--bg-hover) !important;
+    color: var(--accent-primary) !important;
+}
+
+[data-theme="light"] .dropdown-divider {
+    border-color: var(--border-color) !important;
+}
+
+/* Cards */
+[data-theme="light"] .card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-card);
+}
+
+[data-theme="light"] .card:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+[data-theme="light"] .card-header {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+[data-theme="light"] .card-header h6,
+[data-theme="light"] .card-header .text-white {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .card-title {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="light"] .card-body {
+    color: var(--text-primary);
+}
+
+/* Welcome Banner */
+[data-theme="light"] .welcome-banner {
+    background: linear-gradient(135deg, rgba(13, 202, 240, 0.1), rgba(13, 202, 240, 0.05)) !important;
+    border: 1px solid rgba(13, 202, 240, 0.2) !important;
+}
+
+[data-theme="light"] .welcome-banner p {
+    color: var(--text-secondary) !important;
+}
+
+/* Form Controls */
+[data-theme="light"] .form-control,
+[data-theme="light"] .form-select {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .form-control:focus,
+[data-theme="light"] .form-select:focus {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--accent-info) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 202, 240, 0.15);
+}
+
+[data-theme="light"] .form-control::placeholder {
+    color: var(--text-muted) !important;
+}
+
+[data-theme="light"] .form-label {
+    color: var(--text-secondary) !important;
+}
+
+/* Tables */
+[data-theme="light"] .table {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .table-dark {
+    --bs-table-bg: var(--table-bg) !important;
+    --bs-table-striped-bg: var(--table-stripe) !important;
+    --bs-table-hover-bg: var(--table-hover) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .table-dark th {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .table-dark td {
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .table-dark tbody tr:hover {
+    background-color: var(--table-hover) !important;
+}
+
+/* Alerts */
+[data-theme="light"] .alert-info {
+    background-color: rgba(13, 202, 240, 0.1) !important;
+    border-color: rgba(13, 202, 240, 0.3) !important;
+    color: #055160 !important;
+}
+
+/* Text Colors */
+[data-theme="light"] .text-white {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .text-muted,
+[data-theme="light"] .stat-label {
+    color: var(--text-muted) !important;
+}
+
+/* Badges */
+[data-theme="light"] .badge.bg-dark {
+    background-color: var(--text-muted) !important;
+}
+
+/* Buttons - Outline variants */
+[data-theme="light"] .btn-outline-primary {
+    color: var(--accent-info);
+    border-color: var(--accent-info);
+}
+
+[data-theme="light"] .btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+/* Modal */
+[data-theme="light"] .modal-content {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .modal-header {
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .modal-footer {
+    border-top-color: var(--border-color) !important;
+}
+
+[data-theme="light"] .modal-title {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .btn-close-white {
+    filter: none !important;
+}
+
+/* Pagination */
+[data-theme="light"] .pagination .page-link {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .pagination .page-link:hover {
+    background-color: var(--bg-hover);
+    color: var(--accent-primary);
+}
+
+[data-theme="light"] .pagination .page-item.active .page-link {
+    background-color: var(--accent-info);
+    border-color: var(--accent-info);
+}
+
+/* Scrollbar para modo claro */
+[data-theme="light"] ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 4px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* ========================================= */
+/* THEME TOGGLE BUTTON */
+/* ========================================= */
+.theme-toggle-btn {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #ffc107;
+    margin-right: 12px;
+}
+
+.theme-toggle-btn:hover {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+    border-color: #ffc107;
+    transform: rotate(20deg);
+}
+
+.theme-toggle-btn i {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle-btn:hover i {
+    transform: scale(1.15);
+}
+
+/* Botón en modo claro */
+[data-theme="light"] .theme-toggle-btn {
+    border-color: rgba(0, 0, 0, 0.3);
+    color: #6c757d;
+}
+
+[data-theme="light"] .theme-toggle-btn:hover {
+    background: rgba(108, 117, 125, 0.1);
+    color: #495057;
+    border-color: #495057;
+}
+
+/* Animación suave al cambiar tema */
+body,
+.navbar,
+.card,
+.dropdown-menu,
+.form-control,
+.form-select,
+.table,
+.modal-content {
+    transition: background-color 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+}
+
+/* ========================================= */
+/* ESPECÍFICOS PARA WIDGETS */
+/* ========================================= */
+[data-theme="light"] .company-selector-widget {
+    background: var(--bg-card) !important;
+}
+
+[data-theme="light"] .stat-number {
+    text-shadow: none !important;
+}
+
+[data-theme="light"] .payment-alert-card {
+    background: var(--bg-card) !important;
+}
+
+[data-theme="light"] .students-filters {
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+/* Loading spinner */
+[data-theme="light"] .loading-spinner {
+    color: var(--text-muted);
+}
+
+/* Empty state */
+[data-theme="light"] .empty-state {
+    color: var(--text-muted);
+}
+
+/* Student/Payment status badges */
+[data-theme="light"] .badge {
+    font-weight: 600;
+}
+
+/* Charts - Canvas background */
+[data-theme="light"] canvas {
+    background: transparent !important;
+}
+
+/* ========================================= */
+/* CORRECCIONES DE CONTRASTE - TEXTOS OSCUROS */
+/* ========================================= */
+
+/* Forzar todos los textos a ser oscuros en modo claro */
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] p,
+[data-theme="light"] span,
+[data-theme="light"] label,
+[data-theme="light"] small {
+    color: #2d2d2d !important;
+}
+
+/* Textos que usan clases de Bootstrap para blanco */
+[data-theme="light"] .text-light {
+    color: #4a4a4a !important;
+}
+
+/* Stat cards - números y etiquetas */
+[data-theme="light"] .stat-card h4,
+[data-theme="light"] .stat-card .card-title,
+[data-theme="light"] .stat-card .stat-number {
+    color: #1a1a1a !important;
+}
+
+/* Welcome banner textos */
+[data-theme="light"] .welcome-banner h4 {
+    color: #0a6ebd !important;
+}
+
+[data-theme="light"] .welcome-banner span,
+[data-theme="light"] .welcome-banner p span {
+    color: #2d2d2d !important;
+}
+
+/* Navbar user name */
+[data-theme="light"] #userName {
+    color: #2d2d2d !important;
+}
+
+/* Card body todos los textos */
+[data-theme="light"] .card-body,
+[data-theme="light"] .card-body * {
+    color: #2d2d2d;
+}
+
+/* Preservar colores de estado (success, danger, warning, info) */
+[data-theme="light"] .text-success {
+    color: #198754 !important;
+}
+
+[data-theme="light"] .text-danger {
+    color: #dc3545 !important;
+}
+
+[data-theme="light"] .text-warning {
+    color: #cc9a00 !important;
+}
+
+[data-theme="light"] .text-info {
+    color: #0a6ebd !important;
+}
+
+[data-theme="light"] .text-primary {
+    color: #0d6efd !important;
+}
+
+/* Tablas - asegurar texto oscuro */
+[data-theme="light"] table,
+[data-theme="light"] table th,
+[data-theme="light"] table td,
+[data-theme="light"] table span,
+[data-theme="light"] .table-dark,
+[data-theme="light"] .table-dark th,
+[data-theme="light"] .table-dark td {
+    color: #1a1a1a !important;
+}
+
+/* Dropdown menu items */
+[data-theme="light"] .dropdown-menu a,
+[data-theme="light"] .dropdown-item,
+[data-theme="light"] .dropdown-item i {
+    color: #2d2d2d !important;
+}
+
+[data-theme="light"] .dropdown-item:hover,
+[data-theme="light"] .dropdown-item:hover i {
+    color: #c41212 !important;
+}
+
+/* Form labels y textos de ayuda */
+[data-theme="light"] .form-label,
+[data-theme="light"] .form-text,
+[data-theme="light"] .input-group-text {
+    color: #2d2d2d !important;
+}
+
+/* Iconos en modo claro */
+[data-theme="light"] .fas,
+[data-theme="light"] .far,
+[data-theme="light"] .fab,
+[data-theme="light"] i.fa,
+[data-theme="light"] i.fas,
+[data-theme="light"] i.far {
+    color: inherit;
+}
+
+/* Stat icons mantener colores */
+[data-theme="light"] .stat-icon.text-info {
+    color: #0a6ebd !important;
+}
+
+[data-theme="light"] .stat-icon.text-success {
+    color: #198754 !important;
+}
+
+[data-theme="light"] .stat-icon.text-danger {
+    color: #dc3545 !important;
+}
+
+[data-theme="light"] .stat-icon.text-warning {
+    color: #cc9a00 !important;
+}
+
+/* Modals - textos oscuros */
+[data-theme="light"] .modal-content,
+[data-theme="light"] .modal-content * {
+    color: #2d2d2d;
+}
+
+[data-theme="light"] .modal-title {
+    color: #1a1a1a !important;
+}
+
+/* Badges en modo claro */
+[data-theme="light"] .badge.bg-success {
+    background-color: #198754 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] .badge.bg-info {
+    background-color: #0dcaf0 !important;
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] .badge.bg-primary {
+    background-color: #0d6efd !important;
+    color: #ffffff !important;
+}
+
+/* Pagination texto oscuro */
+[data-theme="light"] .pagination .page-link {
+    color: #2d2d2d !important;
+}
+
+[data-theme="light"] .pagination .page-item.active .page-link {
+    color: #ffffff !important;
+}
+
+/* Select options */
+[data-theme="light"] select option {
+    background-color: #ffffff;
+    color: #1a1a1a;
+}
+
+/* Alerts texto */
+[data-theme="light"] .alert {
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] .alert-info {
+    color: #055160 !important;
+}
+
+[data-theme="light"] .alert-success {
+    color: #0f5132 !important;
+}
+
+[data-theme="light"] .alert-warning {
+    color: #664d03 !important;
+}
+
+[data-theme="light"] .alert-danger {
+    color: #842029 !important;
+}
+
+/* Loading states */
+[data-theme="light"] .loading-spinner,
+[data-theme="light"] .loading-spinner p,
+[data-theme="light"] .loading-state,
+[data-theme="light"] .loading-state p {
+    color: #4a4a4a !important;
+}
+
+/* Empty states */
+[data-theme="light"] .empty-state,
+[data-theme="light"] .empty-state p {
+    color: #4a4a4a !important;
+}
+
+/* Company selector widget */
+[data-theme="light"] .company-selector-widget .stat-number,
+[data-theme="light"] .company-selector-widget .stat-label {
+    color: #2d2d2d !important;
+}
+
+/* Students table specific */
+[data-theme="light"] .students-table-container,
+[data-theme="light"] .students-table-container * {
+    color: #1a1a1a;
+}
+
+/* Metric items */
+[data-theme="light"] .metric-item .stat-number {
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] .metric-item .stat-label {
+    color: #4a4a4a !important;
+}
+
+/* HR dividers */
+[data-theme="light"] hr {
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    opacity: 1;
+}
+
+/* ========================================= */
+/* WIDGETS ESPECÍFICOS - MODO CLARO */
+/* ========================================= */
+
+/* Widget Alumnos Inscritos - Números grandes */
+[data-theme="light"] .student-stat h2,
+[data-theme="light"] .student-stat .text-success,
+[data-theme="light"] .student-stat .text-danger,
+[data-theme="light"] #activeStudents,
+[data-theme="light"] #inactiveStudents {
+    color: inherit !important;
+}
+
+[data-theme="light"] #activeStudents {
+    color: #198754 !important;
+}
+
+[data-theme="light"] #inactiveStudents {
+    color: #dc3545 !important;
+}
+
+/* Widget Alumnos - Labels (Activos/Bajas) */
+[data-theme="light"] .student-stat small {
+    color: #1a1a1a !important;
+}
+
+/* Distribución por clase - textos */
+[data-theme="light"] #classDistribution,
+[data-theme="light"] #classDistribution * {
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] #classDistribution .badge {
+    color: #ffffff !important;
+}
+
+/* Widget Maestros */
+[data-theme="light"] #teachersOverview,
+[data-theme="light"] #teachersOverview * {
+    color: #1a1a1a !important;
+}
+
+/* Total alumnos badge */
+[data-theme="light"] #totalStudents {
+    color: #ffffff !important;
+}
+
+/* ========================================= */
+/* ALERTAS DE PAGOS - MODO CLARO */
+/* ========================================= */
+
+/* Contenedor de alertas */
+[data-theme="light"] #paymentAlertsContainer,
+[data-theme="light"] #paymentAlertsContainer * {
+    color: #1a1a1a !important;
+}
+
+/* Alertas próximos a vencer (amarillo) */
+[data-theme="light"] .alert-warning,
+[data-theme="light"] .alert-warning *,
+[data-theme="light"] .bg-warning,
+[data-theme="light"] .bg-warning * {
+    color: #1a1a1a !important;
+}
+
+/* Alertas vencidos (rojo) */
+[data-theme="light"] .alert-danger *,
+[data-theme="light"] .bg-danger * {
+    color: #1a1a1a !important;
+}
+
+/* Excepto los badges que mantienen texto blanco */
+[data-theme="light"] .alert-warning .badge,
+[data-theme="light"] .alert-danger .badge {
+    color: #ffffff !important;
+}
+
+/* Payment alert cards específicos */
+[data-theme="light"] .payment-alert-card *,
+[data-theme="light"] .payment-alert-header * {
+    color: #1a1a1a !important;
+}
+
+/* Nombres de alumnos en alertas */
+[data-theme="light"] [onclick*="showStudentDetail"],
+[data-theme="light"] [onclick*="viewStudentDetails"] {
+    color: #1a1a1a !important;
+}
+
+/* ========================================= */
+/* TRANSACCIONES - COLORES DE TIPO */
+/* ========================================= */
+
+/* Mantener colores de gastos (rojo) e ingresos (verde) en tablas */
+[data-theme="light"] .table td.text-danger,
+[data-theme="light"] .table .text-danger,
+[data-theme="light"] td .text-danger {
+    color: #dc3545 !important;
+}
+
+[data-theme="light"] .table td.text-success,
+[data-theme="light"] .table .text-success,
+[data-theme="light"] td .text-success {
+    color: #198754 !important;
+}
+
+/* Transacciones - columna Total con color según tipo */
+[data-theme="light"] #transactionsBody .text-danger,
+[data-theme="light"] #transactionsBody .text-success {
+    color: inherit;
+}
+
+[data-theme="light"] #transactionsBody td:last-child .text-danger,
+[data-theme="light"] #transactionsBody .text-danger {
+    color: #dc3545 !important;
+}
+
+[data-theme="light"] #transactionsBody td:last-child .text-success,
+[data-theme="light"] #transactionsBody .text-success {
+    color: #198754 !important;
+}
+
+/* Rockstar specific indicators */
+[data-theme="light"] #rockstarSpecificIndicators,
+[data-theme="light"] #rockstarSpecificIndicators * {
+    color: #1a1a1a !important;
+}
+
+[data-theme="light"] #rockstarSpecificIndicators .text-info {
+    color: #0a6ebd !important;
+}
+
+[data-theme="light"] #rockstarSpecificIndicators .text-success {
+    color: #198754 !important;
+}
+
+[data-theme="light"] #rockstarSpecificIndicators .text-danger {
+    color: #dc3545 !important;
+}
+
+/* Company selector stats */
+[data-theme="light"] #companyBalance {
+    color: #198754 !important;
+}
+
+[data-theme="light"] #companyTransactions {
+    color: #cc9a00 !important;
+}
+
+[data-theme="light"] #companyStudents {
+    color: #0a6ebd !important;
+}
+
+/* ========================================= */
+/* GASTOS.HTML E INGRESOS.HTML - MODO CLARO */
+/* ========================================= */
+
+/* Statistics Cards - títulos y labels */
+[data-theme="light"] .stat-card .card-title,
+[data-theme="light"] .stat-card h6,
+[data-theme="light"] .stat-card small,
+[data-theme="light"] .card .card-title {
+    color: #1a1a1a !important;
+}
+
+/* Gráficas - ejes y labels */
+[data-theme="light"] .chart-container,
+[data-theme="light"] .chart-container * {
+    color: #1a1a1a !important;
+}
+
+/* Chart.js colores de texto para ejes */
+[data-theme="light"] canvas {
+    --chart-text-color: #1a1a1a;
+}
+
+/* ========================================= */
+/* BADGES FORMA DE PAGO - MODO CLARO */
+/* ========================================= */
+
+/* Badges de forma de pago - fondo gris claro con texto oscuro */
+[data-theme="light"] .badge.bg-secondary,
+[data-theme="light"] .badge.bg-dark {
+    background-color: #6c757d !important;
+    color: #ffffff !important;
+}
+
+/* Badges específicos de forma de pago */
+[data-theme="light"] td .badge:not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-primary) {
+    background-color: #5a6268 !important;
+    color: #ffffff !important;
+}
+
+/* ========================================= */
+/* GASTOS.HTML - COLORES ESPECÍFICOS */
+/* ========================================= */
+
+/* Gastos página - badge tipo debe ser rojo */
+[data-theme="light"] .badge[class*="Gasto"],
+[data-theme="light"] .badge.bg-danger {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+}
+
+/* Totales en gastos deben ser rojos */
+[data-theme="light"] #totalGastosDisplay,
+[data-theme="light"] #promedioGasto,
+[data-theme="light"] #mayorGasto {
+    color: #dc3545 !important;
+}
+
+/* ========================================= */
+/* INGRESOS.HTML - COLORES ESPECÍFICOS */
+/* ========================================= */
+
+/* Ingresos página - badge tipo debe ser verde */
+[data-theme="light"] .badge[class*="Ingreso"],
+[data-theme="light"] .badge.bg-success {
+    background-color: #198754 !important;
+    color: #ffffff !important;
+}
+
+/* Totales en ingresos deben ser verdes */
+[data-theme="light"] #totalIngresosDisplay,
+[data-theme="light"] #promedioIngreso,
+[data-theme="light"] #mayorIngreso {
+    color: #198754 !important;
+}
+
+/* ========================================= */
+/* STAT CARDS GENERALES - MEJOR CONTRASTE */
+/* ========================================= */
+
+/* Títulos de stat cards */
+[data-theme="light"] .card-body h6,
+[data-theme="light"] .card-body .h6,
+[data-theme="light"] .stat-card .card-body h6 {
+    color: #1a1a1a !important;
+    font-weight: 600;
+}
+
+/* Números grandes en stat cards */
+[data-theme="light"] .card-body h4,
+[data-theme="light"] .card-body .h4,
+[data-theme="light"] .stat-number {
+    font-weight: 700;
+}
+
+/* Textos secundarios en cards */
+[data-theme="light"] .card-body .text-muted,
+[data-theme="light"] .card-body small.text-muted {
+    color: #495057 !important;
+}
+
+/* ========================================= */
+/* TABLAS DE GASTOS E INGRESOS */
+/* ========================================= */
+
+/* Asegurar que columna Total tenga color correcto */
+[data-theme="light"] table tbody td:last-child {
+    font-weight: 600;
+}
+
+/* Fila de totales en tablas */
+[data-theme="light"] table tfoot td,
+[data-theme="light"] table .total-row td {
+    font-weight: 700;
+    color: #1a1a1a !important;
+}
+
+/* Iconos en tablas */
+[data-theme="light"] table i.fas,
+[data-theme="light"] table i.far {
+    opacity: 0.8;
+}

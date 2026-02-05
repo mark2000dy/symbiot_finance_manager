@@ -81,6 +81,16 @@ try {
         exit;
     }
 
+    if ($requestUri === '/user/profile' && $requestMethod === 'GET') {
+        AuthController::getProfile();
+        exit;
+    }
+
+    if ($requestUri === '/user/profile' && $requestMethod === 'PUT') {
+        AuthController::updateProfile();
+        exit;
+    }
+
     // ============================================================
     // HEALTH CHECK
     // ============================================================

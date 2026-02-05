@@ -62,6 +62,37 @@
 console.log('📊 Cargando Reportes Widgets Module...');
 
 // ============================================================
+// 🎨 THEME-AWARE CHART COLORS
+// ============================================================
+
+/**
+ * Obtener colores para Chart.js basados en el tema actual
+ * @returns {Object} - Colores para ejes, texto y grid
+ */
+function getChartColors() {
+    const isLightTheme = document.documentElement.getAttribute('data-theme') === 'light';
+
+    if (isLightTheme) {
+        return {
+            text: '#1a1a1a',
+            textMuted: '#4a4a4a',
+            grid: 'rgba(0, 0, 0, 0.1)',
+            gridLight: 'rgba(0, 0, 0, 0.05)'
+        };
+    } else {
+        return {
+            text: '#E4E6EA',
+            textMuted: '#B0B3B8',
+            grid: 'rgba(255, 255, 255, 0.1)',
+            gridLight: 'rgba(255, 255, 255, 0.05)'
+        };
+    }
+}
+
+// Exponer globalmente para reusar
+window.getChartColors = getChartColors;
+
+// ============================================================
 // 🔄 DATA ADAPTERS - Transform backend responses to expected format
 // ============================================================
 
@@ -452,6 +483,9 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
         });
     }
 
+    // Obtener colores según el tema actual
+    const chartColors = getChartColors();
+
     gastosRealesChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -464,7 +498,7 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
             plugins: {
                 legend: {
                     labels: {
-                        color: '#E4E6EA',
+                        color: chartColors.text,
                         font: { size: mobile ? 10 : 12 }
                     }
                 }
@@ -473,7 +507,7 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        color: '#E4E6EA',
+                        color: chartColors.text,
                         font: { size: mobile ? 9 : 12 },
                         callback: function(value) {
                             if (mobile) return '$' + (value / 1000).toFixed(0) + 'k';
@@ -481,17 +515,17 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
                         }
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: chartColors.grid
                     }
                 },
                 x: {
                     ticks: {
-                        color: '#E4E6EA',
+                        color: chartColors.text,
                         maxRotation: mobile ? 0 : 50,
                         font: { size: mobile ? 10 : 12 }
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: chartColors.grid
                     }
                 }
             }
@@ -1109,6 +1143,9 @@ function updateChartParticipacion(participacion) {
         'rgba(153, 102, 255, 0.8)'   // Morado
     ];
     
+    // Obtener colores según el tema actual
+    const chartColors = getChartColors();
+
     balanceGeneralChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -1127,7 +1164,7 @@ function updateChartParticipacion(participacion) {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        color: '#E4E6EA',
+                        color: chartColors.text,
                         padding: 15,
                         font: {
                             size: 12
@@ -1503,6 +1540,9 @@ function updateAltasBajasChart(meses) {
 
     const mobile = isMobileViewport();
 
+    // Obtener colores según el tema actual
+    const chartColors = getChartColors();
+
     altasBajasChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1541,7 +1581,7 @@ function updateAltasBajasChart(meses) {
             plugins: {
                 legend: {
                     labels: {
-                        color: '#E4E6EA',
+                        color: chartColors.text,
                         font: { size: mobile ? 10 : 12 }
                     }
                 }
@@ -1550,22 +1590,22 @@ function updateAltasBajasChart(meses) {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        color: '#E4E6EA',
+                        color: chartColors.text,
                         stepSize: 1,
                         font: { size: mobile ? 9 : 12 }
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: chartColors.grid
                     }
                 },
                 x: {
                     ticks: {
-                        color: '#E4E6EA',
+                        color: chartColors.text,
                         maxRotation: mobile ? 45 : 0,
                         font: { size: mobile ? 9 : 12 }
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: chartColors.grid
                     }
                 }
             }

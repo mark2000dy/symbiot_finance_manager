@@ -245,6 +245,8 @@
             height: 300px;
         }
     </style>
+    <!-- Theme Toggle CSS -->
+    <link rel="stylesheet" href="css/theme-toggle.css?v=1.0.0">
 </head>
 <body>
     <!-- Navbar -->
@@ -283,6 +285,12 @@
                 </ul>
                 
                 <ul class="navbar-nav">
+                    <!-- Theme Toggle Button -->
+                    <li class="nav-item d-flex align-items-center">
+                        <button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar tema">
+                            <i class="fas fa-sun"></i>
+                        </button>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
@@ -290,7 +298,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); showComingSoon('Perfil');"><i class="fas fa-user me-2"></i>Perfil</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); showComingSoon('Configuración');"><i class="fas fa-cog me-2"></i>Configuración</a></li>
+                            <li><a class="dropdown-item" href="configuracion.html"><i class="fas fa-cog me-2"></i>Configuración</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); logout();"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
                         </ul>
@@ -816,6 +824,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SheetJS para exportación a Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Theme Toggle - Cargar temprano para evitar flash -->
+    <script src="js/theme-toggle.js?v=1.0.0"></script>
 
     <!-- Page Loader Module (reutilizable en todas las páginas) -->
     <script src="js/page-loader.js?v=1.0.0"></script>

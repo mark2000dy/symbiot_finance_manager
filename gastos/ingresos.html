@@ -316,6 +316,8 @@
             margin-bottom: 0;
         }
     </style>
+    <!-- Theme Toggle CSS -->
+    <link rel="stylesheet" href="css/theme-toggle.css?v=1.0.0">
 </head>
 <body>
     <!-- Navbar -->
@@ -354,6 +356,12 @@
                 </ul>
                 
                 <ul class="navbar-nav">
+                    <!-- Theme Toggle Button -->
+                    <li class="nav-item d-flex align-items-center">
+                        <button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar tema">
+                            <i class="fas fa-sun"></i>
+                        </button>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
@@ -361,7 +369,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); showComingSoon('Perfil');"><i class="fas fa-user me-2"></i>Perfil</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); showComingSoon('Configuración');"><i class="fas fa-cog me-2"></i>Configuración</a></li>
+                            <li><a class="dropdown-item" href="configuracion.html"><i class="fas fa-cog me-2"></i>Configuración</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); logout();"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
                         </ul>
@@ -490,7 +498,7 @@
             <div class="card-body">
                 <div class="row g-3">
                     <!-- Filtro de Empresa -->
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-4 col-lg-2">
                         <label for="filterEmpresa" class="form-label">
                             <i class="fas fa-building me-1"></i>Empresa
                         </label>
@@ -502,7 +510,7 @@
                     </div>
 
                     <!-- Filtro de Año -->
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-4 col-lg-1">
                         <label for="filterAno" class="form-label">
                             <i class="fas fa-calendar me-1"></i>Año
                         </label>
@@ -516,7 +524,7 @@
                     </div>
 
                     <!-- Filtro de Mes -->
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-4 col-lg-2">
                         <label for="filterMes" class="form-label">
                             <i class="fas fa-calendar-alt me-1"></i>Mes
                         </label>
@@ -538,7 +546,7 @@
                     </div>
 
                     <!-- Filtro de Tipo -->
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-4 col-lg-2">
                         <label for="filterTipo" class="form-label">
                             <i class="fas fa-tag me-1"></i>Tipo
                         </label>
@@ -550,24 +558,34 @@
                     </div>
 
                     <!-- Filtro de Socio -->
-                    <div class="col-md-2">
+                    <div class="col-6 col-md-4 col-lg-2">
                         <label for="filterSocio" class="form-label">
                             <i class="fas fa-user me-1"></i>Socio
                         </label>
-                        <select class="form-select" id="filterSocio" onchange="applySocioFilter()">
+                        <select class="form-select" id="filterSocio" onchange="applyClientSideFilters()">
                             <option value="">Todos</option>
                         </select>
                     </div>
 
+                    <!-- Filtro de Forma de Pago -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <label for="filterFormaPago" class="form-label">
+                            <i class="fas fa-credit-card me-1"></i>Forma de Pago
+                        </label>
+                        <select class="form-select" id="filterFormaPago" onchange="applyClientSideFilters()">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+
                     <!-- Botones de Acción -->
-                    <div class="col-md-2">
+                    <div class="col-12 col-md-4 col-lg-1">
                         <label class="form-label">&nbsp;</label>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-outline-secondary" onclick="clearFilters()">
-                                <i class="fas fa-eraser me-1"></i>Limpiar
+                            <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()" title="Limpiar filtros">
+                                <i class="fas fa-eraser"></i>
                             </button>
-                            <button class="btn btn-primary" onclick="exportData()">
-                                <i class="fas fa-download me-1"></i>Exportar
+                            <button class="btn btn-primary btn-sm" onclick="exportData()" title="Exportar">
+                                <i class="fas fa-download"></i>
                             </button>
                         </div>
                     </div>
@@ -801,6 +819,9 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Theme Toggle - Cargar temprano para evitar flash -->
+    <script src="js/theme-toggle.js?v=1.0.0"></script>
+
     <!-- Page Loader Module (reutilizable en todas las páginas) -->
     <script src="js/page-loader.js?v=1.0.0"></script>
 
@@ -1015,6 +1036,7 @@
             document.getElementById('filterMes').value = '';
             document.getElementById('filterTipo').value = 'I'; // Mantener solo ingresos
             document.getElementById('filterSocio').value = '';
+            document.getElementById('filterFormaPago').value = '';
             // Re-aplicar permisos para restaurar filtro de empresa restringido
             if (typeof window.applyUserPermissions === 'function') {
                 window.applyUserPermissions();
@@ -1030,10 +1052,11 @@
             document.getElementById('filterTipo').value = 'I'; // Solo ingresos por defecto
         }
 
-        // Poblar filtro Socio con valores únicos de las transacciones cargadas
+        // Poblar filtros Socio y Forma de Pago con valores únicos de las transacciones cargadas
         function populateSocioFilter(data) {
+            // Poblar filtro Socio
             const socioSelect = document.getElementById('filterSocio');
-            const currentValue = socioSelect.value;
+            const currentSocioValue = socioSelect.value;
             const socios = [...new Set(data.map(t => t.socio).filter(Boolean))].sort();
             socioSelect.innerHTML = '<option value="">Todos</option>';
             socios.forEach(socio => {
@@ -1042,31 +1065,58 @@
                 option.textContent = socio;
                 socioSelect.appendChild(option);
             });
-            if (currentValue && socios.includes(currentValue)) {
-                socioSelect.value = currentValue;
+            if (currentSocioValue && socios.includes(currentSocioValue)) {
+                socioSelect.value = currentSocioValue;
+            }
+
+            // Poblar filtro Forma de Pago
+            const formaPagoSelect = document.getElementById('filterFormaPago');
+            const currentFormaPagoValue = formaPagoSelect.value;
+            const formasPago = [...new Set(data.map(t => t.forma_pago).filter(Boolean))].sort();
+            formaPagoSelect.innerHTML = '<option value="">Todas</option>';
+            formasPago.forEach(fp => {
+                const option = document.createElement('option');
+                option.value = fp;
+                option.textContent = fp;
+                formaPagoSelect.appendChild(option);
+            });
+            if (currentFormaPagoValue && formasPago.includes(currentFormaPagoValue)) {
+                formaPagoSelect.value = currentFormaPagoValue;
             }
         }
 
-        // Aplicar filtro Socio sobre los datos ya cargados (client-side)
-        function applySocioFilterToData() {
+        // Aplicar filtros client-side (Socio y Forma de Pago) sobre los datos ya cargados
+        function applyClientSideFiltersToData() {
             const socio = document.getElementById('filterSocio').value;
-            if (socio) {
-                transactionsData = allTransactionsData.filter(t => t.socio === socio);
-            } else {
-                transactionsData = [...allTransactionsData];
-            }
+            const formaPago = document.getElementById('filterFormaPago').value;
+
+            transactionsData = allTransactionsData.filter(t => {
+                const matchSocio = !socio || t.socio === socio;
+                const matchFormaPago = !formaPago || t.forma_pago === formaPago;
+                return matchSocio && matchFormaPago;
+            });
+
             totalTransactions = transactionsData.length;
             currentPage = 1;
         }
 
-        // Handler del filtro Socio (sin re-llamar la API)
-        function applySocioFilter() {
+        // Handler de filtros client-side (sin re-llamar la API)
+        function applyClientSideFilters() {
             const scrollPos = window.scrollY;
-            applySocioFilterToData();
+            applyClientSideFiltersToData();
             renderCurrentPage();
             updateFilterSummary();
             updatePaginationControls();
             requestAnimationFrame(() => window.scrollTo(0, scrollPos));
+        }
+
+        // Mantener compatibilidad con código anterior
+        function applySocioFilter() {
+            applyClientSideFilters();
+        }
+
+        function applySocioFilterToData() {
+            applyClientSideFiltersToData();
         }
 
         // Actualizar resumen de filtros
@@ -1075,6 +1125,7 @@
             const ano = document.getElementById('filterAno').value;
             const mes = document.getElementById('filterMes').value;
             const socio = document.getElementById('filterSocio').value;
+            const formaPago = document.getElementById('filterFormaPago').value;
 
             let summary = 'Mostrando 💰 ingresos';
 
@@ -1090,6 +1141,7 @@
                 filters.push(`mes: ${meses[parseInt(mes)]}`);
             }
             if (socio) filters.push(`socio: ${socio}`);
+            if (formaPago) filters.push(`forma de pago: ${formaPago}`);
 
             if (filters.length > 0) {
                 summary += ` - ${filters.join(', ')}`;
