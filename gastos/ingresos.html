@@ -906,7 +906,14 @@
                 // Construir rango de fechas (IGUAL que en gastos.html)
                 if (ano) {
                     const fechaInicio = mes ? `${ano}-${mes}-01` : `${ano}-01-01`;
-                    const fechaFin = mes ? `${ano}-${mes}-31` : `${ano}-12-31`;
+                    let fechaFin;
+                    if (mes) {
+                        // Calcular último día del mes específico
+                        const ultimoDay = new Date(ano, mes, 0).getDate();
+                        fechaFin = `${ano}-${mes}-${ultimoDay}`;
+                    } else {
+                        fechaFin = `${ano}-12-31`;
+                    }
                     params.fechaInicio = fechaInicio;
                     params.fechaFin = fechaFin;
                 }
