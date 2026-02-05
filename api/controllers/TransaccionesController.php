@@ -494,6 +494,7 @@ class TransaccionesController {
             $estatus = $_GET['estatus'] ?? null;
             $maestro_id = $_GET['maestro_id'] ?? null;
             $clase = $_GET['clase'] ?? null;
+            $unificar = $_GET['unificar'] ?? '1'; // Por defecto unifica
 
             $offset = ((int)$page - 1) * (int)$limit;
 
@@ -520,49 +521,104 @@ class TransaccionesController {
                 $params[] = $clase;
             }
 
-            $alumnos = executeQuery("
-                SELECT
-                    a.id,
-                    a.nombre,
-                    a.edad,
-                    a.telefono,
-                    a.email,
-                    a.clase,
-                    a.tipo_clase,
-                    a.horario,
-                    a.fecha_inscripcion,
-                    NULLIF(
-                        GREATEST(
-                            COALESCE(a.fecha_ultimo_pago, '1900-01-01'),
-                            COALESCE((
-                                SELECT MAX(t.fecha)
-                                FROM transacciones t
-                                WHERE t.tipo = 'I'
-                                  AND t.empresa_id = a.empresa_id
-                                  AND t.concepto LIKE CONCAT('%', a.nombre, '%')
-                            ), '1900-01-01')
-                        ),
-                        '1900-01-01'
-                    ) as fecha_ultimo_pago,
-                    a.promocion,
-                    COALESCE(a.precio_mensual, 0) as precio_mensual,
-                    a.forma_pago,
-                    a.domiciliado,
-                    a.estatus,
-                    COALESCE(m.nombre, 'Sin asignar') as maestro
-                FROM alumnos a
-                LEFT JOIN maestros m ON a.maestro_id = m.id
-                $whereClause
-                ORDER BY a.nombre
-                LIMIT ? OFFSET ?
-            ", array_merge($params, [(int)$limit, (int)$offset]));
+            // Si unificar=1, agrupa alumnos por nombre y consolida sus clases
+            if ($unificar === '1' && empty($clase)) {
+                $alumnos = executeQuery("
+                    SELECT
+                        MIN(a.id) as id,
+                        a.nombre,
+                        MAX(a.edad) as edad,
+                        MAX(a.telefono) as telefono,
+                        MAX(a.email) as email,
+                        GROUP_CONCAT(DISTINCT a.clase ORDER BY a.clase SEPARATOR ', ') as clase,
+                        GROUP_CONCAT(DISTINCT a.tipo_clase ORDER BY a.clase SEPARATOR ', ') as tipo_clase,
+                        GROUP_CONCAT(DISTINCT CONCAT(a.clase, ': ', COALESCE(a.horario, 'Sin horario')) ORDER BY a.clase SEPARATOR ' | ') as horario,
+                        MIN(a.fecha_inscripcion) as fecha_inscripcion,
+                        NULLIF(
+                            GREATEST(
+                                MAX(COALESCE(a.fecha_ultimo_pago, '1900-01-01')),
+                                COALESCE((
+                                    SELECT MAX(t.fecha)
+                                    FROM transacciones t
+                                    WHERE t.tipo = 'I'
+                                      AND t.empresa_id = a.empresa_id
+                                      AND t.concepto LIKE CONCAT('%', a.nombre, '%')
+                                ), '1900-01-01')
+                            ),
+                            '1900-01-01'
+                        ) as fecha_ultimo_pago,
+                        MAX(a.promocion) as promocion,
+                        SUM(COALESCE(a.precio_mensual, 0)) as precio_mensual,
+                        MAX(a.forma_pago) as forma_pago,
+                        MAX(a.domiciliado) as domiciliado,
+                        CASE
+                            WHEN SUM(CASE WHEN a.estatus = 'Activo' THEN 1 ELSE 0 END) > 0 THEN 'Activo'
+                            ELSE 'Baja'
+                        END as estatus,
+                        GROUP_CONCAT(DISTINCT COALESCE(m.nombre, 'Sin asignar') ORDER BY a.clase SEPARATOR ', ') as maestro,
+                        GROUP_CONCAT(DISTINCT a.id ORDER BY a.clase SEPARATOR ',') as all_ids,
+                        COUNT(DISTINCT a.id) as num_clases
+                    FROM alumnos a
+                    LEFT JOIN maestros m ON a.maestro_id = m.id
+                    $whereClause
+                    GROUP BY a.nombre, a.empresa_id
+                    ORDER BY a.nombre
+                    LIMIT ? OFFSET ?
+                ", array_merge($params, [(int)$limit, (int)$offset]));
 
-            $countResult = executeQuery("
-                SELECT COUNT(*) as total
-                FROM alumnos a
-                LEFT JOIN maestros m ON a.maestro_id = m.id
-                $whereClause
-            ", $params);
+                $countResult = executeQuery("
+                    SELECT COUNT(DISTINCT a.nombre) as total
+                    FROM alumnos a
+                    LEFT JOIN maestros m ON a.maestro_id = m.id
+                    $whereClause
+                ", $params);
+            } else {
+                // Query original sin unificar
+                $alumnos = executeQuery("
+                    SELECT
+                        a.id,
+                        a.nombre,
+                        a.edad,
+                        a.telefono,
+                        a.email,
+                        a.clase,
+                        a.tipo_clase,
+                        a.horario,
+                        a.fecha_inscripcion,
+                        NULLIF(
+                            GREATEST(
+                                COALESCE(a.fecha_ultimo_pago, '1900-01-01'),
+                                COALESCE((
+                                    SELECT MAX(t.fecha)
+                                    FROM transacciones t
+                                    WHERE t.tipo = 'I'
+                                      AND t.empresa_id = a.empresa_id
+                                      AND t.concepto LIKE CONCAT('%', a.nombre, '%')
+                                ), '1900-01-01')
+                            ),
+                            '1900-01-01'
+                        ) as fecha_ultimo_pago,
+                        a.promocion,
+                        COALESCE(a.precio_mensual, 0) as precio_mensual,
+                        a.forma_pago,
+                        a.domiciliado,
+                        a.estatus,
+                        COALESCE(m.nombre, 'Sin asignar') as maestro,
+                        1 as num_clases
+                    FROM alumnos a
+                    LEFT JOIN maestros m ON a.maestro_id = m.id
+                    $whereClause
+                    ORDER BY a.nombre
+                    LIMIT ? OFFSET ?
+                ", array_merge($params, [(int)$limit, (int)$offset]));
+
+                $countResult = executeQuery("
+                    SELECT COUNT(*) as total
+                    FROM alumnos a
+                    LEFT JOIN maestros m ON a.maestro_id = m.id
+                    $whereClause
+                ", $params);
+            }
 
             $total = $countResult[0]['total'];
             $totalPages = ceil($total / (int)$limit);
@@ -1087,14 +1143,15 @@ class TransaccionesController {
             $distribucion_maestros = executeQuery($maestrosQuery, [$empresa_id]);
 
             // 3b. INGRESOS REALES desde transacciones (suma de pagos históricos)
+            // JOIN por nombre en concepto (cliente_id no está poblado)
             $ingresosQuery = "
                 SELECT
                     t.socio as maestro,
                     al.estatus,
                     SUM(t.total) as total_ingresos
                 FROM transacciones t
-                INNER JOIN alumnos al ON t.concepto LIKE CONCAT('% ', al.nombre)
-                WHERE t.concepto LIKE 'Mensualidad Clases%'
+                INNER JOIN alumnos al ON t.concepto LIKE CONCAT('Mensualidad Clase % ', al.nombre)
+                WHERE t.concepto LIKE 'Mensualidad Clase %'
                     AND t.empresa_id = ?
                     AND al.empresa_id = ?
                 GROUP BY t.socio, al.estatus
@@ -1210,6 +1267,7 @@ class TransaccionesController {
     /**
      * Obtener alertas de pagos (próximos a vencer y vencidos)
      * Basado en la lógica homologada de periodo de gracia
+     * v3.5.0: Unifica alumnos con múltiples clases
      */
     public static function getDashboardAlertasPagos() {
         AuthController::requireAuth();
@@ -1219,18 +1277,21 @@ class TransaccionesController {
 
             $empresa_id = $_GET['empresa_id'] ?? 1;
 
-            // Obtener todos los alumnos activos con información de pagos
-            // GREATEST + COALESCE: usa la fecha más reciente entre el campo y la última transacción
+            // v3.5.0: Unificar alumnos con múltiples clases
+            // Agrupa por nombre y concatena clases
             $alumnosQuery = "
                 SELECT
-                    a.id,
+                    MIN(a.id) as id,
                     a.nombre,
-                    a.clase,
-                    a.estatus,
-                    a.fecha_inscripcion,
+                    GROUP_CONCAT(DISTINCT a.clase ORDER BY a.clase SEPARATOR ', ') as clase,
+                    CASE
+                        WHEN SUM(CASE WHEN a.estatus = 'Activo' THEN 1 ELSE 0 END) > 0 THEN 'Activo'
+                        ELSE 'Baja'
+                    END as estatus,
+                    MIN(a.fecha_inscripcion) as fecha_inscripcion,
                     NULLIF(
                         GREATEST(
-                            COALESCE(a.fecha_ultimo_pago, '1900-01-01'),
+                            MAX(COALESCE(a.fecha_ultimo_pago, '1900-01-01')),
                             COALESCE((
                                 SELECT MAX(t.fecha)
                                 FROM transacciones t
@@ -1241,10 +1302,11 @@ class TransaccionesController {
                         ),
                         '1900-01-01'
                     ) as fecha_ultimo_pago,
-                    a.precio_mensual
+                    SUM(COALESCE(a.precio_mensual, 0)) as precio_mensual
                 FROM alumnos a
                 WHERE a.empresa_id = ?
                     AND a.nombre NOT LIKE '[ELIMINADO]%'
+                GROUP BY a.nombre, a.empresa_id
                 ORDER BY a.nombre
             ";
             $alumnos = executeQuery($alumnosQuery, [$empresa_id]);
@@ -1453,6 +1515,8 @@ class TransaccionesController {
     /**
      * Obtener historial de pagos de un alumno por nombre
      * GET /alumnos/{nombre}/historial-pagos?meses=12
+     *
+     * v3.5.1: Búsqueda simplificada - patrón construido en PHP
      */
     public static function getHistorialPagosAlumno($nombreAlumno) {
         AuthController::requireAuth();
@@ -1463,11 +1527,16 @@ class TransaccionesController {
             // Decodificar nombre si viene URL-encoded
             $nombreAlumno = urldecode($nombreAlumno);
 
-            error_log("🔍 Buscando historial de pagos para: $nombreAlumno");
+            // Normalizar nombre: quitar espacios extras
+            $nombreAlumno = trim(preg_replace('/\s+/', ' ', $nombreAlumno));
 
-            // Construir query usando LIKE para buscar el nombre en el concepto
-            // El concepto tiene formato: "Mensualidad clase de [instrumento] [G/I] [Nombre Alumno]"
-            // Buscamos el nombre al final del concepto con LIKE
+            error_log("🔍 Buscando historial de pagos para: '$nombreAlumno'");
+
+            // v3.5.1: Construir patrón LIKE en PHP (más confiable que CONCAT en SQL)
+            $searchPattern = '%' . mb_strtolower($nombreAlumno) . '%';
+
+            error_log("📝 Patrón de búsqueda: '$searchPattern'");
+
             $query = "
                 SELECT
                     id,
@@ -1475,18 +1544,16 @@ class TransaccionesController {
                     (cantidad * precio_unitario) as total,
                     fecha,
                     tipo,
-                    empresa_id
+                    empresa_id,
+                    forma_pago,
+                    socio
                 FROM transacciones
                 WHERE tipo = 'I'
-                AND (
-                    concepto LIKE CONCAT('%', ?, '%')
-                    OR concepto LIKE CONCAT('% ', ?)
-                    OR concepto LIKE CONCAT('%[GI] ', ?)
-                )
+                AND LOWER(concepto) LIKE ?
                 AND empresa_id = 1
             ";
 
-            $params = [$nombreAlumno, $nombreAlumno, $nombreAlumno];
+            $params = [$searchPattern];
 
             // Si se especifica meses, filtrar
             if ($meses) {
@@ -1500,11 +1567,41 @@ class TransaccionesController {
 
             error_log("✅ Pagos encontrados: " . count($pagos));
 
+            // Log detallado de los primeros conceptos
+            if (count($pagos) > 0) {
+                error_log("📋 Primeros 5 conceptos encontrados:");
+                foreach (array_slice($pagos, 0, 5) as $p) {
+                    error_log("   -> " . $p['concepto']);
+                }
+            } else {
+                // Debug: buscar transacciones que contengan partes del nombre
+                error_log("⚠️ No se encontraron pagos. Verificando si existen transacciones...");
+                $partes = explode(' ', $nombreAlumno);
+                $primerNombre = $partes[0] ?? '';
+                $apellido = end($partes);
+
+                $debugQuery = "
+                    SELECT DISTINCT concepto
+                    FROM transacciones
+                    WHERE tipo = 'I' AND empresa_id = 1
+                    AND (LOWER(concepto) LIKE ? OR LOWER(concepto) LIKE ?)
+                    LIMIT 10
+                ";
+                $debugParams = ['%' . mb_strtolower($primerNombre) . '%', '%' . mb_strtolower($apellido) . '%'];
+                $debugResults = executeQuery($debugQuery, $debugParams);
+
+                error_log("🔎 Transacciones con '$primerNombre' o '$apellido': " . count($debugResults));
+                foreach ($debugResults as $r) {
+                    error_log("   -> " . $r['concepto']);
+                }
+            }
+
             echo json_encode([
                 'success' => true,
                 'data' => $pagos,
                 'alumno' => $nombreAlumno,
-                'total_pagos' => count($pagos)
+                'total_pagos' => count($pagos),
+                'debug' => ['search_pattern' => $searchPattern]
             ]);
 
         } catch (Exception $e) {

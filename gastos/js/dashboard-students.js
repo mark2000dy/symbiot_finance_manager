@@ -590,13 +590,20 @@ function renderStudentsTable() {
         return;
     }
     
-    tableBody.innerHTML = studentsData.map(student => `
+    tableBody.innerHTML = studentsData.map(student => {
+        // Indicador de múltiples clases
+        const numClases = parseInt(student.num_clases) || 1;
+        const claseBadge = numClases > 1
+            ? `<span class="badge bg-info ms-1" title="${numClases} clases">${numClases}</span>`
+            : '';
+
+        return `
         <tr>
             <td>
                 <strong>${student.nombre}</strong>
                 ${student.telefono ? `<br><small class="text-muted">${student.telefono}</small>` : ''}
             </td>
-            <td>${student.clase || 'Sin clase'}</td>
+            <td>${student.clase || 'Sin clase'}${claseBadge}</td>
             <td>${student.maestro || 'Sin asignar'}</td>
             <td>
                 <span class="badge ${student.estatus === 'Activo' ? 'bg-success' : 'bg-danger'}">
@@ -614,7 +621,7 @@ function renderStudentsTable() {
                 </button>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 /**
@@ -1526,9 +1533,9 @@ function viewStudentDetail(studentId) {
                             <div class="col-md-6">
                                 <h6 class="text-white"><i class="fas fa-music me-2"></i>Información Académica</h6>
                                 <table class="table table-dark table-sm">
-                                    <tr><td><strong>Instrumento:</strong></td><td>${student.clase || 'No especificado'}</td></tr>
-                                    <tr><td><strong>Maestro:</strong></td><td>${student.maestro || 'Sin asignar'}</td></tr>
-                                    <tr><td><strong>Horario:</strong></td><td>${student.horario || 'Sin definir'}</td></tr>
+                                    <tr><td><strong>Clase(s):</strong></td><td>${student.clase || 'No especificado'}${student.num_clases > 1 ? ` <span class="badge bg-info">${student.num_clases}</span>` : ''}</td></tr>
+                                    <tr><td><strong>Maestro(s):</strong></td><td>${student.maestro || 'Sin asignar'}</td></tr>
+                                    <tr><td><strong>Horario(s):</strong></td><td>${student.horario || 'Sin definir'}</td></tr>
                                     <tr><td><strong>Fecha de Inscripción:</strong></td><td>${student.fecha_inscripcion ? formatDate(student.fecha_inscripcion) : 'No registrada'}</td></tr>
                                 </table>
                             </div>

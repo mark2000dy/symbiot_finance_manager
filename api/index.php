@@ -289,6 +289,32 @@ try {
         exit;
     }
 
+    // Debug: buscar todas las transacciones que contengan un nombre
+    if ($requestUri === '/debug/transacciones-alumno' && $requestMethod === 'GET') {
+        AuthController::requireAuth();
+        $nombre = $_GET['nombre'] ?? '';
+        if (empty($nombre)) {
+            echo json_encode(['success' => false, 'error' => 'Falta parámetro nombre']);
+            exit;
+        }
+        $pattern = '%' . mb_strtolower($nombre) . '%';
+        $transacciones = executeQuery("
+            SELECT id, concepto, fecha, tipo, empresa_id, (cantidad * precio_unitario) as total
+            FROM transacciones
+            WHERE LOWER(concepto) LIKE ?
+            ORDER BY fecha DESC
+            LIMIT 50
+        ", [$pattern]);
+        echo json_encode([
+            'success' => true,
+            'nombre_buscado' => $nombre,
+            'patron' => $pattern,
+            'total_encontradas' => count($transacciones),
+            'transacciones' => $transacciones
+        ]);
+        exit;
+    }
+
     // ============================================================
     // RUTAS DE DASHBOARD
     // ============================================================
