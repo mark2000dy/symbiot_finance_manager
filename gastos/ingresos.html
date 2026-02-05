@@ -1100,10 +1100,43 @@
             currentPage = 1;
         }
 
+        // Actualizar tarjetas de estadísticas según datos filtrados
+        function updateStatsCardsFromFilter(data) {
+            if (!data || data.length === 0) {
+                document.getElementById('totalGastosChart').textContent = '$0';
+                document.getElementById('promedioGastosChart').textContent = '$0';
+                document.getElementById('mayorGastoChart').textContent = '$0';
+                document.getElementById('totalTransaccionesChart').textContent = '0';
+                return;
+            }
+
+            const totales = data.reduce((acc, t) => {
+                const cantidad = parseInt(t.cantidad) || 1;
+                const precioUnitario = parseFloat(t.precio_unitario) || 0;
+                const total = cantidad * precioUnitario;
+                return {
+                    sum: acc.sum + total,
+                    max: Math.max(acc.max, total),
+                    count: acc.count + 1
+                };
+            }, { sum: 0, max: 0, count: 0 });
+
+            const totalIngresos = totales.sum;
+            const promedio = totalIngresos / totales.count;
+            const mayorIngreso = totales.max;
+            const cantidadTransacciones = totales.count;
+
+            document.getElementById('totalGastosChart').textContent = '$' + totalIngresos.toFixed(2);
+            document.getElementById('promedioGastosChart').textContent = '$' + promedio.toFixed(2);
+            document.getElementById('mayorGastoChart').textContent = '$' + mayorIngreso.toFixed(2);
+            document.getElementById('totalTransaccionesChart').textContent = cantidadTransacciones;
+        }
+
         // Handler de filtros client-side (sin re-llamar la API)
         function applyClientSideFilters() {
             const scrollPos = window.scrollY;
             applyClientSideFiltersToData();
+            updateStatsCardsFromFilter(transactionsData);
             renderCurrentPage();
             updateFilterSummary();
             updatePaginationControls();
