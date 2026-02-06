@@ -1952,14 +1952,15 @@ class TransaccionesController {
             // Nota: Gastos por transferencia que NO coinciden con conceptosMercadoPago van a Inbursa por defecto
             // (incluye: Honorarios, Prestamo, y cualquier otro concepto)
 
-            // Query para obtener todas las transacciones con sus detalles (incluyendo empresa_id)
+            // Query para obtener todas las transacciones con sus detalles (incluyendo empresa_id y socio)
             $cuentasQuery = "
                 SELECT
                     tipo,
                     forma_pago,
                     LOWER(concepto) as concepto_lower,
                     total,
-                    empresa_id
+                    empresa_id,
+                    socio
                 FROM transacciones
                 $whereClause
             ";
@@ -1977,6 +1978,7 @@ class TransaccionesController {
                 $concepto = $tx['concepto_lower'];
                 $monto = floatval($tx['total']);
                 $empresaId = intval($tx['empresa_id']);
+                $socio = $tx['socio'] ?? '';
 
                 if ($tipo === 'I') {
                     // INGRESOS
@@ -1989,6 +1991,12 @@ class TransaccionesController {
                     }
                 } else {
                     // GASTOS
+
+                    // Gastos etiquetados como "Inversion a RS/ST - ..." son inversión personal
+                    // de los socios. No afectan los saldos de las cuentas bancarias.
+                    if (strpos($formaPago, 'Inversion a') === 0) {
+                        continue;
+                    }
 
                     // Regla especial: Gastos de Symbiot Technologies (empresa_id=2) van a Inbursa
                     // (fueron devueltos a Marco Delgado desde Inbursa)

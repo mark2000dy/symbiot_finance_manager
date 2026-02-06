@@ -903,14 +903,15 @@
                 if (empresa) params.empresa_id = empresa;
                 if (tipo) params.tipo = tipo;
 
-                // Construir rango de fechas (IGUAL que en ingresos.html)
+                // Construir rango de fechas
                 if (ano) {
-                    const fechaInicio = mes ? `${ano}-${mes}-01` : `${ano}-01-01`;
+                    const mesPadded = mes ? String(mes).padStart(2, '0') : null;
+                    const fechaInicio = mesPadded ? `${ano}-${mesPadded}-01` : `${ano}-01-01`;
                     let fechaFin;
                     if (mes) {
                         // Calcular último día del mes específico
                         const ultimoDay = new Date(ano, mes, 0).getDate();
-                        fechaFin = `${ano}-${mes}-${ultimoDay}`;
+                        fechaFin = `${ano}-${mesPadded}-${ultimoDay}`;
                     } else {
                         fechaFin = `${ano}-12-31`;
                     }
@@ -933,6 +934,7 @@
 
                 console.log(`✅ ${totalTransactions} Gastos cargados`);
 
+                updateStatsCardsFromFilter(transactionsData);
                 renderCurrentPage();
                 updateFilterSummary();
                 updatePaginationControls();
@@ -1110,9 +1112,9 @@
         // Actualizar tarjetas de estadísticas según datos filtrados
         function updateStatsCardsFromFilter(data) {
             if (!data || data.length === 0) {
-                document.getElementById('totalGastosChart').textContent = '$0';
-                document.getElementById('promedioGastosChart').textContent = '$0';
-                document.getElementById('mayorGastoChart').textContent = '$0';
+                document.getElementById('totalGastosChart').textContent = '$0.00';
+                document.getElementById('promedioGastosChart').textContent = '$0.00';
+                document.getElementById('mayorGastoChart').textContent = '$0.00';
                 document.getElementById('totalTransaccionesChart').textContent = '0';
                 return;
             }
@@ -1133,10 +1135,10 @@
             const mayorGasto = totales.max;
             const cantidadTransacciones = totales.count;
 
-            document.getElementById('totalGastosChart').textContent = '$' + totalGastos.toFixed(2);
-            document.getElementById('promedioGastosChart').textContent = '$' + promedio.toFixed(2);
-            document.getElementById('mayorGastoChart').textContent = '$' + mayorGasto.toFixed(2);
-            document.getElementById('totalTransaccionesChart').textContent = cantidadTransacciones;
+            document.getElementById('totalGastosChart').textContent = formatCurrency(totalGastos);
+            document.getElementById('promedioGastosChart').textContent = formatCurrency(promedio);
+            document.getElementById('mayorGastoChart').textContent = formatCurrency(mayorGasto);
+            document.getElementById('totalTransaccionesChart').textContent = cantidadTransacciones.toLocaleString();
         }
 
         // Handler de filtros client-side (sin re-llamar la API)
@@ -1144,6 +1146,7 @@
             const scrollPos = window.scrollY;
             applyClientSideFiltersToData();
             updateStatsCardsFromFilter(transactionsData);
+            renderGastosChart(transactionsData);
             renderCurrentPage();
             updateFilterSummary();
             updatePaginationControls();
@@ -1501,14 +1504,19 @@
                 const tipo = document.getElementById('filterTipo').value || 'G'; // Forzar gastos
 
                 if (empresa) params.empresa_id = empresa;
-                if (ano) params.año = ano;
-                if (mes) params.mes = mes;
                 params.tipo = tipo; // Asegurar solo gastos
 
                 // Construir fechas como en loadTransactions()
                 if (ano) {
-                    const fechaInicio = mes ? `${ano}-${mes}-01` : `${ano}-01-01`;
-                    const fechaFin = mes ? `${ano}-${mes}-31` : `${ano}-12-31`;
+                    const mesPadded = mes ? String(mes).padStart(2, '0') : null;
+                    const fechaInicio = mesPadded ? `${ano}-${mesPadded}-01` : `${ano}-01-01`;
+                    let fechaFin;
+                    if (mes) {
+                        const ultimoDay = new Date(ano, mes, 0).getDate();
+                        fechaFin = `${ano}-${mesPadded}-${ultimoDay}`;
+                    } else {
+                        fechaFin = `${ano}-12-31`;
+                    }
                     params.fechaInicio = fechaInicio;
                     params.fechaFin = fechaFin;
                 }
@@ -1592,18 +1600,7 @@
                 }
             });
             
-            // Calcular estadísticas
-            const total = processedData.values.reduce((sum, val) => sum + val, 0);
-            const promedio = total / processedData.values.length || 0;
-            const mayor = Math.max(...processedData.values) || 0;
-            const transacciones = data.length;
-            
-            // Actualizar estadísticas
-            document.getElementById('totalGastosChart').textContent = formatCurrency(total);
-            document.getElementById('promedioGastosChart').textContent = formatCurrency(promedio);
-            document.getElementById('mayorGastoChart').textContent = formatCurrency(mayor);
-            document.getElementById('totalTransaccionesChart').textContent = transacciones;
-            
+            // Stats cards se actualizan en updateStatsCardsFromFilter(), no aquí
             showChartLoading(false);
         }
 

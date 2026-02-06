@@ -934,7 +934,7 @@ function updateBalanceGeneralResumen(resumen) {
     
     const numeroCuentasEl = document.getElementById('numeroCuentas');
     if (numeroCuentasEl) {
-        numeroCuentasEl.textContent = '2 cuentas'; // Hardcoded ya que tenemos Inbursa y Mercado Pago
+        numeroCuentasEl.textContent = '3 cuentas'; // Mercado Pago, Inbursa y Efectivo
     }
 }
 
