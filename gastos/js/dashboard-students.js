@@ -1466,7 +1466,12 @@ async function editStudent(id) {
         setFieldValue('editStudentInstrument', student.clase);
         const maestroId = getMaestroIdByName(student.maestro || student.maestro_id);
         setFieldValue('editStudentTeacher', maestroId);
-        setFieldValue('editStudentSchedule', student.horario);
+        // Limpiar prefijo de clase del horario (la query unificada agrega "Clase: " como prefijo)
+        let horarioLimpio = student.horario || '';
+        if (student.clase && horarioLimpio.startsWith(student.clase + ': ')) {
+            horarioLimpio = horarioLimpio.substring(student.clase.length + 2);
+        }
+        setFieldValue('editStudentSchedule', horarioLimpio);
         setFieldValue('editStudentStatus', student.estatus || 'Activo');
         setFieldValue('editStudentPromotion', student.promocion);
         setFieldValue('editStudentMonthlyFee', student.precio_mensual);
