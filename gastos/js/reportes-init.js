@@ -116,7 +116,13 @@ async function initializeReportes() {
         // FASE 8: Habilitar botón de exportar
         console.log('📋 FASE 8: Habilitando exportación...');
         enableExportButton();
-        
+
+        // FASE 9: Sincronizar filtros con el DOM y mostrar widget Altas/Bajas
+        console.log('📋 FASE 9: Verificando widget Altas/Bajas...');
+        currentFilters.empresa = document.getElementById('filterEmpresa')?.value || '';
+        currentFilters.ano = document.getElementById('filterAno')?.value || '';
+        toggleAltasBajasWidget(currentFilters);
+
         reportesInitialized = true;
         
         console.log('====================================================');

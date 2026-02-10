@@ -23,6 +23,7 @@ const USER_PERMISSIONS = {
         canViewNavGastos: true,
         canViewNavIngresos: true,
         canViewNavReportes: true,
+        canViewNavMaestros: false,
         empresasPermitidas: ['1', '2', ''] // 1=RockstarSkull, 2=Symbiot, ''=Todas
     },
     'antonio.razo@symbiot.com.mx': {
@@ -35,13 +36,14 @@ const USER_PERMISSIONS = {
         canViewNavGastos: true,
         canViewNavIngresos: true,
         canViewNavReportes: true,
+        canViewNavMaestros: false,
         empresasPermitidas: ['1', '2', '']
     },
 
-    // Usuario con acceso limitado a RockstarSkull - acceso a todas las páginas
+    // Usuario con acceso limitado a RockstarSkull - acceso a todas las paginas + maestros
     'hvazquez@rockstarskull.com': {
         role: 'user',
-        allowedPages: ['dashboard.html', 'gastos.html', 'ingresos.html', 'reportes.html'],
+        allowedPages: ['dashboard.html', 'gastos.html', 'ingresos.html', 'reportes.html', 'maestros.html'],
         canFilterAllEmpresas: false,
         canViewStatsCards: true,
         canViewCompanySelector: true,
@@ -49,10 +51,104 @@ const USER_PERMISSIONS = {
         canViewNavGastos: true,
         canViewNavIngresos: true,
         canViewNavReportes: true,
+        canViewNavMaestros: true,
         empresasPermitidas: ['1'] // Solo RockstarSkull
     },
 
-    // Escuela - solo dashboard con widgets específicos
+    // Maestros RockstarSkull - solo acceso a su portal
+    'jolvera@rockstarskull.com': {
+        role: 'maestro',
+        allowedPages: ['maestros.html'],
+        canFilterAllEmpresas: false,
+        canViewStatsCards: false,
+        canViewCompanySelector: false,
+        canViewMaestrosWidget: false,
+        canViewNavGastos: false,
+        canViewNavIngresos: false,
+        canViewNavReportes: false,
+        canViewNavMaestros: false,
+        empresasPermitidas: ['1']
+    },
+    'dandrade@rockstarskull.com': {
+        role: 'maestro',
+        allowedPages: ['maestros.html'],
+        canFilterAllEmpresas: false,
+        canViewStatsCards: false,
+        canViewCompanySelector: false,
+        canViewMaestrosWidget: false,
+        canViewNavGastos: false,
+        canViewNavIngresos: false,
+        canViewNavReportes: false,
+        canViewNavMaestros: false,
+        empresasPermitidas: ['1']
+    },
+    'ihernandez@rockstarskull.com': {
+        role: 'maestro',
+        allowedPages: ['maestros.html'],
+        canFilterAllEmpresas: false,
+        canViewStatsCards: false,
+        canViewCompanySelector: false,
+        canViewMaestrosWidget: false,
+        canViewNavGastos: false,
+        canViewNavIngresos: false,
+        canViewNavReportes: false,
+        canViewNavMaestros: false,
+        empresasPermitidas: ['1']
+    },
+    'nperez@rockstarskull.com': {
+        role: 'maestro',
+        allowedPages: ['maestros.html'],
+        canFilterAllEmpresas: false,
+        canViewStatsCards: false,
+        canViewCompanySelector: false,
+        canViewMaestrosWidget: false,
+        canViewNavGastos: false,
+        canViewNavIngresos: false,
+        canViewNavReportes: false,
+        canViewNavMaestros: false,
+        empresasPermitidas: ['1']
+    },
+    'lblanquet@rockstarskull.com': {
+        role: 'maestro',
+        allowedPages: ['maestros.html'],
+        canFilterAllEmpresas: false,
+        canViewStatsCards: false,
+        canViewCompanySelector: false,
+        canViewMaestrosWidget: false,
+        canViewNavGastos: false,
+        canViewNavIngresos: false,
+        canViewNavReportes: false,
+        canViewNavMaestros: false,
+        empresasPermitidas: ['1']
+    },
+    'mreyes@rockstarskull.com': {
+        role: 'maestro',
+        allowedPages: ['maestros.html'],
+        canFilterAllEmpresas: false,
+        canViewStatsCards: false,
+        canViewCompanySelector: false,
+        canViewMaestrosWidget: false,
+        canViewNavGastos: false,
+        canViewNavIngresos: false,
+        canViewNavReportes: false,
+        canViewNavMaestros: false,
+        empresasPermitidas: ['1']
+    },
+    'hlopez@rockstarskull.com': {
+        role: 'maestro',
+        allowedPages: ['maestros.html'],
+        canFilterAllEmpresas: false,
+        canViewStatsCards: false,
+        canViewCompanySelector: false,
+        canViewMaestrosWidget: false,
+        canViewNavGastos: false,
+        canViewNavIngresos: false,
+        canViewNavReportes: false,
+        canViewNavMaestros: false,
+        empresasPermitidas: ['1']
+    },
+
+    // Escuela - solo dashboard con widgets especificos
     'escuela@rockstarskull.com': {
         role: 'viewer',
         allowedPages: ['dashboard.html'],
@@ -78,6 +174,7 @@ const DEFAULT_PERMISSIONS = {
     canViewNavGastos: false,
     canViewNavIngresos: false,
     canViewNavReportes: false,
+    canViewNavMaestros: false,
     empresasPermitidas: ['1']
 };
 
@@ -137,7 +234,7 @@ function checkPageAccess() {
     const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
 
     if (!permissions.allowedPages.includes(currentPage)) {
-        window.location.href = 'dashboard.html';
+        window.location.href = permissions.allowedPages[0] || 'dashboard.html';
         return false;
     }
     return true;
@@ -244,19 +341,18 @@ function applyUserPermissions() {
         if (maestrosWidget) maestrosWidget.style.display = 'none';
     }
 
-    // 4. Ocultar links de navegación según permisos
-    if (!permissions.canViewNavGastos) {
-        const navGastos = document.getElementById('navLinkGastos');
-        if (navGastos) navGastos.style.display = 'none';
-    }
-    if (!permissions.canViewNavIngresos) {
-        const navIngresos = document.getElementById('navLinkIngresos');
-        if (navIngresos) navIngresos.style.display = 'none';
-    }
-    if (!permissions.canViewNavReportes) {
-        const navReportes = document.getElementById('navLinkReportes');
-        if (navReportes) navReportes.style.display = 'none';
-    }
+    // 4. Mostrar/ocultar links de navegación según permisos
+    const navLinks = {
+        'navLinkDashboard': permissions.allowedPages.includes('dashboard.html'),
+        'navLinkGastos': permissions.canViewNavGastos,
+        'navLinkIngresos': permissions.canViewNavIngresos,
+        'navLinkReportes': permissions.canViewNavReportes,
+        'navLinkMaestros': permissions.canViewNavMaestros
+    };
+    Object.entries(navLinks).forEach(function([id, visible]) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = visible ? '' : 'none';
+    });
 
     // 5. Filtrar opciones del dropdown de empresa
     filterEmpresaOptions(permissions);
