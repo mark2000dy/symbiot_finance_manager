@@ -195,10 +195,23 @@
                         </div>
                     `;
 
-                    // Redirigir después de 1 segundo
+                    // Redirigir despues de 1 segundo
                     setTimeout(() => {
-                        const dashboardUrl = (window.APP_BASE_PATH || '') + '/dashboard.html';
-                        const finalUrl = data.redirectUrl || dashboardUrl;
+                        const basePath = window.APP_BASE_PATH || '';
+                        // Maestros @rockstarskull.com van a maestros.html
+                        const maestroEmails = [
+                            'jolvera@rockstarskull.com',
+                            'dandrade@rockstarskull.com',
+                            'ihernandez@rockstarskull.com',
+                            'nperez@rockstarskull.com',
+                            'lblanquet@rockstarskull.com',
+                            'mreyes@rockstarskull.com',
+                            'hlopez@rockstarskull.com'
+                        ];
+                        const userEmail = (data.user.email || '').toLowerCase();
+                        const isMaestro = maestroEmails.includes(userEmail);
+                        const defaultPage = isMaestro ? '/maestros.html' : '/dashboard.html';
+                        const finalUrl = data.redirectUrl || (basePath + defaultPage);
                         window.location.href = finalUrl;
                     }, 1000);
 
