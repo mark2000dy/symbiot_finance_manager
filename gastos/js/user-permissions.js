@@ -558,3 +558,7 @@ window.canAccessEmpresa = canAccessEmpresa;
 window.getCurrentUserEmail = getCurrentUserEmail;
 window.setupEmpresaFilterInterceptor = setupEmpresaFilterInterceptor;
 window.checkPageAccess = checkPageAccess;
+
+// Auto-ejecutar checkPageAccess al cargar el script
+// Redirige inmediatamente si el usuario no tiene permiso para esta página
+checkPageAccess();
