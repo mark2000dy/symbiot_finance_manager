@@ -1558,6 +1558,11 @@
                 processedData = processYearlyData(data);
             }
             
+            // Colores dinámicos según tema activo
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const textColor = isLight ? '#1a1a1a' : 'white';
+            const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
+
             // Configurar gráfica
             currentChart = new Chart(ctx, {
                 type: 'bar',
@@ -1578,23 +1583,23 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            labels: { color: 'white' }
+                            labels: { color: textColor }
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                color: 'white',
+                                color: textColor,
                                 callback: function(value) {
                                     return formatCurrency(value);
                                 }
                             },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            grid: { color: gridColor }
                         },
                         x: {
-                            ticks: { color: 'white' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
                         }
                     }
                 }

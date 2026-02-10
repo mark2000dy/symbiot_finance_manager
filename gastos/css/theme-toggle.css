@@ -311,17 +311,18 @@
 /* ========================================= */
 .theme-toggle-btn {
     background: transparent;
-    border: 2px solid rgba(255, 255, 255, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
     color: #ffc107;
-    margin-right: 12px;
+    margin-right: 8px;
+    padding: 0;
 }
 
 .theme-toggle-btn:hover {
@@ -332,8 +333,9 @@
 }
 
 .theme-toggle-btn i {
-    font-size: 1.2rem;
+    font-size: 0.8rem;
     transition: transform 0.3s ease;
+    line-height: 1;
 }
 
 .theme-toggle-btn:hover i {
