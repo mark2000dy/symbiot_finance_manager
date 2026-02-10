@@ -324,6 +324,11 @@ async function loadStudentsList(page = 1) {
         if (result.success && result.data) {
             let allStudents = result.data;
             
+            // FILTRAR POR TIPO DE CLASE EN FRONTEND
+            if (currentStudentFilters.tipoClaseFilter) {
+                allStudents = allStudents.filter(student => student.tipo_clase === currentStudentFilters.tipoClaseFilter);
+            }
+
             // FILTRAR POR ESTADO DE PAGO EN FRONTEND
             if (currentStudentFilters.paymentFilter) {
                 console.log(`🔍 Aplicando filtro de pagos: ${currentStudentFilters.paymentFilter}`);
@@ -333,7 +338,7 @@ async function loadStudentsList(page = 1) {
                 });
                 console.log(`✅ Filtrados: ${allStudents.length} alumnos con estado "${currentStudentFilters.paymentFilter}"`);
             }
-            
+
             // PAGINACIÓN EN FRONTEND
             totalStudentsRecords = allStudents.length;
             totalStudentsPages = Math.ceil(totalStudentsRecords / studentsPerPage);
@@ -552,13 +557,15 @@ function filterStudents() {
     const teacherFilter = document.getElementById('teacherFilter')?.value || '';
     const statusFilter = document.getElementById('statusFilter')?.value || '';
     const instrumentFilter = document.getElementById('instrumentFilter')?.value || '';
+    const tipoClaseFilter = document.getElementById('tipoClaseFilter')?.value || '';
     const paymentFilter = document.getElementById('paymentFilter')?.value || '';
-    
+
     // Actualizar filtros globales
     currentStudentFilters = {
         teacherFilter,
         statusFilter,
         instrumentFilter,
+        tipoClaseFilter,
         paymentFilter
     };
     
@@ -783,7 +790,8 @@ function updateStudentsFilterSummary() {
                     case 'teacherFilter': return `Maestro: ${getTeacherName(value)}`;
                     case 'statusFilter': return `Estatus: ${value}`;
                     case 'instrumentFilter': return `Instrumento: ${value}`;
-                    case 'paymentFilter': 
+                    case 'tipoClaseFilter': return `Tipo de Clase: ${value}`;
+                    case 'paymentFilter':
                         const paymentLabels = {
                             'current': 'Al Corriente',
                             'upcoming': 'Próximos a Vencer',
@@ -1801,6 +1809,7 @@ function filterStudentsByStatus(status) {
         teacherFilter: '',
         statusFilter: status === 'active' ? 'Activo' : status === 'inactive' ? 'Baja' : '',
         instrumentFilter: '',
+        tipoClaseFilter: '',
         paymentFilter: ''
     };
     
@@ -1809,7 +1818,11 @@ function filterStudentsByStatus(status) {
     if (statusSelect) {
         statusSelect.value = currentStudentFilters.statusFilter;
     }
-    
+    const tipoClaseSelect = document.getElementById('tipoClaseFilter');
+    if (tipoClaseSelect) {
+        tipoClaseSelect.value = '';
+    }
+
     // Cargar lista de alumnos filtrada
     loadStudentsList(1);
     

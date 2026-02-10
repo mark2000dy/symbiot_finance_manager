@@ -31,6 +31,7 @@ if (typeof window.currentStudentFilters === 'undefined') {
         teacherFilter: '',
         statusFilter: '',
         instrumentFilter: '',
+        tipoClaseFilter: '',
         paymentFilter: ''
     };
 }
@@ -353,13 +354,41 @@ async function loadRockstarSkullDataReal() {
             }
             
             console.log('✅ Datos REALES de RockstarSkull actualizados');
-            
+
+            // Cargar altas/bajas del mes en curso
+            loadAltasBajasCurrentMonth();
+
         } else {
             console.error('❌ Error en API alumnos:', result.message);
         }
-        
+
     } catch (error) {
         console.error('❌ Error cargando datos REALES de RockstarSkull:', error);
+    }
+}
+
+/**
+ * Cargar altas y bajas del mes en curso desde el endpoint de reportes
+ */
+async function loadAltasBajasCurrentMonth() {
+    try {
+        const now = new Date();
+        const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        const result = await window.apiGet('reportes/altas-bajas', {
+            empresa: '1',
+            ano: String(now.getFullYear())
+        });
+
+        if (result.success && result.data && result.data.meses) {
+            const mesActual = result.data.meses.find(m => m.mes === currentMonthKey);
+            const altasEl = document.getElementById('altasMesActual');
+            const bajasEl = document.getElementById('bajasMesActual');
+            if (altasEl) altasEl.textContent = mesActual ? mesActual.altas : 0;
+            if (bajasEl) bajasEl.textContent = mesActual ? mesActual.bajas : 0;
+        }
+    } catch (error) {
+        console.error('Error cargando altas/bajas del mes:', error);
     }
 }
 

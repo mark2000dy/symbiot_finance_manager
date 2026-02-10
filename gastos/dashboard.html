@@ -288,6 +288,29 @@
                                     <i class="fas fa-music text-warning" title="Piano"></i>
                                     <i class="fas fa-microphone text-info" title="Canto"></i>
                                 </div>
+
+                                <!-- Altas y Bajas del Mes en Curso -->
+                                <div class="mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                                    <small style="color: #E4E6EA !important; font-weight: 600;">
+                                        <i class="fas fa-exchange-alt me-1"></i>Movimientos del Mes:
+                                    </small>
+                                    <div id="altasBajasCurrentMonth" class="row text-center mt-2">
+                                        <div class="col-6">
+                                            <div style="background: rgba(40,167,69,0.15); border-radius: 8px; padding: 8px;">
+                                                <i class="fas fa-user-plus text-success"></i>
+                                                <div class="fw-bold text-success" id="altasMesActual" style="font-size: 1.3rem;">-</div>
+                                                <small style="color: #adb5bd; font-size: 0.75rem;">Altas</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div style="background: rgba(220,53,69,0.15); border-radius: 8px; padding: 8px;">
+                                                <i class="fas fa-user-minus text-danger"></i>
+                                                <div class="fw-bold text-danger" id="bajasMesActual" style="font-size: 1.3rem;">-</div>
+                                                <small style="color: #adb5bd; font-size: 0.75rem;">Bajas</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -355,7 +378,7 @@
                                 <!-- Student Filters -->
                                 <div class="students-filters">
                                     <div class="row">
-                                        <div class="col-md-3 mb-2">
+                                        <div class="col-md-3 col-lg mb-2">
                                             <label class="form-label">
                                                 <i class="fas fa-filter me-1"></i>Maestro
                                             </label>
@@ -363,7 +386,7 @@
                                                 <option value="">👨‍🏫 Todos los Maestros</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-3 mb-2">
+                                        <div class="col-md-3 col-lg mb-2">
                                             <label class="form-label">
                                                 <i class="fas fa-user-check me-1"></i>Estatus
                                             </label>
@@ -373,7 +396,7 @@
                                                 <option value="Baja">❌ Bajas</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-3 mb-2">
+                                        <div class="col-md-3 col-lg mb-2">
                                             <label class="form-label">
                                                 <i class="fas fa-music me-1"></i>Instrumento
                                             </label>
@@ -381,7 +404,17 @@
                                                 <option value="">🎵 Todos</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-3 mb-2">
+                                        <div class="col-md-3 col-lg mb-2">
+                                            <label class="form-label">
+                                                <i class="fas fa-chalkboard me-1"></i>Tipo de Clase
+                                            </label>
+                                            <select class="form-select form-select-sm" id="tipoClaseFilter" onchange="filterStudents()">
+                                                <option value="">📚 Todos</option>
+                                                <option value="Individual">👤 Individual</option>
+                                                <option value="Grupal">👥 Grupal</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 col-lg mb-2">
                                             <label class="form-label">
                                                 <i class="fas fa-money-bill me-1"></i>Pagos
                                             </label>

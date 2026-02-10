@@ -34,6 +34,7 @@ let currentStudentFilters = {
     teacherFilter: '',
     statusFilter: '',
     instrumentFilter: '',
+    tipoClaseFilter: '',
     paymentFilter: ''
 };
 
