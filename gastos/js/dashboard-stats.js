@@ -355,8 +355,9 @@ async function loadRockstarSkullDataReal() {
             
             console.log('✅ Datos REALES de RockstarSkull actualizados');
 
-            // Cargar altas/bajas del mes en curso
+            // Cargar altas/bajas del mes en curso e inversión MKT
             loadAltasBajasCurrentMonth();
+            loadInversionMKT();
 
         } else {
             console.error('❌ Error en API alumnos:', result.message);
@@ -384,11 +385,49 @@ async function loadAltasBajasCurrentMonth() {
             const mesActual = result.data.meses.find(m => m.mes === currentMonthKey);
             const altasEl = document.getElementById('altasMesActual');
             const bajasEl = document.getElementById('bajasMesActual');
+            const nuevosEl = document.getElementById('nuevosAlumnosMes');
             if (altasEl) altasEl.textContent = mesActual ? mesActual.altas : 0;
             if (bajasEl) bajasEl.textContent = mesActual ? mesActual.bajas : 0;
+            if (nuevosEl) nuevosEl.textContent = mesActual ? mesActual.altas : 0;
         }
     } catch (error) {
         console.error('Error cargando altas/bajas del mes:', error);
+    }
+}
+
+/**
+ * Cargar inversión MKT del mes en curso
+ * Filtra gastos cuyo concepto contenga "MKT Emiliano Rosas" o "Meta Ads"
+ */
+async function loadInversionMKT() {
+    try {
+        const now = new Date();
+        const firstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const lastDayStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+
+        const result = await window.apiGet('transacciones', {
+            empresa_id: 1,
+            tipo: 'G',
+            fechaInicio: firstDay,
+            fechaFin: lastDayStr,
+            limit: 1000
+        });
+
+        if (result.success && result.data) {
+            const mktKeywords = ['mkt emiliano rosas', 'meta ads'];
+            const totalMKT = result.data
+                .filter(t => {
+                    const concepto = (t.concepto || '').toLowerCase();
+                    return mktKeywords.some(kw => concepto.includes(kw));
+                })
+                .reduce((sum, t) => sum + parseFloat(t.total || 0), 0);
+
+            const el = document.getElementById('inversionMKT');
+            if (el) el.textContent = formatCurrency(totalMKT);
+        }
+    } catch (error) {
+        console.error('Error cargando inversión MKT:', error);
     }
 }
 
@@ -633,7 +672,7 @@ async function handleCompanyChange() {
             }
             
             // RESETEAR métricas específicas a 0
-            ['groupClasses', 'individualClasses', 'currentStudents', 'pendingStudents', 'companyStudents'].forEach(id => {
+            ['groupClasses', 'individualClasses', 'currentStudents', 'pendingStudents', 'companyStudents', 'inversionMKT', 'nuevosAlumnosMes'].forEach(id => {
                 const element = document.getElementById(id);
                 if (element) element.textContent = '0';
             });

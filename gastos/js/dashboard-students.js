@@ -1545,6 +1545,7 @@ function viewStudentDetail(studentId) {
                                     <tr><td><strong>Maestro(s):</strong></td><td>${student.maestro || 'Sin asignar'}</td></tr>
                                     <tr><td><strong>Horario(s):</strong></td><td>${student.horario || 'Sin definir'}</td></tr>
                                     <tr><td><strong>Fecha de Inscripción:</strong></td><td>${student.fecha_inscripcion ? formatDate(student.fecha_inscripcion) : 'No registrada'}</td></tr>
+                                    <tr><td><strong>Tipo de Clase:</strong></td><td>${student.tipo_clase || 'No especificado'}</td></tr>
                                 </table>
                             </div>
                         </div>
