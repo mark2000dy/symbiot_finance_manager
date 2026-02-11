@@ -15,7 +15,7 @@ const USER_PERMISSIONS = {
     // Administradores con acceso total
     'marco.delgado@symbiot.com.mx': {
         role: 'admin',
-        allowedPages: ['dashboard.html', 'gastos.html', 'ingresos.html', 'reportes.html'],
+        allowedPages: ['dashboard.html', 'gastos.html', 'ingresos.html', 'reportes.html', 'pagos.html'],
         canFilterAllEmpresas: true,
         canViewStatsCards: true,
         canViewCompanySelector: true,
@@ -24,11 +24,12 @@ const USER_PERMISSIONS = {
         canViewNavIngresos: true,
         canViewNavReportes: true,
         canViewNavMaestros: false,
+        canViewNavPagos: true,
         empresasPermitidas: ['1', '2', ''] // 1=RockstarSkull, 2=Symbiot, ''=Todas
     },
     'antonio.razo@symbiot.com.mx': {
         role: 'admin',
-        allowedPages: ['dashboard.html', 'gastos.html', 'ingresos.html', 'reportes.html'],
+        allowedPages: ['dashboard.html', 'gastos.html', 'ingresos.html', 'reportes.html', 'pagos.html'],
         canFilterAllEmpresas: true,
         canViewStatsCards: true,
         canViewCompanySelector: true,
@@ -37,13 +38,14 @@ const USER_PERMISSIONS = {
         canViewNavIngresos: true,
         canViewNavReportes: true,
         canViewNavMaestros: false,
+        canViewNavPagos: true,
         empresasPermitidas: ['1', '2', '']
     },
 
     // Usuario con acceso limitado a RockstarSkull - acceso a todas las paginas + maestros
     'hvazquez@rockstarskull.com': {
         role: 'user',
-        allowedPages: ['dashboard.html', 'gastos.html', 'ingresos.html', 'reportes.html', 'maestros.html'],
+        allowedPages: ['dashboard.html', 'gastos.html', 'ingresos.html', 'reportes.html', 'maestros.html', 'pagos.html'],
         canFilterAllEmpresas: false,
         canViewStatsCards: true,
         canViewCompanySelector: true,
@@ -52,6 +54,7 @@ const USER_PERMISSIONS = {
         canViewNavIngresos: true,
         canViewNavReportes: true,
         canViewNavMaestros: true,
+        canViewNavPagos: true,
         empresasPermitidas: ['1'] // Solo RockstarSkull
     },
 
@@ -347,7 +350,8 @@ function applyUserPermissions() {
         'navLinkGastos': permissions.canViewNavGastos,
         'navLinkIngresos': permissions.canViewNavIngresos,
         'navLinkReportes': permissions.canViewNavReportes,
-        'navLinkMaestros': permissions.canViewNavMaestros
+        'navLinkMaestros': permissions.canViewNavMaestros,
+        'navLinkPagos': permissions.canViewNavPagos
     };
     Object.entries(navLinks).forEach(function([id, visible]) {
         const el = document.getElementById(id);
