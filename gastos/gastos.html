@@ -334,7 +334,7 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
+                    <li class="nav-item" id="navLinkDashboard">
                         <a class="nav-link" href="dashboard.html">
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                         </a>
@@ -1378,7 +1378,7 @@
                 const result = await window.apiDelete(`transacciones/${transactionId}`);
                 
                 if (result.success) {
-                    showAlert('success', 'asto eliminado exitosamente');
+                    showAlert('success', 'Gasto eliminado exitosamente');
                     
                     // Cerrar modal si está abierto
                     const modalInstance = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));

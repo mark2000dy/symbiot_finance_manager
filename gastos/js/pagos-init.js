@@ -424,7 +424,7 @@ function renderCorteTable(students) {
 
     eligible.forEach(function(s) {
         var maestroName = s.maestro || 'Sin maestro';
-        var maestroId = s.maestro_id || 0;
+        var maestroId = parseInt(s.maestro_id) || 0;
 
         if (!maestroMap[maestroName]) {
             maestroMap[maestroName] = {
@@ -507,6 +507,10 @@ function renderCorteTable(students) {
 // ============================================================
 // LOGOUT
 // ============================================================
+
+function showUserProfile() {
+    alert('Mi Perfil - En construccion. Disponible proximamente.');
+}
 
 async function logout() {
     try {

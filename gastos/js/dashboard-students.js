@@ -488,62 +488,131 @@ async function saveNewStudent() {
  */
 async function saveStudentChanges() {
     console.log('💾 Guardando cambios del alumno...');
-    
+
     try {
         const form = document.getElementById('editStudentForm');
-        
+
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
         }
-        
-        // Obtener datos correctamente
-        const studentData = {
-            id: document.getElementById('editStudentId').value,
-            nombre: document.getElementById('editStudentName').value.trim(),
-            edad: document.getElementById('editStudentAge').value ? parseInt(document.getElementById('editStudentAge').value) : null,
-            telefono: document.getElementById('editStudentPhone').value || null,
-            email: document.getElementById('editStudentEmail').value || null,
-            fecha_inscripcion: document.getElementById('editStudentEnrollmentDate').value || null,
-            clase: document.getElementById('editStudentInstrument').value || null,
-            tipo_clase: 'Individual',
-            maestro_id: document.getElementById('editStudentTeacher').value || null,
-            horario: document.getElementById('editStudentSchedule').value || null,
-            estatus: document.getElementById('editStudentStatus').value || 'Activo',
-            promocion: document.getElementById('editStudentPromotion').value || null,
-            precio_mensual: document.getElementById('editStudentMonthlyFee').value ?
-                parseFloat(document.getElementById('editStudentMonthlyFee').value) : null,
-            forma_pago: document.getElementById('editStudentPaymentMethod').value || null,
-            domiciliado: document.getElementById('editStudentDomiciled').value === 'Si',
-            titular_domicilado: document.getElementById('editStudentDomiciliedName').value || null
-        };
-        
-        console.log('📤 Datos a actualizar:', studentData);
 
-        // Actualizar alumno usando API Client
-        const result = await window.apiPut('alumnos/' + studentData.id, studentData);
+        // Detectar modo doble: si existe el campo hidden editStudentDoubleMode
+        const doubleModeField = document.getElementById('editStudentDoubleMode');
+        const numClases = doubleModeField ? parseInt(doubleModeField.value) : 0;
 
-        if (result.success) {
-            showAlert('success', `Información de ${studentData.nombre} actualizada exitosamente`);
+        if (numClases > 1) {
+            // ========== GUARDADO MULTIPLE (alumno doble) ==========
+            await saveDoubleStudentChanges(numClases);
         } else {
-            throw new Error(result.message || 'Error actualizando alumno');
+            // ========== GUARDADO SIMPLE (alumno con una clase) ==========
+            await saveSingleStudentChanges();
         }
 
-        // CORRECCIÓN: Cerrar modal correctamente
+        // Cerrar modal
         const editModal = bootstrap.Modal.getInstance(document.getElementById('editStudentModal'));
         if (editModal) {
             editModal.hide();
         }
-        
-        // CORRECCIÓN: Recargar lista
+
+        // Recargar lista
         await loadStudentsList(currentStudentsPage);
-        
+
         console.log('✅ Alumno actualizado correctamente');
-        
+
     } catch (error) {
         console.error('❌ Error guardando cambios:', error);
         showAlert('danger', 'Error guardando los cambios: ' + error.message);
     }
+}
+
+/**
+ * Guardar alumno simple (una clase)
+ */
+async function saveSingleStudentChanges() {
+    const studentData = {
+        id: document.getElementById('editStudentId').value,
+        nombre: document.getElementById('editStudentName').value.trim(),
+        edad: document.getElementById('editStudentAge').value ? parseInt(document.getElementById('editStudentAge').value) : null,
+        telefono: document.getElementById('editStudentPhone').value || null,
+        email: document.getElementById('editStudentEmail').value || null,
+        fecha_inscripcion: document.getElementById('editStudentEnrollmentDate').value || null,
+        clase: document.getElementById('editStudentInstrument').value || null,
+        tipo_clase: document.getElementById('editStudentClassType')?.value || 'Individual',
+        maestro_id: document.getElementById('editStudentTeacher').value || null,
+        horario: document.getElementById('editStudentSchedule').value || null,
+        estatus: document.getElementById('editStudentStatus').value || 'Activo',
+        promocion: document.getElementById('editStudentPromotion').value || null,
+        precio_mensual: document.getElementById('editStudentMonthlyFee').value ?
+            parseFloat(document.getElementById('editStudentMonthlyFee').value) : null,
+        forma_pago: document.getElementById('editStudentPaymentMethod').value || null,
+        domiciliado: document.getElementById('editStudentDomiciled').value === 'Si',
+        titular_domicilado: document.getElementById('editStudentDomiciliedName').value || null
+    };
+
+    console.log('📤 Datos a actualizar (simple):', studentData);
+
+    const result = await window.apiPut('alumnos/' + studentData.id, studentData);
+
+    if (result.success) {
+        showAlert('success', `Informacion de ${studentData.nombre} actualizada exitosamente`);
+    } else {
+        throw new Error(result.message || 'Error actualizando alumno');
+    }
+}
+
+/**
+ * Guardar alumno doble (multiples clases) - envia un PUT por cada registro individual
+ */
+async function saveDoubleStudentChanges(numClases) {
+    // Datos personales compartidos
+    const sharedData = {
+        nombre: document.getElementById('editStudentName').value.trim(),
+        edad: document.getElementById('editStudentAge').value ? parseInt(document.getElementById('editStudentAge').value) : null,
+        telefono: document.getElementById('editStudentPhone').value || null,
+        email: document.getElementById('editStudentEmail').value || null,
+        fecha_inscripcion: document.getElementById('editStudentEnrollmentDate').value || null,
+        estatus: document.getElementById('editStudentStatus').value || 'Activo',
+        promocion: document.getElementById('editStudentPromotion').value || null,
+        forma_pago: document.getElementById('editStudentPaymentMethod').value || null,
+        domiciliado: document.getElementById('editStudentDomiciled').value === 'Si',
+        titular_domicilado: document.getElementById('editStudentDomiciliedName').value || null
+    };
+
+    const errors = [];
+    let nombreAlumno = sharedData.nombre;
+
+    for (let idx = 0; idx < numClases; idx++) {
+        const classId = document.getElementById(`editStudentClassId_${idx}`)?.value;
+        if (!classId) {
+            console.warn(`⚠️ No se encontro ID para clase ${idx}`);
+            continue;
+        }
+
+        const classData = {
+            ...sharedData,
+            clase: document.getElementById(`editStudentInstrument_${idx}`)?.value || null,
+            tipo_clase: document.getElementById(`editStudentClassType_${idx}`)?.value || 'Individual',
+            maestro_id: document.getElementById(`editStudentTeacher_${idx}`)?.value || null,
+            horario: document.getElementById(`editStudentSchedule_${idx}`)?.value || null,
+            precio_mensual: document.getElementById(`editStudentMonthlyFee_${idx}`)?.value ?
+                parseFloat(document.getElementById(`editStudentMonthlyFee_${idx}`).value) : null
+        };
+
+        console.log(`📤 Actualizando clase ${idx + 1} (ID: ${classId}):`, classData);
+
+        const result = await window.apiPut('alumnos/' + classId, classData);
+
+        if (!result.success) {
+            errors.push(`Clase ${idx + 1}: ${result.message || 'Error desconocido'}`);
+        }
+    }
+
+    if (errors.length > 0) {
+        throw new Error('Errores al actualizar: ' + errors.join('; '));
+    }
+
+    showAlert('success', `Informacion de ${nombreAlumno} (${numClases} clases) actualizada exitosamente`);
 }
 
 /**
@@ -1302,7 +1371,16 @@ function createEditStudentModalHTML() {
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
+                                <label for="editStudentClassType" class="form-label">
+                                    <i class="fas fa-users me-1"></i>Tipo de Clase *
+                                </label>
+                                <select class="form-select" id="editStudentClassType" required>
+                                    <option value="Individual">👤 Individual</option>
+                                    <option value="Grupal">👥 Grupal</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label for="editStudentStatus" class="form-label">
                                     <i class="fas fa-toggle-on me-1"></i>Estatus *
                                 </label>
@@ -1311,7 +1389,7 @@ function createEditStudentModalHTML() {
                                     <option value="Baja">❌ Baja</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="editStudentPromotion" class="form-label">
                                     <i class="fas fa-tag me-1"></i>Promoción
                                 </label>
@@ -1376,6 +1454,204 @@ function createEditStudentModalHTML() {
 }
 
 /**
+ * Crear HTML del modal de editar alumno DOBLE (multiples clases)
+ * Muestra datos personales compartidos arriba y secciones separadas por clase abajo
+ */
+function createEditDoubleStudentModalHTML(records) {
+    // Generar secciones por cada clase
+    const classSections = records.map((record, idx) => {
+        const maestroOptions = [
+            { id: '', name: 'Sin asignar' },
+            { id: '1', name: 'Hugo Vazquez' },
+            { id: '2', name: 'Julio Olvera' },
+            { id: '3', name: 'Demian Andrade' },
+            { id: '4', name: 'Irwin Hernandez' },
+            { id: '5', name: 'Nahomy Perez' },
+            { id: '6', name: 'Luis Blanquet' },
+            { id: '7', name: 'Manuel Reyes' },
+            { id: '8', name: 'Harim Lopez' }
+        ];
+        const maestroId = getMaestroIdByName(record.maestro);
+        const maestroSelectOptions = maestroOptions.map(m =>
+            `<option value="${m.id}" ${m.id === maestroId ? 'selected' : ''}>${m.name}</option>`
+        ).join('');
+
+        return `
+            <input type="hidden" id="editStudentClassId_${idx}" value="${record.id}">
+            <div class="class-section mb-3 p-3" style="border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; background: rgba(255,255,255,0.03);">
+                <h6 class="mb-3" style="color: #0dcaf0;">
+                    <i class="fas fa-music me-1"></i>Clase ${idx + 1}: ${record.clase || 'Sin clase'}
+                </h6>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><i class="fas fa-music me-1"></i>Instrumento *</label>
+                        <select class="form-select" id="editStudentInstrument_${idx}" required>
+                            <option value="">Selecciona instrumento</option>
+                            <option value="Guitarra" ${record.clase === 'Guitarra' ? 'selected' : ''}>🎸 Guitarra</option>
+                            <option value="Teclado" ${record.clase === 'Teclado' ? 'selected' : ''}>🎹 Teclado</option>
+                            <option value="Batería" ${record.clase === 'Batería' ? 'selected' : ''}>🥁 Batería</option>
+                            <option value="Bajo" ${record.clase === 'Bajo' ? 'selected' : ''}>🎸 Bajo</option>
+                            <option value="Canto" ${record.clase === 'Canto' ? 'selected' : ''}>🎤 Canto</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><i class="fas fa-users me-1"></i>Tipo de Clase *</label>
+                        <select class="form-select" id="editStudentClassType_${idx}" required>
+                            <option value="Individual" ${record.tipo_clase === 'Individual' ? 'selected' : ''}>👤 Individual</option>
+                            <option value="Grupal" ${record.tipo_clase === 'Grupal' ? 'selected' : ''}>👥 Grupal</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label"><i class="fas fa-chalkboard-teacher me-1"></i>Maestro</label>
+                        <select class="form-select" id="editStudentTeacher_${idx}">
+                            ${maestroSelectOptions}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><i class="fas fa-clock me-1"></i>Horario</label>
+                        <input type="text" class="form-control" id="editStudentSchedule_${idx}" value="${record.horario || ''}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label"><i class="fas fa-dollar-sign me-1"></i>Mensualidad *</label>
+                        <input type="number" class="form-control" id="editStudentMonthlyFee_${idx}" step="0.01" value="${record.precio_mensual || ''}" required>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Editar Alumno <span class="badge bg-info ms-2">${records.length} clases</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <form id="editStudentForm">
+                        <input type="hidden" id="editStudentId" value="${records[0].id}">
+                        <input type="hidden" id="editStudentDoubleMode" value="${records.length}">
+
+                        <h6 class="mb-3" style="color: #ffc107;">
+                            <i class="fas fa-id-card me-1"></i>Datos Personales
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Nombre Completo *
+                                </label>
+                                <input type="text" class="form-control" id="editStudentName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentAge" class="form-label">
+                                    <i class="fas fa-birthday-cake me-1"></i>Edad *
+                                </label>
+                                <input type="number" class="form-control" id="editStudentAge" min="1" max="100" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentPhone" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Telefono
+                                </label>
+                                <input type="tel" class="form-control" id="editStudentPhone">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentEmail" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>Email
+                                </label>
+                                <input type="email" class="form-control" id="editStudentEmail">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentEnrollmentDate" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Fecha de Inscripcion *
+                                </label>
+                                <input type="date" class="form-control" id="editStudentEnrollmentDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentStatus" class="form-label">
+                                    <i class="fas fa-toggle-on me-1"></i>Estatus *
+                                </label>
+                                <select class="form-select" id="editStudentStatus" required>
+                                    <option value="Activo">✅ Activo</option>
+                                    <option value="Baja">❌ Baja</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="editStudentPromotion" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>Promocion
+                                </label>
+                                <input type="text" class="form-control" id="editStudentPromotion">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="editStudentPaymentMethod" class="form-label">
+                                    <i class="fas fa-credit-card me-1"></i>Forma de Pago
+                                </label>
+                                <select class="form-select" id="editStudentPaymentMethod">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="Efectivo">💵 Efectivo</option>
+                                    <option value="TPV">📱 TPV</option>
+                                    <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="editStudentDomiciled" class="form-label">
+                                    <i class="fas fa-home me-1"></i>Domiciliado
+                                </label>
+                                <select class="form-select" id="editStudentDomiciled" onchange="toggleDomiciliadoName()">
+                                    <option value="No">No</option>
+                                    <option value="Si">Si</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editStudentDomiciliedName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Titular
+                                </label>
+                                <input type="text" class="form-control" id="editStudentDomiciliedName" disabled>
+                            </div>
+                        </div>
+
+                        <hr style="border-color: rgba(255,255,255,0.15);">
+
+                        <h6 class="mb-3" style="color: #0dcaf0;">
+                            <i class="fas fa-layer-group me-1"></i>Clases Inscritas
+                        </h6>
+                        ${classSections}
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="deleteStudent()">
+                        <i class="fas fa-trash me-1"></i>Eliminar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="saveStudentChanges()">
+                        <i class="fas fa-save me-1"></i>Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
  * Convertir nombre de maestro a ID
  */
 function getMaestroIdByName(nombreMaestro) {
@@ -1394,109 +1670,167 @@ function getMaestroIdByName(nombreMaestro) {
 
 /**
  * Editar alumno - cargar datos en modal
+ * Soporta alumnos simples y dobles (multiples clases)
  */
 async function editStudent(id) {
     console.log('✏️ Editando alumno:', id);
-    
+
     const modalElement = document.getElementById('editStudentModal');
     if (!modalElement) {
         console.error('❌ Modal editStudentModal no encontrado');
         return;
     }
-    
+
     try {
         const student = studentsData.find(s => s.id === id);
         if (!student) {
             showAlert('warning', 'Alumno no encontrado en los datos actuales');
             return;
         }
-        
-        // ✅ CREAR CONTENIDO DEL MODAL SI ESTÁ VACÍO
-        if (!modalElement.querySelector('.modal-dialog')) {
-            const modalHTML = createEditStudentModalHTML();
-            modalElement.innerHTML = modalHTML;
-        }
-        
-        // ✅ POBLAR SELECT DE MAESTROS
-        const teacherSelect = document.getElementById('editStudentTeacher');
-        if (teacherSelect) {
-            teacherSelect.innerHTML = `
-                <option value="">Sin asignar</option>
-                <option value="1">Hugo Vazquez</option>
-                <option value="2">Julio Olvera</option>
-                <option value="3">Demian Andrade</option>
-                <option value="4">Irwin Hernandez</option>
-                <option value="5">Nahomy Perez</option>
-                <option value="6">Luis Blanquet</option>
-                <option value="7">Manuel Reyes</option>
-                <option value="8">Harim Lopez</option>
-            `;
-        }
-        
-        // ✅ LLENAR CAMPOS CON VALIDACIÓN
-        const setFieldValue = (id, value) => {
-            const field = document.getElementById(id);
-            if (field) {
-                field.value = value || '';
-            } else {
-                console.warn(`⚠️ Campo ${id} no encontrado`);
+
+        const numClases = parseInt(student.num_clases) || 1;
+
+        // ========== ALUMNO DOBLE: cargar registros individuales ==========
+        if (numClases > 1 && student.all_ids) {
+            console.log(`📚 Alumno doble detectado: ${student.nombre} (${numClases} clases, IDs: ${student.all_ids})`);
+
+            // Fetch registros individuales (sin unificar)
+            const empresaId = currentCompanyFilter || 1;
+            const result = await window.apiGet('alumnos', { empresa_id: empresaId, unificar: '0', limit: 1000 });
+
+            if (!result.success || !result.data) {
+                showAlert('danger', 'Error cargando registros individuales del alumno');
+                return;
             }
-        };
-        
-        setFieldValue('editStudentId', student.id);
-        setFieldValue('editStudentName', student.nombre);
-        setFieldValue('editStudentAge', student.edad);
-        setFieldValue('editStudentPhone', student.telefono);
-        setFieldValue('editStudentEmail', student.email);
-        // Normalizar fecha de inscripción al formato YYYY-MM-DD
-        let fechaInscripcion = '';
-        if (student.fecha_inscripcion) {
-            try {
-                // Parseo local para evitar desfase UTC
-                const parts = String(student.fecha_inscripcion).split('T')[0].split('-');
-                if (parts.length === 3) {
-                    fechaInscripcion = `${parts[0]}-${parts[1]}-${parts[2]}`;
-                }
-            } catch (e) {
-                console.warn('Error parseando fecha de inscripción:', e);
+
+            // Filtrar por nombre exacto del alumno
+            const individualRecords = result.data.filter(s => s.nombre === student.nombre);
+            console.log(`📋 Registros individuales encontrados: ${individualRecords.length}`, individualRecords);
+
+            if (individualRecords.length < 2) {
+                console.warn('⚠️ No se encontraron multiples registros, usando modal simple');
+                // Fallback a modal simple
+                editStudentSimple(modalElement, student);
+                return;
             }
+
+            // Generar modal doble con los registros individuales
+            modalElement.innerHTML = createEditDoubleStudentModalHTML(individualRecords);
+
+            // Poblar datos personales compartidos (del primer registro)
+            const first = individualRecords[0];
+            const setFieldValue = (fieldId, value) => {
+                const field = document.getElementById(fieldId);
+                if (field) field.value = value || '';
+            };
+
+            setFieldValue('editStudentName', first.nombre);
+            setFieldValue('editStudentAge', first.edad);
+            setFieldValue('editStudentPhone', first.telefono);
+            setFieldValue('editStudentEmail', first.email);
+
+            let fechaInscripcion = '';
+            if (first.fecha_inscripcion) {
+                try {
+                    const parts = String(first.fecha_inscripcion).split('T')[0].split('-');
+                    if (parts.length === 3) fechaInscripcion = `${parts[0]}-${parts[1]}-${parts[2]}`;
+                } catch (e) { /* ignore */ }
+            }
+            setFieldValue('editStudentEnrollmentDate', fechaInscripcion);
+            setFieldValue('editStudentStatus', first.estatus || 'Activo');
+            setFieldValue('editStudentPromotion', first.promocion);
+            setFieldValue('editStudentPaymentMethod', first.forma_pago);
+            setFieldValue('editStudentDomiciled', first.domiciliado ? 'Si' : 'No');
+            setFieldValue('editStudentDomiciliedName', first.titular_domicilado);
+
+            toggleDomiciliadoName();
+
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            return;
         }
-        console.log('Fecha de inscripción procesada:', fechaInscripcion);
-        setFieldValue('editStudentEnrollmentDate', fechaInscripcion);
-        setFieldValue('editStudentInstrument', student.clase);
-        const maestroId = getMaestroIdByName(student.maestro || student.maestro_id);
-        setFieldValue('editStudentTeacher', maestroId);
-        // Limpiar prefijo de clase del horario (la query unificada agrega "Clase: " como prefijo)
-        let horarioLimpio = student.horario || '';
-        if (student.clase && horarioLimpio.startsWith(student.clase + ': ')) {
-            horarioLimpio = horarioLimpio.substring(student.clase.length + 2);
-        }
-        setFieldValue('editStudentSchedule', horarioLimpio);
-        setFieldValue('editStudentStatus', student.estatus || 'Activo');
-        setFieldValue('editStudentPromotion', student.promocion);
-        setFieldValue('editStudentMonthlyFee', student.precio_mensual);
-        setFieldValue('editStudentPaymentMethod', student.forma_pago);
-        setFieldValue('editStudentDomiciled', student.domiciliado ? 'Si' : 'No');
-        setFieldValue('editStudentDomiciliedName', student.titular_domicilado);
-        
-        // Configurar campo domiciliado
-        toggleDomiciliadoName();
-        
-        // ✅ AGREGAR SCROLL AL MODAL
-        const modalBody = modalElement.querySelector('.modal-body');
-        if (modalBody) {
-            modalBody.style.maxHeight = '70vh';
-            modalBody.style.overflowY = 'auto';
-        }
-        
-        // Mostrar modal
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-        
+
+        // ========== ALUMNO SIMPLE: flujo original ==========
+        editStudentSimple(modalElement, student);
+
     } catch (error) {
         console.error('❌ Error editando alumno:', error);
-        showAlert('error', 'Error al abrir modal de edición');
+        showAlert('error', 'Error al abrir modal de edicion');
     }
+}
+
+/**
+ * Cargar modal simple (alumno con una sola clase)
+ */
+function editStudentSimple(modalElement, student) {
+    // Crear contenido del modal si esta vacio o reemplazar
+    const modalHTML = createEditStudentModalHTML();
+    modalElement.innerHTML = modalHTML;
+
+    // Poblar select de maestros
+    const teacherSelect = document.getElementById('editStudentTeacher');
+    if (teacherSelect) {
+        teacherSelect.innerHTML = `
+            <option value="">Sin asignar</option>
+            <option value="1">Hugo Vazquez</option>
+            <option value="2">Julio Olvera</option>
+            <option value="3">Demian Andrade</option>
+            <option value="4">Irwin Hernandez</option>
+            <option value="5">Nahomy Perez</option>
+            <option value="6">Luis Blanquet</option>
+            <option value="7">Manuel Reyes</option>
+            <option value="8">Harim Lopez</option>
+        `;
+    }
+
+    const setFieldValue = (fieldId, value) => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.value = value || '';
+        } else {
+            console.warn(`⚠️ Campo ${fieldId} no encontrado`);
+        }
+    };
+
+    setFieldValue('editStudentId', student.id);
+    setFieldValue('editStudentName', student.nombre);
+    setFieldValue('editStudentAge', student.edad);
+    setFieldValue('editStudentPhone', student.telefono);
+    setFieldValue('editStudentEmail', student.email);
+
+    let fechaInscripcion = '';
+    if (student.fecha_inscripcion) {
+        try {
+            const parts = String(student.fecha_inscripcion).split('T')[0].split('-');
+            if (parts.length === 3) {
+                fechaInscripcion = `${parts[0]}-${parts[1]}-${parts[2]}`;
+            }
+        } catch (e) {
+            console.warn('Error parseando fecha de inscripcion:', e);
+        }
+    }
+    setFieldValue('editStudentEnrollmentDate', fechaInscripcion);
+    setFieldValue('editStudentInstrument', student.clase);
+    const maestroId = getMaestroIdByName(student.maestro || student.maestro_id);
+    setFieldValue('editStudentTeacher', maestroId);
+    // Limpiar prefijo de clase del horario
+    let horarioLimpio = student.horario || '';
+    if (student.clase && horarioLimpio.startsWith(student.clase + ': ')) {
+        horarioLimpio = horarioLimpio.substring(student.clase.length + 2);
+    }
+    setFieldValue('editStudentSchedule', horarioLimpio);
+    setFieldValue('editStudentClassType', student.tipo_clase || 'Individual');
+    setFieldValue('editStudentStatus', student.estatus || 'Activo');
+    setFieldValue('editStudentPromotion', student.promocion);
+    setFieldValue('editStudentMonthlyFee', student.precio_mensual);
+    setFieldValue('editStudentPaymentMethod', student.forma_pago);
+    setFieldValue('editStudentDomiciled', student.domiciliado ? 'Si' : 'No');
+    setFieldValue('editStudentDomiciliedName', student.titular_domicilado);
+
+    toggleDomiciliadoName();
+
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
 }
 
 // AGREGAR DESPUÉS DE editStudent:
