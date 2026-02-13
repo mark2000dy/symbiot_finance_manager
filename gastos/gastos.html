@@ -1669,15 +1669,16 @@
             showChartLoading(false);
         }
 
-        // Procesar datos por mes (excluye inversiones de socios)
+        // Procesar datos por mes (excluye inversiones excepto si filtro es Inversión)
         function processMonthlyData(data) {
             const monthlyData = {};
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const tipoFiltroChart = document.getElementById('filterTipo').value || 'G';
 
             data.forEach(transaction => {
-                // Excluir inversiones del gráfico
-                if ((transaction.forma_pago || '').startsWith('Inversion a')) return;
+                // Excluir inversiones del gráfico (excepto cuando se filtra por inversión)
+                if (tipoFiltroChart !== 'V' && (transaction.forma_pago || '').startsWith('Inversion a')) return;
 
                 const parts = String(transaction.fecha).split('T')[0].split('-');
                 const year = parseInt(parts[0]);
@@ -1710,13 +1711,14 @@
             };
         }
 
-        // Procesar datos por año (excluye inversiones de socios)
+        // Procesar datos por año (excluye inversiones excepto si filtro es Inversión)
         function processYearlyData(data) {
             const yearlyData = {};
+            const tipoFiltroChart = document.getElementById('filterTipo').value || 'G';
 
             data.forEach(transaction => {
-                // Excluir inversiones del gráfico
-                if ((transaction.forma_pago || '').startsWith('Inversion a')) return;
+                // Excluir inversiones del gráfico (excepto cuando se filtra por inversión)
+                if (tipoFiltroChart !== 'V' && (transaction.forma_pago || '').startsWith('Inversion a')) return;
 
                 const parts = String(transaction.fecha).split('T')[0].split('-');
                 const year = parseInt(parts[0]);
