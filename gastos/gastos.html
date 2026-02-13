@@ -1547,10 +1547,10 @@
                 const empresa = document.getElementById('filterEmpresa').value;
                 const ano = document.getElementById('filterAno').value;
                 const mes = document.getElementById('filterMes').value;
-                const tipoFilter = document.getElementById('filterTipo').value || 'G';
+                const tipoFilter = document.getElementById('filterTipo').value;
 
-                // 'V' (Inversión) es subfiltro de G
-                const tipoAPI = (tipoFilter === 'V') ? 'G' : tipoFilter;
+                // '' (Todos) y 'V' (Inversión) son subfiltros de G - pedir tipo G al API
+                const tipoAPI = (!tipoFilter || tipoFilter === 'V') ? 'G' : tipoFilter;
 
                 if (empresa) params.empresa_id = empresa;
                 params.tipo = tipoAPI;
@@ -1578,12 +1578,7 @@
                     throw new Error('Error cargando datos para gráfica');
                 }
 
-                let data = result.data || [];
-
-                // Si filtro es 'V', solo mostrar inversiones en la gráfica
-                if (tipoFilter === 'V') {
-                    data = data.filter(t => (t.forma_pago || '').startsWith('Inversion a'));
-                }
+                const data = result.data || [];
                 renderGastosChart(data);
                 
             } catch (error) {
@@ -1616,27 +1611,42 @@
             const textColor = isLight ? '#1a1a1a' : 'white';
             const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
 
-            // Colores según filtro de tipo (morado para inversión, rojo para gastos)
-            const tipoActual = document.getElementById('filterTipo').value || 'G';
-            const esInversion = tipoActual === 'V';
-            const chartBg = esInversion ? 'rgba(139, 92, 246, 0.7)' : 'rgba(220, 53, 69, 0.7)';
-            const chartBorder = esInversion ? 'rgba(139, 92, 246, 1)' : 'rgba(220, 53, 69, 1)';
-            const chartLabel = esInversion ? 'Inversión ($)' : 'Gastos ($)';
+            // Construir datasets según filtro de tipo
+            const tipoActual = document.getElementById('filterTipo').value;
+            const datasets = [];
+
+            // Gastos (rojo): mostrar en '' (Todos) y 'G'
+            if (tipoActual === '' || tipoActual === 'G') {
+                datasets.push({
+                    label: 'Gastos ($)',
+                    data: processedData.values,
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                    borderColor: 'rgba(220, 53, 69, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                });
+            }
+
+            // Inversión (morado): mostrar en '' (Todos) y 'V'
+            if (tipoActual === '' || tipoActual === 'V') {
+                datasets.push({
+                    label: 'Inversión ($)',
+                    data: processedData.inversionValues,
+                    backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                    borderColor: 'rgba(139, 92, 246, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                });
+            }
 
             // Configurar gráfica
             currentChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: processedData.labels,
-                    datasets: [{
-                        label: chartLabel,
-                        data: processedData.values,
-                        backgroundColor: chartBg,
-                        borderColor: chartBorder,
-                        borderWidth: 2,
-                        borderRadius: 6,
-                        borderSkipped: false,
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -1669,16 +1679,20 @@
             showChartLoading(false);
         }
 
-        // Procesar datos por mes (excluye inversiones excepto si filtro es Inversión)
+        // Procesar datos por mes (separa gastos e inversión)
         function processMonthlyData(data) {
             const monthlyData = {};
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            const tipoFiltroChart = document.getElementById('filterTipo').value || 'G';
+            const tipoFiltroChart = document.getElementById('filterTipo').value;
 
             data.forEach(transaction => {
-                // Excluir inversiones del gráfico (excepto cuando se filtra por inversión)
-                if (tipoFiltroChart !== 'V' && (transaction.forma_pago || '').startsWith('Inversion a')) return;
+                const esInvTx = (transaction.forma_pago || '').startsWith('Inversion a');
+
+                // Filtrar según tipo seleccionado
+                if (tipoFiltroChart === 'G' && esInvTx) return;   // Gastos: excluir inversión
+                if (tipoFiltroChart === 'V' && !esInvTx) return;  // Inversión: excluir gastos
+                // '' (Todos): incluir todo
 
                 const parts = String(transaction.fecha).split('T')[0].split('-');
                 const year = parseInt(parts[0]);
@@ -1689,45 +1703,59 @@
                 if (!monthlyData[monthKey]) {
                     monthlyData[monthKey] = {
                         label: monthLabel,
-                        total: 0,
+                        gastos: 0,
+                        inversion: 0,
                         sortDate: new Date(year, month, 1)
                     };
                 }
 
-                monthlyData[monthKey].total += (transaction.cantidad || 1) * (transaction.precio_unitario || 0);
+                const monto = (transaction.cantidad || 1) * (transaction.precio_unitario || 0);
+                if (esInvTx) {
+                    monthlyData[monthKey].inversion += monto;
+                } else {
+                    monthlyData[monthKey].gastos += monto;
+                }
             });
 
             const sortedEntries = Object.entries(monthlyData)
                 .sort(([, a], [, b]) => a.sortDate - b.sortDate);
 
             // Solo limitar a 12 meses si hay un año específico seleccionado
-            // Cuando se selecciona "Todos", mostrar todos los meses
             const ano = document.getElementById('filterAno').value;
             const finalEntries = ano ? sortedEntries.slice(-12) : sortedEntries;
 
             return {
-                labels: finalEntries.map(([_, data]) => data.label),
-                values: finalEntries.map(([_, data]) => data.total)
+                labels: finalEntries.map(([_, d]) => d.label),
+                values: finalEntries.map(([_, d]) => d.gastos),
+                inversionValues: finalEntries.map(([_, d]) => d.inversion)
             };
         }
 
-        // Procesar datos por año (excluye inversiones excepto si filtro es Inversión)
+        // Procesar datos por año (separa gastos e inversión)
         function processYearlyData(data) {
             const yearlyData = {};
-            const tipoFiltroChart = document.getElementById('filterTipo').value || 'G';
+            const tipoFiltroChart = document.getElementById('filterTipo').value;
 
             data.forEach(transaction => {
-                // Excluir inversiones del gráfico (excepto cuando se filtra por inversión)
-                if (tipoFiltroChart !== 'V' && (transaction.forma_pago || '').startsWith('Inversion a')) return;
+                const esInvTx = (transaction.forma_pago || '').startsWith('Inversion a');
+
+                // Filtrar según tipo seleccionado
+                if (tipoFiltroChart === 'G' && esInvTx) return;
+                if (tipoFiltroChart === 'V' && !esInvTx) return;
 
                 const parts = String(transaction.fecha).split('T')[0].split('-');
                 const year = parseInt(parts[0]);
 
                 if (!yearlyData[year]) {
-                    yearlyData[year] = 0;
+                    yearlyData[year] = { gastos: 0, inversion: 0 };
                 }
 
-                yearlyData[year] += (transaction.cantidad || 1) * (transaction.precio_unitario || 0);
+                const monto = (transaction.cantidad || 1) * (transaction.precio_unitario || 0);
+                if (esInvTx) {
+                    yearlyData[year].inversion += monto;
+                } else {
+                    yearlyData[year].gastos += monto;
+                }
             });
 
             const sortedEntries = Object.entries(yearlyData)
@@ -1735,7 +1763,8 @@
 
             return {
                 labels: sortedEntries.map(([year]) => year),
-                values: sortedEntries.map(([_, total]) => total)
+                values: sortedEntries.map(([_, d]) => d.gastos),
+                inversionValues: sortedEntries.map(([_, d]) => d.inversion)
             };
         }
 
