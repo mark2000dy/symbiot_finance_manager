@@ -24,7 +24,7 @@ require_once __DIR__ . '/PHPMailer/SMTP.php';
 define('SMTP_HOST', 'symbiot.com.mx');
 define('SMTP_PORT', 465);
 define('SMTP_USER', 'contacto@symbiot.com.mx');
-define('SMTP_PASS', 'Symb10t2026$'); // ⚠️ CAMBIAR por la contraseña real
+define('SMTP_PASS', 'Symb10t2026$');
 define('SMTP_FROM_EMAIL', 'contacto@symbiot.com.mx');
 define('SMTP_FROM_NAME', 'Formulario Web Symbiot');
 define('RECEIVING_EMAIL', 'contacto@symbiot.com.mx');
