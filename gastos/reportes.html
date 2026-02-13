@@ -466,6 +466,7 @@
                                     <option value="">Todos</option>
                                     <option value="I">Ingresos</option>
                                     <option value="G">Gastos</option>
+                                    <option value="V">Inversión</option>
                                     <option value="F">Flujo Neto</option>
                                 </select>
                             </div>
@@ -492,7 +493,7 @@
                     <div class="card-body">
                         <!-- Indicadores Clave (Cards) -->
                         <div class="row mb-4">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <div class="card bg-gradient-success" style="background: rgba(25, 135, 84, 0.1); border: 1px solid rgba(25, 135, 84, 0.3);">
                                     <div class="card-body text-center">
                                         <i class="fas fa-arrow-up fa-2x text-success mb-2"></i>
@@ -501,7 +502,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <div class="card bg-gradient-danger" style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3);">
                                     <div class="card-body text-center">
                                         <i class="fas fa-arrow-down fa-2x text-danger mb-2"></i>
@@ -510,7 +511,16 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
+                                <div class="card" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3);">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-hand-holding-usd fa-2x mb-2" style="color: #8b5cf6;"></i>
+                                        <h6 class="text-muted">Inversión Socios</h6>
+                                        <h3 class="mb-0" id="totalInversion" style="color: #8b5cf6;">$0.00</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
                                 <div class="card bg-gradient-info" style="background: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);">
                                     <div class="card-body text-center">
                                         <i class="fas fa-balance-scale fa-2x text-info mb-2"></i>
@@ -545,12 +555,13 @@
                                                 <th><i class="fas fa-calendar me-1"></i>Mes</th>
                                                 <th class="text-end"><i class="fas fa-arrow-up me-1 text-success"></i>Entradas</th>
                                                 <th class="text-end"><i class="fas fa-arrow-down me-1 text-danger"></i>Salidas</th>
+                                                <th class="text-end"><i class="fas fa-hand-holding-usd me-1" style="color: #8b5cf6;"></i>Inversión</th>
                                                 <th class="text-end"><i class="fas fa-balance-scale me-1 text-info"></i>Flujo</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tablaGastosReales">
                                             <tr>
-                                                <td colspan="4" class="text-center">
+                                                <td colspan="5" class="text-center">
                                                     <i class="fas fa-spinner fa-spin me-2"></i>Cargando datos...
                                                 </td>
                                             </tr>

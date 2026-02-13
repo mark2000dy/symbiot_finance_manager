@@ -436,7 +436,7 @@
                     <hr class="my-4" style="border-color: rgba(255, 255, 255, 0.2);">
                     <div class="row g-3">
                         <!-- Total Gastos Card -->
-                        <div class="col-sm-6 col-lg-3">
+                        <div class="col-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="stat-icon-small bg-success bg-opacity-20 rounded-circle me-3">
@@ -444,14 +444,29 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-success" id="totalGastosChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">💸 Total Gastos</small>
+                                        <small style="color: #E4E6EA !important;">Total Gastos</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
+                        <!-- Inversión Socios Card -->
+                        <div class="col-6 col-lg">
+                            <div class="card stat-card-small h-100">
+                                <div class="card-body d-flex align-items-center p-3">
+                                    <div class="stat-icon-small rounded-circle me-3" style="background: rgba(139, 92, 246, 0.2);">
+                                        <i class="fas fa-hand-holding-usd" style="color: #8b5cf6;"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0" id="inversionSociosChart" style="color: #8b5cf6;">$0</h5>
+                                        <small style="color: #E4E6EA !important;">Inversión Socios</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Promedio Card -->
-                        <div class="col-sm-6 col-lg-3">
+                        <div class="col-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="stat-icon-small bg-info bg-opacity-20 rounded-circle me-3">
@@ -459,14 +474,14 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-info" id="promedioGastosChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">📊 Promedio</small>
+                                        <small style="color: #E4E6EA !important;">Promedio</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Mayor Gasto Card -->
-                        <div class="col-sm-6 col-lg-3">
+                        <div class="col-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="stat-icon-small bg-warning bg-opacity-20 rounded-circle me-3">
@@ -474,14 +489,14 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-warning" id="mayorGastoChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">🏆 Mayor Gasto</small>
+                                        <small style="color: #E4E6EA !important;">Mayor Gasto</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Transacciones Card -->
-                        <div class="col-sm-6 col-lg-3">
+                        <div class="col-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="stat-icon-small bg-primary bg-opacity-20 rounded-circle me-3">
@@ -489,7 +504,7 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-primary" id="totalTransaccionesChart">0</h5>
-                                        <small style="color: #E4E6EA !important;">📝 Transacciones</small>
+                                        <small style="color: #E4E6EA !important;">Transacciones</small>
                                     </div>
                                 </div>
                             </div>
@@ -994,7 +1009,9 @@
                         <span class="badge bg-secondary">${transaction.forma_pago}</span>
                     </td>
                     <td>
-                        <span class="badge bg-danger">💸 Gasto</span>
+                        ${(transaction.forma_pago || '').startsWith('Inversion a')
+                            ? '<span class="badge" style="background: #8b5cf6;">Inversión</span>'
+                            : '<span class="badge bg-danger">Gasto</span>'}
                     </td>
                     <td class="text-end text-success fw-bold">${formatCurrency((transaction.cantidad || 1) * (transaction.precio_unitario || 0))}</td>
                     <td class="text-center">
@@ -1124,32 +1141,38 @@
         function updateStatsCardsFromFilter(data) {
             if (!data || data.length === 0) {
                 document.getElementById('totalGastosChart').textContent = '$0.00';
+                document.getElementById('inversionSociosChart').textContent = '$0.00';
                 document.getElementById('promedioGastosChart').textContent = '$0.00';
                 document.getElementById('mayorGastoChart').textContent = '$0.00';
                 document.getElementById('totalTransaccionesChart').textContent = '0';
                 return;
             }
 
-            const totales = data.reduce((acc, t) => {
+            // Separar gastos regulares de inversión de socios
+            let sumGastos = 0, sumInversion = 0, maxGasto = 0, countGastos = 0;
+
+            data.forEach(t => {
                 const cantidad = parseInt(t.cantidad) || 1;
                 const precioUnitario = parseFloat(t.precio_unitario) || 0;
                 const total = cantidad * precioUnitario;
-                return {
-                    sum: acc.sum + total,
-                    max: Math.max(acc.max, total),
-                    count: acc.count + 1
-                };
-            }, { sum: 0, max: 0, count: 0 });
+                const formaPago = (t.forma_pago || '').trim();
 
-            const totalGastos = totales.sum;
-            const promedio = totalGastos / totales.count;
-            const mayorGasto = totales.max;
-            const cantidadTransacciones = totales.count;
+                if (formaPago.startsWith('Inversion a')) {
+                    sumInversion += total;
+                } else {
+                    sumGastos += total;
+                    maxGasto = Math.max(maxGasto, total);
+                    countGastos++;
+                }
+            });
 
-            document.getElementById('totalGastosChart').textContent = formatCurrency(totalGastos);
+            const promedio = countGastos > 0 ? sumGastos / countGastos : 0;
+
+            document.getElementById('totalGastosChart').textContent = formatCurrency(sumGastos);
+            document.getElementById('inversionSociosChart').textContent = formatCurrency(sumInversion);
             document.getElementById('promedioGastosChart').textContent = formatCurrency(promedio);
-            document.getElementById('mayorGastoChart').textContent = formatCurrency(mayorGasto);
-            document.getElementById('totalTransaccionesChart').textContent = cantidadTransacciones.toLocaleString();
+            document.getElementById('mayorGastoChart').textContent = formatCurrency(maxGasto);
+            document.getElementById('totalTransaccionesChart').textContent = countGastos.toLocaleString();
         }
 
         // Handler de filtros client-side (sin re-llamar la API)
@@ -1620,13 +1643,16 @@
             showChartLoading(false);
         }
 
-        // Procesar datos por mes
+        // Procesar datos por mes (excluye inversiones de socios)
         function processMonthlyData(data) {
             const monthlyData = {};
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                         'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
             data.forEach(transaction => {
+                // Excluir inversiones del gráfico
+                if ((transaction.forma_pago || '').startsWith('Inversion a')) return;
+
                 const parts = String(transaction.fecha).split('T')[0].split('-');
                 const year = parseInt(parts[0]);
                 const month = parseInt(parts[1]) - 1; // 0-11
@@ -1658,11 +1684,14 @@
             };
         }
 
-        // Procesar datos por año
+        // Procesar datos por año (excluye inversiones de socios)
         function processYearlyData(data) {
             const yearlyData = {};
 
             data.forEach(transaction => {
+                // Excluir inversiones del gráfico
+                if ((transaction.forma_pago || '').startsWith('Inversion a')) return;
+
                 const parts = String(transaction.fecha).split('T')[0].split('-');
                 const year = parseInt(parts[0]);
 

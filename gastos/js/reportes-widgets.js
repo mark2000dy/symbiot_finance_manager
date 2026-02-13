@@ -108,6 +108,7 @@ function adaptGastosReales(backendResponse) {
             detalle_mensual: [],
             total_entradas: 0,
             total_salidas: 0,
+            total_inversion: 0,
             flujo_neto: 0
         };
     }
@@ -115,7 +116,7 @@ function adaptGastosReales(backendResponse) {
     const transacciones = backendResponse.data;
     const monthlyData = {};
 
-    // Group transactions by month
+    // Group transactions by month, separando inversión de salidas
     transacciones.forEach(tx => {
         if (tx.fecha && tx.total && tx.tipo) {
             // Parsear como fecha local para evitar desfase UTC
@@ -129,20 +130,27 @@ function adaptGastosReales(backendResponse) {
                     mes: mesKey,
                     entradas: 0,
                     salidas: 0,
+                    inversion: 0,
                     flujo: 0
                 };
             }
 
             const monto = parseFloat(tx.total);
+            const formaPago = (tx.forma_pago || '').trim();
+
             if (tx.tipo === 'I') {
                 monthlyData[mesKey].entradas += monto;
             } else if (tx.tipo === 'G') {
-                monthlyData[mesKey].salidas += monto;
+                if (formaPago.startsWith('Inversion a')) {
+                    monthlyData[mesKey].inversion += monto;
+                } else {
+                    monthlyData[mesKey].salidas += monto;
+                }
             }
         }
     });
 
-    // Calculate flujo for each month and convert to array
+    // Calculate flujo for each month (sin inversión) and convert to array
     const detalleMensual = Object.values(monthlyData).map(month => {
         month.flujo = month.entradas - month.salidas;
         return month;
@@ -154,12 +162,14 @@ function adaptGastosReales(backendResponse) {
     // Calculate totals
     const totalEntradas = detalleMensual.reduce((sum, m) => sum + m.entradas, 0);
     const totalSalidas = detalleMensual.reduce((sum, m) => sum + m.salidas, 0);
+    const totalInversion = detalleMensual.reduce((sum, m) => sum + m.inversion, 0);
     const flujoNeto = totalEntradas - totalSalidas;
 
     return {
         detalle_mensual: detalleMensual,
         total_entradas: totalEntradas,
         total_salidas: totalSalidas,
+        total_inversion: totalInversion,
         flujo_neto: flujoNeto
     };
 }
@@ -207,10 +217,11 @@ function aggregateByTrimester(detalleMensual) {
         const key = `${year}-T${q}`;
 
         if (!trimestres[key]) {
-            trimestres[key] = { mes: key, entradas: 0, salidas: 0, flujo: 0 };
+            trimestres[key] = { mes: key, entradas: 0, salidas: 0, inversion: 0, flujo: 0 };
         }
         trimestres[key].entradas += item.entradas;
         trimestres[key].salidas += item.salidas;
+        trimestres[key].inversion += item.inversion;
     });
 
     return Object.values(trimestres).map(t => {
@@ -341,8 +352,8 @@ async function loadGastosRealesData(filters = {}) {
         if (filters.empresa) params.empresa = filters.empresa;
         if (filters.ano) params.ano = filters.ano;
         if (filters.mes) params.mes = filters.mes;
-        // 'F' (Flujo Neto) es filtro visual del chart, no de API - necesita ambos tipos (I y G)
-        if (filters.tipo && filters.tipo !== 'F') params.tipo = filters.tipo;
+        // 'F' (Flujo Neto) y 'V' (Inversión) son filtros visuales del chart, no de API
+        if (filters.tipo && filters.tipo !== 'F' && filters.tipo !== 'V') params.tipo = filters.tipo;
 
         // Llamar al endpoint
         const data = await window.apiGet('reportes/gastos-reales', params);
@@ -397,24 +408,30 @@ function updateGastosRealesIndicators(data) {
             currency: 'MXN'
         }).format(amount);
     };
-    
+
     // Total Entradas
     const totalEntradasEl = document.getElementById('totalEntradas');
     if (totalEntradasEl) {
         totalEntradasEl.textContent = formatCurrency(data.total_entradas);
     }
-    
-    // Total Salidas
+
+    // Total Salidas (sin inversión)
     const totalSalidasEl = document.getElementById('totalSalidas');
     if (totalSalidasEl) {
         totalSalidasEl.textContent = formatCurrency(data.total_salidas);
     }
-    
+
+    // Inversión Socios
+    const totalInversionEl = document.getElementById('totalInversion');
+    if (totalInversionEl) {
+        totalInversionEl.textContent = formatCurrency(data.total_inversion);
+    }
+
     // Flujo Neto
     const flujoNetoEl = document.getElementById('flujoNeto');
     if (flujoNetoEl) {
         flujoNetoEl.textContent = formatCurrency(data.flujo_neto);
-        
+
         // Cambiar color según sea positivo o negativo
         if (data.flujo_neto >= 0) {
             flujoNetoEl.className = 'text-success mb-0';
@@ -445,6 +462,7 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
     const meses = chartData.map(d => d.mes);
     const entradas = chartData.map(d => d.entradas);
     const salidas = chartData.map(d => d.salidas);
+    const inversiones = chartData.map(d => d.inversion);
     const flujos = chartData.map(d => d.flujo);
 
     // Construir datasets según el filtro de tipo
@@ -468,6 +486,17 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
             data: salidas,
             borderColor: 'rgb(255, 99, 132)',
             backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1
+        });
+    }
+
+    // Si filtro es '' (Todos) o 'V' (Inversión), mostrar Inversión
+    if (tipoFiltro === '' || tipoFiltro === 'V') {
+        datasets.push({
+            label: 'Inversión',
+            data: inversiones,
+            borderColor: 'rgb(139, 92, 246)',
+            backgroundColor: 'rgba(139, 92, 246, 0.2)',
             tension: 0.1
         });
     }
@@ -550,7 +579,7 @@ function updateGastosRealesTable(detalleMensual) {
     if (!detalleMensual || detalleMensual.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="4" class="text-center text-muted">
+                <td colspan="5" class="text-center text-muted">
                     <i class="fas fa-info-circle me-2"></i>
                     No hay datos disponibles para los filtros seleccionados
                 </td>
@@ -567,7 +596,7 @@ function updateGastosRealesTable(detalleMensual) {
     sortedData.forEach(item => {
         const flujoClass = item.flujo >= 0 ? 'text-success' : 'text-danger';
         const flujoIcon = item.flujo >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-        
+
         const row = `
             <tr>
                 <td>
@@ -582,13 +611,17 @@ function updateGastosRealesTable(detalleMensual) {
                     <i class="fas fa-arrow-down me-1"></i>
                     ${formatCurrency(item.salidas)}
                 </td>
+                <td class="text-end" style="color: #8b5cf6;">
+                    <i class="fas fa-hand-holding-usd me-1"></i>
+                    ${formatCurrency(item.inversion)}
+                </td>
                 <td class="text-end ${flujoClass}">
                     <i class="fas ${flujoIcon} me-1"></i>
                     <strong>${formatCurrency(item.flujo)}</strong>
                 </td>
             </tr>
         `;
-        
+
         tbody.insertAdjacentHTML('beforeend', row);
     });
 
@@ -678,22 +711,29 @@ function exportGastosRealesExcel() {
             row5.push(item.salidas);
         });
         row5.push('', '', gastosRealesData.total_salidas);
-        
-        // Fila 6: Flujo de Efectivo
-        const row6 = ['Flujo de Efectivo', '', '', ''];
+
+        // Fila 6: Inversión Socios
+        const row6 = ['Inversión Socios', '', '', ''];
         detalle.forEach(item => {
-            row6.push(item.flujo);
+            row6.push(item.inversion);
         });
-        row6.push('', '', gastosRealesData.flujo_neto);
-        
-        // Fila 7: Vacía
-        const row7 = Array(row2.length).fill('');
-        
-        // Fila 8: Total de Gastos
-        const row8 = ['Total de Gastos', '', gastosRealesData.total_salidas, ''];
-        
+        row6.push('', '', gastosRealesData.total_inversion);
+
+        // Fila 7: Flujo de Efectivo
+        const row7 = ['Flujo de Efectivo', '', '', ''];
+        detalle.forEach(item => {
+            row7.push(item.flujo);
+        });
+        row7.push('', '', gastosRealesData.flujo_neto);
+
+        // Fila 8: Vacía
+        const row8 = Array(row2.length).fill('');
+
+        // Fila 9: Total de Gastos
+        const row9 = ['Total de Gastos', '', gastosRealesData.total_salidas, ''];
+
         // Construir array de datos
-        const data = [row1, row2, row3, row4, row5, row6, row7, row8];
+        const data = [row1, row2, row3, row4, row5, row6, row7, row8, row9];
         
         // Convertir array a worksheet
         const wsData = XLSX.utils.aoa_to_sheet(data);
@@ -705,43 +745,26 @@ function exportGastosRealesExcel() {
         // Formato de moneda para las celdas numéricas
         const currencyFormat = '"$"#,##0.00';
         
-        // Filas de datos (4, 5, 6) - columnas E en adelante
+        // Filas de datos (4,5,6,7) - columnas E en adelante
         for (let col = 4; col < row2.length - 3; col++) {
-            // Fila 4 (Entradas) - índice 3
-            const cellEntradas = XLSX.utils.encode_cell({ r: 3, c: col });
-            if (wsData[cellEntradas]) {
-                wsData[cellEntradas].z = currencyFormat;
-            }
-            
-            // Fila 5 (Salidas) - índice 4
-            const cellSalidas = XLSX.utils.encode_cell({ r: 4, c: col });
-            if (wsData[cellSalidas]) {
-                wsData[cellSalidas].z = currencyFormat;
-            }
-            
-            // Fila 6 (Flujo) - índice 5
-            const cellFlujo = XLSX.utils.encode_cell({ r: 5, c: col });
-            if (wsData[cellFlujo]) {
-                wsData[cellFlujo].z = currencyFormat;
+            // Filas: Entradas(3), Salidas(4), Inversión(5), Flujo(6)
+            for (let r = 3; r <= 6; r++) {
+                const cell = XLSX.utils.encode_cell({ r: r, c: col });
+                if (wsData[cell]) wsData[cell].z = currencyFormat;
             }
         }
-        
-        // Columna Total (últimas 3 filas)
+
+        // Columna Total y celdas fijas con formato moneda
         const totalCol = row2.length - 1;
-        ['C8', 'C4', 'C5', 'C6'].forEach(cell => {
-            if (wsData[cell]) {
-                wsData[cell].z = currencyFormat;
-            }
+        ['C9', 'C4', 'C5', 'C6', 'C7'].forEach(cell => {
+            if (wsData[cell]) wsData[cell].z = currencyFormat;
         });
-        
+
         // Formato para totales en columna final
-        const cellTotalEntradas = XLSX.utils.encode_cell({ r: 3, c: totalCol });
-        const cellTotalSalidas = XLSX.utils.encode_cell({ r: 4, c: totalCol });
-        const cellTotalFlujo = XLSX.utils.encode_cell({ r: 5, c: totalCol });
-        
-        if (wsData[cellTotalEntradas]) wsData[cellTotalEntradas].z = currencyFormat;
-        if (wsData[cellTotalSalidas]) wsData[cellTotalSalidas].z = currencyFormat;
-        if (wsData[cellTotalFlujo]) wsData[cellTotalFlujo].z = currencyFormat;
+        for (let r = 3; r <= 6; r++) {
+            const cell = XLSX.utils.encode_cell({ r: r, c: totalCol });
+            if (wsData[cell]) wsData[cell].z = currencyFormat;
+        }
         
         // ============================================================
         // CONFIGURAR ANCHOS DE COLUMNA
@@ -765,13 +788,13 @@ function exportGastosRealesExcel() {
         
         // Ya se combinaron los años en row1 arriba con mergeCells()
         
-        // Combinar celda "Flujo de Efectivo" (A6:D6)
-        mergeCells(wsData, 5, 0, 5, 3);
-        
+        // Combinar celda "Flujo de Efectivo" (A7:D7) - ahora fila 7 (índice 6)
+        mergeCells(wsData, 6, 0, 6, 3);
+
         // Establecer rango de la hoja
         const range = XLSX.utils.decode_range(wsData['!ref']);
         range.e.c = row2.length - 1;
-        range.e.r = 7;
+        range.e.r = 8;
         wsData['!ref'] = XLSX.utils.encode_range(range);
         
         // Aplicar merges al worksheet

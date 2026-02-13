@@ -408,12 +408,13 @@ class TransaccionesController {
                 SELECT
                     CASE
                         WHEN tipo = 'I' THEN 'ingresos'
+                        WHEN tipo = 'G' AND forma_pago LIKE 'Inversion a%' THEN 'inversion'
                         WHEN tipo = 'G' THEN 'gastos'
                     END as categoria,
                     SUM(total) as total_monto,
                     COUNT(*) as cantidad
                 FROM transacciones $whereClause
-                GROUP BY tipo
+                GROUP BY categoria
             ";
 
             $resultados = executeQuery($resumenQuery, $params);
@@ -421,6 +422,7 @@ class TransaccionesController {
             $resumen = [
                 'ingresos' => 0,
                 'gastos' => 0,
+                'inversion' => 0,
                 'balance' => 0,
                 'total_transacciones' => 0
             ];
@@ -431,6 +433,9 @@ class TransaccionesController {
                     $resumen['total_transacciones'] += $row['cantidad'] ?? 0;
                 } else if ($row['categoria'] === 'gastos') {
                     $resumen['gastos'] = floatval($row['total_monto'] ?? 0);
+                    $resumen['total_transacciones'] += $row['cantidad'] ?? 0;
+                } else if ($row['categoria'] === 'inversion') {
+                    $resumen['inversion'] = floatval($row['total_monto'] ?? 0);
                     $resumen['total_transacciones'] += $row['cantidad'] ?? 0;
                 }
             }
@@ -603,6 +608,7 @@ class TransaccionesController {
                         a.forma_pago,
                         a.domiciliado,
                         a.estatus,
+                        a.maestro_id,
                         COALESCE(m.nombre, 'Sin asignar') as maestro,
                         1 as num_clases
                     FROM alumnos a

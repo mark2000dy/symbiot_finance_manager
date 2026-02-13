@@ -101,6 +101,7 @@ async function loadDashboardData() {
             const resumen = {
                 ingresos: data.data.ingresos || 0,
                 gastos: data.data.gastos || 0,
+                inversion: data.data.inversion || 0,
                 balance: data.data.balance || 0,
                 total_transacciones: data.data.total_transacciones || 0
             };
@@ -144,6 +145,11 @@ function updateMainStatsReal(resumen) {
                 value: resumen.balance || 0,
                 defaultClass: 'text-info mb-0'
             },
+            'inversionSocios': {
+                value: resumen.inversion || 0,
+                defaultClass: 'mb-0',
+                customStyle: 'color: #8b5cf6'
+            },
             'totalIngresos': {
                 value: resumen.ingresos || 0,
                 defaultClass: 'text-success mb-0'
@@ -179,6 +185,11 @@ function updateMainStatsReal(resumen) {
                 } else {
                     // Otros elementos mantienen su color por defecto
                     element.className = config.defaultClass;
+                }
+
+                // Aplicar estilo custom si existe (ej: color purple para inversión)
+                if (config.customStyle) {
+                    element.style.cssText = config.customStyle;
                 }
                 
                 console.log(`✅ ${elementId} = ${formattedValue} (REAL) - Clase: ${element.className}`);
@@ -586,6 +597,7 @@ function resetMainStats() {
     try {
         const defaults = {
             'balanceTotal': { value: '$0.00', class: 'text-info mb-0' },
+            'inversionSocios': { value: '$0.00', class: 'mb-0', style: 'color: #8b5cf6' },
             'totalIngresos': { value: '$0.00', class: 'text-success mb-0' },
             'totalGastos': { value: '$0.00', class: 'text-danger mb-0' },
             'esteMes': { value: '$0.00', class: 'text-warning mb-0' }
@@ -597,6 +609,7 @@ function resetMainStats() {
                 element.innerHTML = '';
                 element.textContent = config.value;
                 element.className = config.class;
+                if (config.style) element.style.cssText = config.style;
             }
         });
         
