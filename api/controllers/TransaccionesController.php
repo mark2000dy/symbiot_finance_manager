@@ -414,7 +414,12 @@ class TransaccionesController {
                     SUM(total) as total_monto,
                     COUNT(*) as cantidad
                 FROM transacciones $whereClause
-                GROUP BY categoria
+                GROUP BY
+                    CASE
+                        WHEN tipo = 'I' THEN 'ingresos'
+                        WHEN tipo = 'G' AND forma_pago LIKE 'Inversion a%' THEN 'inversion'
+                        WHEN tipo = 'G' THEN 'gastos'
+                    END
             ";
 
             $resultados = executeQuery($resumenQuery, $params);
@@ -1732,7 +1737,8 @@ class TransaccionesController {
                     total,
                     fecha,
                     tipo,
-                    empresa_id
+                    empresa_id,
+                    forma_pago
                 FROM transacciones
                 $whereClause
                 ORDER BY fecha DESC

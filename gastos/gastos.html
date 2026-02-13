@@ -578,8 +578,9 @@
                         </label>
                         <select class="form-select" id="filterTipo" onchange="applyFilters()">
                             <option value="">Todos</option>
-                            <option value="I" disabled>💰 Ingresos (Solo en sección Ingresos)</option>
-                            <option value="G" selected>💸 Gastos </option>
+                            <option value="I" disabled>Ingresos (Solo en sección Ingresos)</option>
+                            <option value="G" selected>Gastos</option>
+                            <option value="V">Inversión Socios</option>
                         </select>
                     </div>
 
@@ -924,10 +925,13 @@
                 const empresa = document.getElementById('filterEmpresa').value;
                 const ano = document.getElementById('filterAno').value;
                 const mes = document.getElementById('filterMes').value;
-                const tipo = document.getElementById('filterTipo').value || 'G'; // Solo Gastos por defecto
+                const tipoFilter = document.getElementById('filterTipo').value || 'G';
+
+                // 'V' (Inversión) es un subfiltro de tipo G - pedir G al API y filtrar client-side
+                const tipoAPI = (tipoFilter === 'V') ? 'G' : tipoFilter;
 
                 if (empresa) params.empresa_id = empresa;
-                if (tipo) params.tipo = tipo;
+                if (tipoAPI) params.tipo = tipoAPI;
 
                 // Construir rango de fechas
                 if (ano) {
@@ -955,6 +959,14 @@
                 }
 
                 allTransactionsData = result.data || [];
+
+                // Si filtro es 'V' (Inversión), filtrar solo transacciones de inversión
+                if (tipoFilter === 'V') {
+                    allTransactionsData = allTransactionsData.filter(t =>
+                        (t.forma_pago || '').startsWith('Inversion a')
+                    );
+                }
+
                 populateSocioFilter(allTransactionsData);
                 applySocioFilterToData();
 
@@ -1535,10 +1547,13 @@
                 const empresa = document.getElementById('filterEmpresa').value;
                 const ano = document.getElementById('filterAno').value;
                 const mes = document.getElementById('filterMes').value;
-                const tipo = document.getElementById('filterTipo').value || 'G'; // Forzar gastos
+                const tipoFilter = document.getElementById('filterTipo').value || 'G';
+
+                // 'V' (Inversión) es subfiltro de G
+                const tipoAPI = (tipoFilter === 'V') ? 'G' : tipoFilter;
 
                 if (empresa) params.empresa_id = empresa;
-                params.tipo = tipo; // Asegurar solo gastos
+                params.tipo = tipoAPI;
 
                 // Construir fechas como en loadTransactions()
                 if (ano) {
@@ -1557,14 +1572,18 @@
 
                 console.log('📊 Cargando datos de gráfica con filtros:', params);
 
-                // v3.1.2: Usar API Client en lugar de fetch directo
                 const result = await window.apiGet('transacciones', params);
-                
+
                 if (!result.success) {
                     throw new Error('Error cargando datos para gráfica');
                 }
-                
-                const data = result.data || [];
+
+                let data = result.data || [];
+
+                // Si filtro es 'V', solo mostrar inversiones en la gráfica
+                if (tipoFilter === 'V') {
+                    data = data.filter(t => (t.forma_pago || '').startsWith('Inversion a'));
+                }
                 renderGastosChart(data);
                 
             } catch (error) {
@@ -1597,16 +1616,23 @@
             const textColor = isLight ? '#1a1a1a' : 'white';
             const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
 
+            // Colores según filtro de tipo (morado para inversión, rojo para gastos)
+            const tipoActual = document.getElementById('filterTipo').value || 'G';
+            const esInversion = tipoActual === 'V';
+            const chartBg = esInversion ? 'rgba(139, 92, 246, 0.7)' : 'rgba(220, 53, 69, 0.7)';
+            const chartBorder = esInversion ? 'rgba(139, 92, 246, 1)' : 'rgba(220, 53, 69, 1)';
+            const chartLabel = esInversion ? 'Inversión ($)' : 'Gastos ($)';
+
             // Configurar gráfica
             currentChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: processedData.labels,
                     datasets: [{
-                        label: 'Gastos ($)',
+                        label: chartLabel,
                         data: processedData.values,
-                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
-                        borderColor: 'rgba(220, 53, 69, 1)',
+                        backgroundColor: chartBg,
+                        borderColor: chartBorder,
                         borderWidth: 2,
                         borderRadius: 6,
                         borderSkipped: false,
