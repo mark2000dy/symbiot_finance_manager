@@ -1013,3 +1013,11 @@ body,
 [data-theme="light"] .class-item .text-white {
     color: #1a1a1a !important;
 }
+
+/* Línea divisoria TOTAL GENERAL en Corte de Pagos */
+.corte-total-row {
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+[data-theme="light"] .corte-total-row {
+    border-top: 2px solid rgba(0, 0, 0, 0.35) !important;
+}
