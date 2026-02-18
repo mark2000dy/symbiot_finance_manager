@@ -53,13 +53,13 @@ function createEditStudentModalHTML() {
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="editStudentEnrollmentDate" class="form-label">
                                     <i class="fas fa-calendar me-1"></i>Fecha de Inscripción *
                                 </label>
                                 <input type="date" class="form-control" id="editStudentEnrollmentDate" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="editStudentInstrument" class="form-label">
                                     <i class="fas fa-music me-1"></i>Instrumento/Clase *
                                 </label>
@@ -70,6 +70,15 @@ function createEditStudentModalHTML() {
                                     <option value="Batería">🥁 Batería</option>
                                     <option value="Bajo">🎸 Bajo Eléctrico</option>
                                     <option value="Canto">🎤 Canto</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="editStudentClassType" class="form-label">
+                                    <i class="fas fa-users me-1"></i>Tipo de Clase *
+                                </label>
+                                <select class="form-select" id="editStudentClassType" required>
+                                    <option value="Individual">👤 Individual</option>
+                                    <option value="Grupal">👥 Grupal</option>
                                 </select>
                             </div>
                         </div>

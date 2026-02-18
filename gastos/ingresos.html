@@ -156,10 +156,6 @@
             color: #FFFFFF !important;
         }
         
-        .alert-info strong {
-            color: #FFFFFF !important;
-        }
-        
         /* Mejorar visibilidad de textos */
         .text-muted, .small {
             color: #E4E6EA !important;
@@ -239,18 +235,20 @@
         }
         
         /* Estadísticas en gráfica */
-        .stat-card-small {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .stat-card-small,
+        .card.stat-card-small {
+            background: rgba(25, 28, 36, 0.85) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
             border-radius: 0.75rem;
             transition: all 0.3s ease;
         }
-        
-        .stat-card-small:hover {
-            background: rgba(255, 255, 255, 0.12);
+
+        .stat-card-small:hover,
+        .card.stat-card-small:hover {
+            background: rgba(25, 28, 36, 0.95) !important;
             transform: translateY(-2px);
         }
-        
+
         .stat-icon-small {
             width: 45px;
             height: 45px;
@@ -260,16 +258,15 @@
             flex-shrink: 0;
             border-radius: 0.5rem;
         }
-        
+
         .stat-icon-small i {
             font-size: 1.2rem;
         }
-        
+
         .stat-card-small h5 {
             font-size: 1.1rem;
             line-height: 1.2;
             font-weight: 600;
-            color: #FFFFFF !important;
         }
         
         /* Dropdown menus */
@@ -444,7 +441,7 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-success" id="totalIngresosChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">💰 Total Ingresos</small>
+                                        <small style="color: rgba(255,255,255,0.75);">💰 Total Ingresos</small>
                                     </div>
                                 </div>
                             </div>
@@ -459,7 +456,7 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-info" id="promedioIngresosChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">📊 Promedio</small>
+                                        <small style="color: rgba(255,255,255,0.75);">📊 Promedio</small>
                                     </div>
                                 </div>
                             </div>
@@ -474,7 +471,7 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-warning" id="mayorIngresoChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">🏆 Mayor Ingreso</small>
+                                        <small style="color: rgba(255,255,255,0.75);">🏆 Mayor Ingreso</small>
                                     </div>
                                 </div>
                             </div>
@@ -489,7 +486,7 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-primary" id="totalTransaccionesChart">0</h5>
-                                        <small style="color: #E4E6EA !important;">📝 Transacciones</small>
+                                        <small style="color: rgba(255,255,255,0.75);">📝 Transacciones</small>
                                     </div>
                                 </div>
                             </div>
@@ -1709,6 +1706,11 @@
             document.getElementById('chartSummary').style.display = 'none';
             document.getElementById('chartError').style.display = 'block';
         }
+
+        // Observer para re-renderizar la gráfica al cambiar el tema
+        new MutationObserver(() => {
+            if (typeof loadIngresosChart === 'function') loadIngresosChart();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
         // ============================================================
         // FUNCIONES DE UTILIDAD

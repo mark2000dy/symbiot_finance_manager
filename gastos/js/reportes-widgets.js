@@ -243,6 +243,7 @@ function isMobileViewport() {
 
 let gastosRealesChart = null;
 let gastosRealesData = null;
+let lastGastosRealesTipo = '';
 
 // ============================================================
 // 🎨 HELPERS DE FORMATO PARA EXCEL
@@ -374,8 +375,9 @@ async function loadGastosRealesData(filters = {}) {
         // Actualizar tabla
         updateGastosRealesTable(adaptedData.detalle_mensual);
 
-        // Guardar datos para exportación
+        // Guardar datos para exportación y re-render en cambio de tema
         gastosRealesData = adaptedData;
+        lastGastosRealesTipo = filters.tipo || '';
         
     } catch (error) {
         console.error('❌ Error cargando datos de Gastos Reales:', error);
@@ -1717,5 +1719,22 @@ window.updateTablaParticipacion = updateTablaParticipacion;
 // Altas y Bajas
 window.initializeAltasBajasWidget = initializeAltasBajasWidget;
 window.loadAltasBajasData = loadAltasBajasData;
+
+// ============================================================
+// 🎨 RE-RENDER GRÁFICAS AL CAMBIAR TEMA
+// ============================================================
+
+function refreshAllChartsForTheme() {
+    if (gastosRealesData && gastosRealesData.detalle_mensual) {
+        updateGastosRealesChart(gastosRealesData.detalle_mensual, lastGastosRealesTipo);
+    }
+    if (balanceGeneralData && balanceGeneralData.participacion && balanceGeneralData.participacion.length > 0) {
+        updateChartParticipacion(balanceGeneralData.participacion);
+    }
+    if (altasBajasData && altasBajasData.meses) {
+        updateAltasBajasChart(altasBajasData.meses);
+    }
+}
+window.refreshAllChartsForTheme = refreshAllChartsForTheme;
 
 console.log('✅ Reportes Widgets Module cargado');

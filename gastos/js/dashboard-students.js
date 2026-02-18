@@ -1703,8 +1703,9 @@ async function editStudent(id) {
                 return;
             }
 
-            // Filtrar por nombre exacto del alumno
-            const individualRecords = result.data.filter(s => s.nombre === student.nombre);
+            // Filtrar por IDs conocidos (all_ids) para evitar fallos por acentos u ortografía
+            const knownIds = String(student.all_ids).split(',').map(id => parseInt(id.trim(), 10));
+            const individualRecords = result.data.filter(s => knownIds.includes(parseInt(s.id, 10)));
             console.log(`📋 Registros individuales encontrados: ${individualRecords.length}`, individualRecords);
 
             if (individualRecords.length < 2) {

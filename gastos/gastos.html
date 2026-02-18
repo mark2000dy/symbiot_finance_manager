@@ -156,10 +156,6 @@
             color: #FFFFFF !important;
         }
         
-        .alert-info strong {
-            color: #FFFFFF !important;
-        }
-        
         /* Mejorar visibilidad de textos */
         .text-muted, .small {
             color: #E4E6EA !important;
@@ -239,18 +235,20 @@
         }
         
         /* Estadísticas en gráfica */
-        .stat-card-small {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .stat-card-small,
+        .card.stat-card-small {
+            background: rgba(25, 28, 36, 0.85) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
             border-radius: 0.75rem;
             transition: all 0.3s ease;
         }
-        
-        .stat-card-small:hover {
-            background: rgba(255, 255, 255, 0.12);
+
+        .stat-card-small:hover,
+        .card.stat-card-small:hover {
+            background: rgba(25, 28, 36, 0.95) !important;
             transform: translateY(-2px);
         }
-        
+
         .stat-icon-small {
             width: 45px;
             height: 45px;
@@ -260,16 +258,15 @@
             flex-shrink: 0;
             border-radius: 0.5rem;
         }
-        
+
         .stat-icon-small i {
             font-size: 1.2rem;
         }
-        
+
         .stat-card-small h5 {
             font-size: 1.1rem;
             line-height: 1.2;
             font-weight: 600;
-            color: #FFFFFF !important;
         }
         
         /* Dropdown menus */
@@ -436,22 +433,22 @@
                     <hr class="my-4" style="border-color: rgba(255, 255, 255, 0.2);">
                     <div class="row g-3">
                         <!-- Total Gastos Card -->
-                        <div class="col-6 col-lg">
+                        <div class="col-12 col-sm-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
-                                    <div class="stat-icon-small bg-success bg-opacity-20 rounded-circle me-3">
-                                        <i class="fas fa-coins text-success"></i>
+                                    <div class="stat-icon-small bg-danger bg-opacity-20 rounded-circle me-3">
+                                        <i class="fas fa-coins text-danger"></i>
                                     </div>
                                     <div>
-                                        <h5 class="mb-0 text-success" id="totalGastosChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">Total Gastos</small>
+                                        <h5 class="mb-0 text-danger" id="totalGastosChart">$0</h5>
+                                        <small style="color: rgba(255,255,255,0.75);">💸 Total Gastos</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Inversión Socios Card -->
-                        <div class="col-6 col-lg">
+                        <div class="col-12 col-sm-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="stat-icon-small rounded-circle me-3" style="background: rgba(139, 92, 246, 0.2);">
@@ -459,14 +456,14 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0" id="inversionSociosChart" style="color: #8b5cf6;">$0</h5>
-                                        <small style="color: #E4E6EA !important;">Inversión Socios</small>
+                                        <small style="color: rgba(255,255,255,0.75);">💼 Inversión Socios</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Promedio Card -->
-                        <div class="col-6 col-lg">
+                        <div class="col-12 col-sm-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="stat-icon-small bg-info bg-opacity-20 rounded-circle me-3">
@@ -474,14 +471,14 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-info" id="promedioGastosChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">Promedio</small>
+                                        <small style="color: rgba(255,255,255,0.75);">📊 Promedio</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Mayor Gasto Card -->
-                        <div class="col-6 col-lg">
+                        <div class="col-12 col-sm-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="stat-icon-small bg-warning bg-opacity-20 rounded-circle me-3">
@@ -489,14 +486,14 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-warning" id="mayorGastoChart">$0</h5>
-                                        <small style="color: #E4E6EA !important;">Mayor Gasto</small>
+                                        <small style="color: rgba(255,255,255,0.75);">🏆 Mayor Gasto</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Transacciones Card -->
-                        <div class="col-6 col-lg">
+                        <div class="col-12 col-sm-6 col-lg">
                             <div class="card stat-card-small h-100">
                                 <div class="card-body d-flex align-items-center p-3">
                                     <div class="stat-icon-small bg-primary bg-opacity-20 rounded-circle me-3">
@@ -504,7 +501,7 @@
                                     </div>
                                     <div>
                                         <h5 class="mb-0 text-primary" id="totalTransaccionesChart">0</h5>
-                                        <small style="color: #E4E6EA !important;">Transacciones</small>
+                                        <small style="color: rgba(255,255,255,0.75);">📝 Transacciones</small>
                                     </div>
                                 </div>
                             </div>
@@ -1025,7 +1022,7 @@
                             ? '<span class="badge" style="background: #8b5cf6;">Inversión</span>'
                             : '<span class="badge bg-danger">Gasto</span>'}
                     </td>
-                    <td class="text-end text-success fw-bold">${formatCurrency((transaction.cantidad || 1) * (transaction.precio_unitario || 0))}</td>
+                    <td class="text-end text-danger fw-bold">${formatCurrency((transaction.cantidad || 1) * (transaction.precio_unitario || 0))}</td>
                     <td class="text-center">
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-outline-primary btn-sm" onclick="editTransaction(${transaction.id})" title="Editar">
@@ -1795,6 +1792,11 @@
             document.getElementById('chartSummary').style.display = 'none';
             document.getElementById('chartError').style.display = 'block';
         }
+
+        // Observer para re-renderizar la gráfica al cambiar el tema
+        new MutationObserver(() => {
+            if (typeof loadGastosChart === 'function') loadGastosChart();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
         // ============================================================
         // FUNCIONES DE UTILIDAD

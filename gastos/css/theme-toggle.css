@@ -62,8 +62,8 @@
     --text-dark: #000000;
 
     /* Bordes */
-    --border-color: rgba(0, 0, 0, 0.12);
-    --border-light: rgba(0, 0, 0, 0.18);
+    --border-color: rgba(0, 0, 0, 0.2);
+    --border-light: rgba(0, 0, 0, 0.25);
 
     /* Sombras */
     --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -239,6 +239,14 @@
 
 [data-theme="light"] .table-dark tbody tr:hover {
     background-color: var(--table-hover) !important;
+}
+
+[data-theme="light"] .table-dark .table-active,
+[data-theme="light"] .table-dark .table-active th,
+[data-theme="light"] .table-dark .table-active td {
+    --bs-table-active-bg: rgba(0, 0, 0, 0.08);
+    background-color: rgba(0, 0, 0, 0.08) !important;
+    color: #1a1a1a !important;
 }
 
 /* Alerts */
@@ -966,4 +974,42 @@ body,
 [data-theme="light"] table i.fas,
 [data-theme="light"] table i.far {
     opacity: 0.8;
+}
+
+/* ========================================= */
+/* STAT CARDS DE GRÁFICA (gastos/ingresos)   */
+/* Fondo claro (del .card) + texto oscuro    */
+/* ========================================= */
+
+/* Label visible en modo claro — especificidad (0,3,1) supera inline sin !important */
+[data-theme="light"] .card.stat-card-small small {
+    color: #2d2d2d !important;
+}
+
+/* ========================================= */
+/* DASHBOARD: Teacher Cards y Class Items    */
+/* Fondos y textos adaptados al modo claro  */
+/* ========================================= */
+
+/* Fondo de sub-card de maestro */
+[data-theme="light"] .teacher-card {
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Textos blancos dentro de teacher-card → oscuros en modo claro */
+[data-theme="light"] .teacher-card .text-white {
+    color: #1a1a1a !important;
+}
+[data-theme="light"] .teacher-card .text-muted {
+    color: #4a4a4a !important;
+}
+
+/* Fondo de fila de distribución por clase */
+[data-theme="light"] .class-item {
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Nombre de clase dentro de class-item */
+[data-theme="light"] .class-item .text-white {
+    color: #1a1a1a !important;
 }
