@@ -82,38 +82,28 @@ function getPaymentStatusHomologado(student) {
 // ============================================================
 
 /**
- * Detecta si un alumno tiene doble clase:
- * - precio_mensual == 2550
- * - O horario con 2+ horas (ej: "17:00 a 19:00" = 2h)
- * - O horario con 2+ dias (ej: "Lun, Mie" o separado por |)
- * Retorna 2 si es doble, 1 si es normal.
+ * Detecta si una inscripción representa 2 slots de clase para el PAGO AL MAESTRO.
+ * Criterio único: precio_mensual == $2,550 (equivale a 2 × $1,275 en una sola fila).
+ * Retorna 2 si es doble slot, 1 en cualquier otro caso.
  */
 function getClassMultiplier(student) {
-    // Criterio 1: precio $2,550
     var precio = parseFloat(student.precio_mensual) || 0;
     if (precio === PRECIO_DOBLE_CLASE) return 2;
-
-    // Criterio 2: horario con 2+ horas
-    var horario = (student.horario || '').trim();
-    if (horario) {
-        // Detectar rango horario tipo "17:00 a 19:00" (2 horas)
-        var rangoMatch = horario.match(/(\d{1,2}):(\d{2})\s*a\s*(\d{1,2}):(\d{2})/);
-        if (rangoMatch) {
-            var horaInicio = parseInt(rangoMatch[1]);
-            var horaFin = parseInt(rangoMatch[3]);
-            if ((horaFin - horaInicio) >= 2) return 2;
-        }
-
-        // Detectar 2+ dias: separados por coma, "y", o pipe
-        var dias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
-        var diasEncontrados = 0;
-        dias.forEach(function(d) {
-            if (horario.indexOf(d) !== -1) diasEncontrados++;
-        });
-        if (diasEncontrados >= 2) return 2;
-    }
-
     return 1;
+}
+
+/**
+ * Detecta si una inscripción tiene 2+ sesiones por semana para la TABLA INFORMATIVA.
+ * Criterio: el campo horario contiene 2+ nombres de día (ej: "Lun, Mie 17:00").
+ * Esto permite mostrar a hermanos con descuento (Cano Soto $1,150 x2/semana)
+ * sin afectar el cálculo de pago al maestro.
+ */
+function hasMultipleSessionsPerWeek(student) {
+    var horario = (student.horario || '').trim();
+    if (!horario) return false;
+    var dias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+    var encontrados = dias.filter(function(d) { return horario.indexOf(d) !== -1; });
+    return encontrados.length >= 2;
 }
 
 // ============================================================
@@ -283,8 +273,8 @@ function renderMultiClassStudents(students) {
         if (studentMap[nombre].maestros.indexOf(maestroName) === -1) {
             studentMap[nombre].maestros.push(maestroName);
         }
-        // Detectar doble clase en misma inscripcion
-        if (s._classMultiplier >= 2) {
+        // Detectar doble clase: por precio $2,550 O por horario multi-día (ej: Cano Soto)
+        if (s._classMultiplier >= 2 || hasMultipleSessionsPerWeek(s)) {
             studentMap[nombre].isDouble = true;
             studentMap[nombre].precio = parseFloat(s.precio_mensual) || 0;
         }
