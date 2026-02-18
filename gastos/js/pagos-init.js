@@ -82,28 +82,38 @@ function getPaymentStatusHomologado(student) {
 // ============================================================
 
 /**
- * Detecta si una inscripción representa 2 slots de clase para el PAGO AL MAESTRO.
- * Criterio único: precio_mensual == $2,550 (equivale a 2 × $1,275 en una sola fila).
- * Retorna 2 si es doble slot, 1 en cualquier otro caso.
+ * Devuelve cuántos slots de clase por semana representa una inscripción.
+ *
+ * Criterio 1 (precio): precio_mensual == $2,550 → 2 slots (ej: Diego Grajeda 2×$1,275).
+ * Criterio 2 (horario): cuenta días únicos en el campo horario.
+ *   "17:00 a 18:00 Lun y 16:00 a 17:00 Mar" → 2 días → multiplier 2 → maestro cobra ×2
+ *   "Lun, Mie y Vie 17:00"                  → 3 días → multiplier 3 → maestro cobra ×3
+ * Las filas de multi-instrumento (Joshua) tienen 1 día c/u → multiplier 1 por fila, sin falso positivo.
+ *
+ * Retorna el número de sesiones semanales (mínimo 1).
  */
 function getClassMultiplier(student) {
+    // Criterio 1: precio exacto $2,550
     var precio = parseFloat(student.precio_mensual) || 0;
     if (precio === PRECIO_DOBLE_CLASE) return 2;
+
+    // Criterio 2: contar días distintos en el horario
+    var horario = (student.horario || '').trim();
+    if (horario) {
+        var dias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+        var encontrados = dias.filter(function(d) { return horario.indexOf(d) !== -1; });
+        if (encontrados.length >= 2) return encontrados.length;
+    }
+
     return 1;
 }
 
 /**
- * Detecta si una inscripción tiene 2+ sesiones por semana para la TABLA INFORMATIVA.
- * Criterio: el campo horario contiene 2+ nombres de día (ej: "Lun, Mie 17:00").
- * Esto permite mostrar a hermanos con descuento (Cano Soto $1,150 x2/semana)
- * sin afectar el cálculo de pago al maestro.
+ * Alias semántico para la tabla informativa (2+ Clases/Horarios).
+ * Reutiliza getClassMultiplier para mantener consistencia con el corte de pagos.
  */
 function hasMultipleSessionsPerWeek(student) {
-    var horario = (student.horario || '').trim();
-    if (!horario) return false;
-    var dias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
-    var encontrados = dias.filter(function(d) { return horario.indexOf(d) !== -1; });
-    return encontrados.length >= 2;
+    return getClassMultiplier(student) >= 2;
 }
 
 // ============================================================
