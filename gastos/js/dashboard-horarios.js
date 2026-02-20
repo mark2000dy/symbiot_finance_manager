@@ -60,6 +60,9 @@ function _isOperatingHour(dayNum, hour) {
         // Leyenda
         '.hr-legend{font-size:0.78rem;color:rgba(255,255,255,0.82);}' +
         '[data-theme="light"] .hr-legend{color:rgba(0,0,0,0.72);}' +
+        // Fondo del contenedor de barra de capacidad
+        '.hr-bar-bg{background:rgba(255,255,255,0.14);border-radius:3px;overflow:hidden;height:19px;position:relative;}' +
+        '[data-theme="light"] .hr-bar-bg{background:rgba(0,0,0,0.28);}' +
         // Cards resumen — wrapper Total Escuela
         '.hr-card-total{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.25);}' +
         '[data-theme="light"] .hr-card-total{background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.15);}' +
@@ -461,8 +464,7 @@ function _buildCell(salaKey, sala, day, hour, slots) {
         hasAny = true;
 
         var pct       = info.count / info.cap;
-        var barColor  = pct >= 1 ? '#dc3545' : pct >= 0.7 ? '#ffc107' : '#0dcaf0';
-        var textColor = (pct >= 0.7 && pct < 1) ? '#1a1a1a' : '#fff';
+        var barColor  = pct >= 1 ? '#dc3545' : pct >= 0.7 ? '#e67e22' : '#0dcaf0';
         var barW      = Math.min(100, Math.round(pct * 100));
         var cfg       = INSTR_CFG[inst];
         var maestro   = info.maestros.length > 0 ? info.maestros[0].split(' ')[0] : '';
@@ -483,12 +485,12 @@ function _buildCell(salaKey, sala, day, hour, slots) {
 
         // Barra de capacidad
         content +=
-            '<div style="background:#2d2d2d;border-radius:3px;overflow:hidden;height:19px;position:relative;">' +
+            '<div class="hr-bar-bg">' +
             '<div style="width:' + barW + '%;height:100%;background:' + barColor + ';transition:width .3s;"></div>' +
             '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
-                   'font-size:0.7rem;font-weight:600;color:' + textColor + ';gap:3px;">' +
+                   'font-size:0.7rem;font-weight:600;color:#fff;gap:3px;">' +
             info.count + '/' + info.cap +
-            (maestro ? '<span style="opacity:.8;font-weight:400;">· ' + maestro + '</span>' : '') +
+            (maestro ? '<span style="opacity:.85;font-weight:400;">· ' + maestro + '</span>' : '') +
             '</span>' +
             '</div>';
 
