@@ -409,6 +409,35 @@ function buildSalonGrid($salonId, $salonNombre, $slotsMatrix, $SCHOOL_SCHEDULE, 
     return $html;
 }
 
+// Capacidad real semanal (alumno-slots disponibles por semana)
+// Lun-Vie 15:00-20:00 = 5h × 5 días = 25 slots
+// Sáb    11:00-16:00 = 5h × 1 día  =  5 slots → total: 30 slots/sem
+$totalSlotsSemanales = 0;
+foreach ($DIAS_NUMS as $d) {
+    $sch = $SCHOOL_SCHEDULE[$d];
+    $totalSlotsSemanales += $sch[1] - $sch[0];  // = 30
+}
+
+// Capacidad por slot de cada salón (alumnos simultáneos por franja de 1 h)
+// Múltiple = 3 (máx Bajo/Canto); Teclado = 2 se detalla aparte
+$CAP_POR_SLOT = [1 => 2, 2 => 5, 3 => 3];
+
+$realCap     = [];   // alumno-slots máximos por semana
+$realOcupado = [];   // alumno-slots efectivamente usados
+
+foreach ([1, 2, 3] as $sid) {
+    $capSlot = $CAP_POR_SLOT[$sid];
+    $realCap[$sid] = $capSlot * $totalSlotsSemanales;
+    $occ = 0;
+    foreach (($slotsMatrix[$sid] ?? []) as $daySlots) {
+        foreach ($daySlots as $cell) {
+            // Clase individual → bloquea salón completo → cuenta cap. entera del slot
+            $occ += $cell['hasIndiv'] ? $capSlot : $cell['count'];
+        }
+    }
+    $realOcupado[$sid] = $occ;
+}
+
 // 7. Logo en base64
 $imgLogo = '';
 $pathLogo = __DIR__ . '/assets/img/LOGO_CM_R.png';
@@ -685,27 +714,34 @@ ob_start(); ?>
         <thead>
             <tr>
                 <th>Salón</th>
-                <th class="text-center">Capacidad</th>
-                <th class="text-center">Alumnos Activos</th>
-                <th class="text-center">% Ocupación</th>
-                <th>Ocupación visual</th>
+                <th class="text-center">Cap./hora</th>
+                <th class="text-center">Horas op./sem</th>
+                <th class="text-center">Cap. real/sem</th>
+                <th class="text-center">Alumnos inscritos</th>
+                <th class="text-center">Slots usados/sem</th>
+                <th class="text-center">% Uso real</th>
+                <th>Uso visual</th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($salones as $s):
+                $sid      = (int)$s['id'];
                 $activos  = (int)$s['activos'];
-                $cap      = max(1, (int)$s['capacidad']);
-                $pct      = min(100, round($activos / $cap * 100));
-                $barColor = $pct >= 90 ? '#dc3545' : ($pct >= 60 ? $amarillo : '#28a745');
-                $esMultiple = ((int)$s['id'] === 3);
-                // Para Sala Múltiple la "capacidad" mostrada es la mayor del instrumento con más alumnos
-                // La barra y % usan la capacidad fija como referencia visual
+                $capHora  = $CAP_POR_SLOT[$sid] ?? (int)$s['capacidad'];
+                $capReal  = $realCap[$sid]     ?? ($capHora * $totalSlotsSemanales);
+                $ocupado  = $realOcupado[$sid] ?? 0;
+                $pct      = $capReal > 0 ? min(100, round($ocupado / $capReal * 100)) : 0;
+                $barColor = $pct >= 80 ? '#dc3545' : ($pct >= 50 ? $amarillo : '#28a745');
+                $esMultiple = ($sid === 3);
             ?>
             <tr>
                 <td><?= htmlspecialchars($s['salon']) ?><?= $esMultiple ? ' *' : '' ?></td>
-                <td class="text-center"><?= $cap ?><?= $esMultiple ? ' †' : '' ?></td>
+                <td class="text-center"><?= $capHora ?><?= $esMultiple ? ' †' : '' ?></td>
+                <td class="text-center"><?= $totalSlotsSemanales ?></td>
+                <td class="text-center"><strong><?= $capReal ?></strong></td>
                 <td class="text-center"><?= $activos ?></td>
-                <td class="text-center <?= $pct >= 90 ? 'neg' : ($pct >= 60 ? '' : 'pos') ?>"><?= $pct ?>%</td>
+                <td class="text-center"><?= $ocupado ?></td>
+                <td class="text-center <?= $pct >= 80 ? 'neg' : ($pct >= 50 ? '' : 'pos') ?>"><strong><?= $pct ?>%</strong></td>
                 <td>
                     <div class="bar-bg">
                         <div class="bar-fill" style="width:<?= $pct ?>%;background:<?= $barColor ?>;"></div>
@@ -721,29 +757,54 @@ ob_start(); ?>
     <p style="font-size:10px;font-weight:bold;margin:10px 0 4px">
         * Salón Múltiple — desglose por instrumento (capacidades distintas):
     </p>
-    <table style="width:60%">
+    <table style="width:80%">
         <thead>
             <tr>
                 <th>Instrumento</th>
-                <th class="text-center">Cap. máx</th>
-                <th class="text-center">Activos</th>
-                <th class="text-center">% Ocupación</th>
+                <th class="text-center">Cap./hora</th>
+                <th class="text-center">Cap. real/sem</th>
+                <th class="text-center">Inscritos</th>
+                <th class="text-center">Slots usados</th>
+                <th class="text-center">% Uso real</th>
                 <th>Visual</th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($salonMultipleDetalle as $d):
-                $clase    = $d['clase'];
-                $act      = (int)$d['activos'];
-                $capI     = $capMultiple[$clase] ?? 3;
-                $pctI     = min(100, round($act / max(1, $capI) * 100));
-                $barI     = $pctI >= 90 ? '#dc3545' : ($pctI >= 60 ? $amarillo : '#28a745');
+                $clase   = $d['clase'];
+                $act     = (int)$d['activos'];
+                $capI    = $capMultiple[$clase] ?? 3;
+                $capRealI = $capI * $totalSlotsSemanales;
+                // Contar slots realmente ocupados por este instrumento en slotsMatrix[3]
+                $occI = 0;
+                foreach (($slotsMatrix[3] ?? []) as $daySlots) {
+                    foreach ($daySlots as $cell) {
+                        // Solo contamos si la celda es de este instrumento
+                        // (en slotsMatrix cada instrumento tiene su propia celda)
+                        if ($cell['hasIndiv']) { $occI += $capI; }
+                        // Nota: count ya está desagregado por instrumento en la clave de slotsMatrix
+                    }
+                }
+                // Fallback: usar conteo directo de alumnos con slots parseados
+                // Calculamos por instrumento desde los horariosAlumnos
+                $occI = 0;
+                foreach ($horariosAlumnos as $al) {
+                    if ((int)($al['salon_id'] ?? 0) !== 3 || $al['clase'] !== $clase) continue;
+                    $isIndiv = ($al['tipo_clase'] === 'Individual');
+                    foreach (parseSlots($al['horario']) as $slot) {
+                        $occI += $isIndiv ? $capI : 1;
+                    }
+                }
+                $pctI    = $capRealI > 0 ? min(100, round($occI / $capRealI * 100)) : 0;
+                $barI    = $pctI >= 80 ? '#dc3545' : ($pctI >= 50 ? $amarillo : '#28a745');
             ?>
             <tr>
                 <td><?= htmlspecialchars($clase) ?></td>
                 <td class="text-center"><?= $capI ?></td>
+                <td class="text-center"><strong><?= $capRealI ?></strong></td>
                 <td class="text-center"><?= $act ?></td>
-                <td class="text-center <?= $pctI >= 90 ? 'neg' : '' ?>"><?= $pctI ?>%</td>
+                <td class="text-center"><?= $occI ?></td>
+                <td class="text-center <?= $pctI >= 80 ? 'neg' : ($pctI >= 50 ? '' : 'pos') ?>"><strong><?= $pctI ?>%</strong></td>
                 <td>
                     <div class="bar-bg">
                         <div class="bar-fill" style="width:<?= $pctI ?>%;background:<?= $barI ?>;"></div>
@@ -753,11 +814,17 @@ ob_start(); ?>
             <?php endforeach; ?>
         </tbody>
     </table>
-    <p style="font-size:9px;color:#999">† Capacidad del Salón Múltiple: Bajo=3, Canto=3, Teclado=2 (solo 2 teclados disponibles).</p>
+    <p style="font-size:9px;color:#999">† Salón Múltiple: Bajo=3/hora, Canto=3/hora, Teclado=2/hora (solo 2 teclados). Cap. real/sem = cap/hora × <?= $totalSlotsSemanales ?> horas operativas.</p>
     <?php endif; ?>
 
+    <p style="font-size:9px;color:#555;margin:6px 0 14px;">
+        <em>Cap. real/sem = alumnos simultáneos/hora × <?= $totalSlotsSemanales ?> horas operativas (Lun–Vie 15-20h + Sáb 11-16h).
+        Clase individual bloquea el salón completo en esa franja.
+        Verde &lt;50% · Amarillo 50-79% · Rojo &ge;80%.</em>
+    </p>
+
     <!-- Grilla semanal de horarios por salón -->
-    <p style="font-size:10px;font-weight:bold;margin:14px 0 4px;">Disponibilidad por franja horaria</p>
+    <p style="font-size:10px;font-weight:bold;margin:0 0 4px;">Disponibilidad por franja horaria</p>
     <p style="font-size:9px;color:#666;margin:0 0 6px;">
         Lun–Vie 15:00–20:00 &nbsp;|&nbsp; Sáb 11:00–16:00
     </p>
