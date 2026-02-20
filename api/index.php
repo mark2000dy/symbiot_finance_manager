@@ -264,6 +264,15 @@ try {
     }
 
     // ============================================================
+    // RUTAS DE ALUMNOS - CALENDARIO
+    // ============================================================
+    if (preg_match('#^/alumnos/(\d+)/horario-calendar$#', $requestUri, $matches)) {
+        $id = $matches[1];
+        TransaccionesController::getHorarioFromCalendar($id);
+        exit;
+    }
+
+    // ============================================================
     // RUTAS ADICIONALES DE TRANSACCIONES
     // ============================================================
     if ($requestUri === '/transacciones/rango-fechas' && $requestMethod === 'GET') {

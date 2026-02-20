@@ -413,110 +413,147 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <!-- Student Filters -->
-                                <div class="students-filters">
-                                    <div class="row">
-                                        <div class="col-md-3 col-lg mb-2">
-                                            <label class="form-label">
-                                                <i class="fas fa-filter me-1"></i>Maestro
-                                            </label>
-                                            <select class="form-select form-select-sm" id="teacherFilter" onchange="filterStudents()">
-                                                <option value="">👨‍🏫 Todos los Maestros</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3 col-lg mb-2">
-                                            <label class="form-label">
-                                                <i class="fas fa-user-check me-1"></i>Estatus
-                                            </label>
-                                            <select class="form-select form-select-sm" id="statusFilter" onchange="filterStudents()">
-                                                <option value="">📋 Todos</option>
-                                                <option value="Activo">✅ Activos</option>
-                                                <option value="Baja">❌ Bajas</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3 col-lg mb-2">
-                                            <label class="form-label">
-                                                <i class="fas fa-music me-1"></i>Instrumento
-                                            </label>
-                                            <select class="form-select form-select-sm" id="instrumentFilter" onchange="filterStudents()">
-                                                <option value="">🎵 Todos</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3 col-lg mb-2">
-                                            <label class="form-label">
-                                                <i class="fas fa-chalkboard me-1"></i>Tipo de Clase
-                                            </label>
-                                            <select class="form-select form-select-sm" id="tipoClaseFilter" onchange="filterStudents()">
-                                                <option value="">📚 Todos</option>
-                                                <option value="Individual">👤 Individual</option>
-                                                <option value="Grupal">👥 Grupal</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3 col-lg mb-2">
-                                            <label class="form-label">
-                                                <i class="fas fa-money-bill me-1"></i>Pagos
-                                            </label>
-                                            <select class="form-select form-select-sm" id="paymentFilter" onchange="filterStudents()">
-                                                <option value="">💰 Todos</option>
-                                                <option value="current">✅ Al corriente</option>
-                                                <option value="upcoming">⏰ Próximos a vencer</option>
-                                                <option value="overdue">❌ Vencidos</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="card-body p-0">
 
-                                <!-- Students Table Container -->
-                                <div class="students-table-container">
-                                    <!-- Loading State -->
-                                    <div class="loading-state" id="studentsLoadingState">
-                                        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                                        <p class="mt-2">Cargando lista de alumnos...</p>
-                                    </div>
+                                <!-- Pestañas del Gestor de Alumnos -->
+                                <ul class="nav nav-tabs px-3 pt-2" id="gestorAlumnosTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="tab-lista-btn"
+                                                data-bs-toggle="tab" data-bs-target="#tab-lista"
+                                                type="button" role="tab" aria-selected="true">
+                                            <i class="fas fa-list me-1"></i>Lista de Alumnos
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="tab-horarios-btn"
+                                                data-bs-toggle="tab" data-bs-target="#tab-horarios"
+                                                type="button" role="tab" aria-selected="false">
+                                            <i class="fas fa-calendar-week me-1"></i>Horarios Disponibles
+                                        </button>
+                                    </li>
+                                </ul>
 
-                                    <!-- Empty State -->
-                                    <div class="empty-state" id="studentsEmptyState" style="display: none;">
-                                        <i class="fas fa-user-graduate fa-3x mb-3" style="opacity: 0.3;"></i>
-                                        <p>No se encontraron alumnos</p>
-                                    </div>
+                                <div class="tab-content">
 
-                                    <!-- Students Table -->
-                                    <div class="table-responsive" id="studentsTableContainer" style="display: none;">
-                                        <table class="table table-sm table-dark table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th><i class="fas fa-user me-1"></i>Alumno</th>
-                                                    <th><i class="fas fa-music me-1"></i>Instrumento</th>
-                                                    <th><i class="fas fa-user-tie me-1"></i>Maestro</th>
-                                                    <th><i class="fas fa-user-check me-1"></i>Estatus</th>
-                                                    <th><i class="fas fa-calendar me-1"></i>Próximo Pago</th>
-                                                    <th><i class="fas fa-money-bill me-1"></i>Estado Pago</th>
-                                                    <th><i class="fas fa-cogs me-1"></i>Acciones</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="studentsTableBody">
-                                                <!-- Se llena dinámicamente -->
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <!-- Tab 1: Lista de Alumnos (contenido existente) -->
+                                    <div class="tab-pane fade show active p-3" id="tab-lista" role="tabpanel" aria-labelledby="tab-lista-btn">
 
-                                    <!-- Students Pagination -->
-                                    <div class="pagination-container" id="studentsPaginationContainer" style="display: none;">
-                                        <div class="pagination-info">
-                                            <small>
-                                                Mostrando <span id="studentsShowingFrom">1</span> - <span id="studentsShowingTo">10</span> 
-                                                de <span id="studentsTotalRecords">0</span> alumnos
-                                            </small>
+                                        <!-- Student Filters -->
+                                        <div class="students-filters">
+                                            <div class="row">
+                                                <div class="col-md-3 col-lg mb-2">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-filter me-1"></i>Maestro
+                                                    </label>
+                                                    <select class="form-select form-select-sm" id="teacherFilter" onchange="filterStudents()">
+                                                        <option value="">👨‍🏫 Todos los Maestros</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3 col-lg mb-2">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-user-check me-1"></i>Estatus
+                                                    </label>
+                                                    <select class="form-select form-select-sm" id="statusFilter" onchange="filterStudents()">
+                                                        <option value="">📋 Todos</option>
+                                                        <option value="Activo">✅ Activos</option>
+                                                        <option value="Baja">❌ Bajas</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3 col-lg mb-2">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-music me-1"></i>Instrumento
+                                                    </label>
+                                                    <select class="form-select form-select-sm" id="instrumentFilter" onchange="filterStudents()">
+                                                        <option value="">🎵 Todos</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3 col-lg mb-2">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-chalkboard me-1"></i>Tipo de Clase
+                                                    </label>
+                                                    <select class="form-select form-select-sm" id="tipoClaseFilter" onchange="filterStudents()">
+                                                        <option value="">📚 Todos</option>
+                                                        <option value="Individual">👤 Individual</option>
+                                                        <option value="Grupal">👥 Grupal</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3 col-lg mb-2">
+                                                    <label class="form-label">
+                                                        <i class="fas fa-money-bill me-1"></i>Pagos
+                                                    </label>
+                                                    <select class="form-select form-select-sm" id="paymentFilter" onchange="filterStudents()">
+                                                        <option value="">💰 Todos</option>
+                                                        <option value="current">✅ Al corriente</option>
+                                                        <option value="upcoming">⏰ Próximos a vencer</option>
+                                                        <option value="overdue">❌ Vencidos</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <nav>
-                                            <ul class="pagination pagination-sm mb-0" id="studentsPaginationList">
-                                                <!-- Se genera dinámicamente -->
-                                            </ul>
-                                        </nav>
-                                    </div>
-                                </div>
-                            </div>
+
+                                        <!-- Students Table Container -->
+                                        <div class="students-table-container">
+                                            <!-- Loading State -->
+                                            <div class="loading-state" id="studentsLoadingState">
+                                                <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                                <p class="mt-2">Cargando lista de alumnos...</p>
+                                            </div>
+
+                                            <!-- Empty State -->
+                                            <div class="empty-state" id="studentsEmptyState" style="display: none;">
+                                                <i class="fas fa-user-graduate fa-3x mb-3" style="opacity: 0.3;"></i>
+                                                <p>No se encontraron alumnos</p>
+                                            </div>
+
+                                            <!-- Students Table -->
+                                            <div class="table-responsive" id="studentsTableContainer" style="display: none;">
+                                                <table class="table table-sm table-dark table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th><i class="fas fa-user me-1"></i>Alumno</th>
+                                                            <th><i class="fas fa-music me-1"></i>Instrumento</th>
+                                                            <th><i class="fas fa-user-tie me-1"></i>Maestro</th>
+                                                            <th><i class="fas fa-user-check me-1"></i>Estatus</th>
+                                                            <th><i class="fas fa-calendar me-1"></i>Próximo Pago</th>
+                                                            <th><i class="fas fa-money-bill me-1"></i>Estado Pago</th>
+                                                            <th><i class="fas fa-cogs me-1"></i>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="studentsTableBody">
+                                                        <!-- Se llena dinámicamente -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <!-- Students Pagination -->
+                                            <div class="pagination-container" id="studentsPaginationContainer" style="display: none;">
+                                                <div class="pagination-info">
+                                                    <small>
+                                                        Mostrando <span id="studentsShowingFrom">1</span> - <span id="studentsShowingTo">10</span>
+                                                        de <span id="studentsTotalRecords">0</span> alumnos
+                                                    </small>
+                                                </div>
+                                                <nav>
+                                                    <ul class="pagination pagination-sm mb-0" id="studentsPaginationList">
+                                                        <!-- Se genera dinámicamente -->
+                                                    </ul>
+                                                </nav>
+                                            </div>
+                                        </div>
+
+                                    </div><!-- /tab-lista -->
+
+                                    <!-- Tab 2: Horarios Disponibles -->
+                                    <div class="tab-pane fade p-3" id="tab-horarios" role="tabpanel" aria-labelledby="tab-horarios-btn">
+                                        <div id="horariosLoading" class="text-center py-5">
+                                            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                                            <p class="mt-2 text-muted">Cargando horarios...</p>
+                                        </div>
+                                        <div id="horariosContainer" style="display:none;"></div>
+                                    </div><!-- /tab-horarios -->
+
+                                </div><!-- /tab-content -->
+                            </div><!-- /card-body -->
                         </div>
                     </div>
                 </div>
@@ -768,6 +805,7 @@
     <script src="js/dashboard-transactions.js?v=3.4.0"></script>   <!-- v3.4.0: Cache-bust para formatDate corregido -->
     <script src="js/dashboard-modals.js?v=3.4.0"></script>         <!-- v3.4.0: Homologar formas de pago + scroll preserve -->
     <script src="js/dashboard-students.js?v=3.4.0"></script>       <!-- v3.4.0: Fix UTC desfase en pagos y fecha inscripción -->
+    <script src="js/dashboard-horarios.js?v=1.0.0"></script>       <!-- v1.0.0: Pestaña Horarios Disponibles por salón -->
     <script src="js/user-permissions.js?v=1.2.0"></script>        <!-- v1.1.0: Permisos por página y navegación -->
     <script>if (typeof window.checkPageAccess === 'function') window.checkPageAccess();</script>
     <script src="js/dashboard-init.js?v=3.4.0"></script>           <!-- v3.4.0: Scroll preserve en visibility change -->

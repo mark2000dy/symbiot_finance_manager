@@ -1366,7 +1366,12 @@ function createEditStudentModalHTML() {
                                 <label for="editStudentSchedule" class="form-label">
                                     <i class="fas fa-clock me-1"></i>Horario
                                 </label>
-                                <input type="text" class="form-control" id="editStudentSchedule">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="editStudentSchedule">
+                                    <button class="btn btn-outline-info" type="button" onclick="syncStudentSchedule()" title="Sincronizar con Google Calendar">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         
@@ -1511,7 +1516,12 @@ function createEditDoubleStudentModalHTML(records) {
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-clock me-1"></i>Horario</label>
-                        <input type="text" class="form-control" id="editStudentSchedule_${idx}" value="${record.horario || ''}">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="editStudentSchedule_${idx}" value="${record.horario || ''}">
+                            <button class="btn btn-outline-info" type="button" onclick="syncStudentSchedule(${idx})" title="Sincronizar con Google Calendar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label"><i class="fas fa-dollar-sign me-1"></i>Mensualidad *</label>
@@ -1722,7 +1732,7 @@ async function editStudent(id) {
             const first = individualRecords[0];
             const setFieldValue = (fieldId, value) => {
                 const field = document.getElementById(fieldId);
-                if (field) field.value = value || '';
+                if (field) field.value = (value !== null && value !== undefined) ? value : '';
             };
 
             setFieldValue('editStudentName', first.nombre);
@@ -1787,7 +1797,7 @@ function editStudentSimple(modalElement, student) {
     const setFieldValue = (fieldId, value) => {
         const field = document.getElementById(fieldId);
         if (field) {
-            field.value = value || '';
+            field.value = (value !== null && value !== undefined) ? value : '';
         } else {
             console.warn(`⚠️ Campo ${fieldId} no encontrado`);
         }
@@ -1829,6 +1839,24 @@ function editStudentSimple(modalElement, student) {
     setFieldValue('editStudentDomiciliedName', student.titular_domicilado);
 
     toggleDomiciliadoName();
+
+    // ============================================================
+    // LÓGICA DE REACTIVACIÓN: Limpiar horario si pasa de Baja a Activo
+    // ============================================================
+    const statusSelect = document.getElementById('editStudentStatus');
+    if (statusSelect) {
+        // Guardar estado inicial
+        statusSelect.setAttribute('data-initial', student.estatus || 'Activo');
+        
+        statusSelect.onchange = function() {
+            const initialStatus = this.getAttribute('data-initial');
+            // Si estaba en Baja y se cambia a Activo -> Limpiar horario para obligar a reasignar
+            if (initialStatus === 'Baja' && this.value === 'Activo') {
+                const scheduleInput = document.getElementById('editStudentSchedule');
+                if (scheduleInput) scheduleInput.value = '';
+            }
+        };
+    }
 
     const modal = new bootstrap.Modal(modalElement);
     modal.show();
@@ -2699,6 +2727,51 @@ async function viewPaymentTransactionDetail(transactionId) {
     }
 }
 
+/**
+ * Sincronizar horario con Google Calendar
+ * @param {number|null} index - Índice para alumnos con múltiples clases (null para simple)
+ */
+async function syncStudentSchedule(index = null) {
+    let studentId, inputId;
+    
+    if (index !== null) {
+        studentId = document.getElementById(`editStudentClassId_${index}`).value;
+        inputId = `editStudentSchedule_${index}`;
+    } else {
+        studentId = document.getElementById('editStudentId').value;
+        inputId = 'editStudentSchedule';
+    }
+    
+    const input = document.getElementById(inputId);
+    const btn = input.nextElementSibling; // El botón está justo después del input
+    const originalIcon = btn.innerHTML;
+    
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        const response = await window.apiGet(`alumnos/${studentId}/horario-calendar`);
+        
+        if (response.success && response.data) {
+            if (response.data.horario && !response.data.horario.startsWith('Error:')) {
+                input.value = response.data.horario;
+                showAlert('success', 'Horario sincronizado con Google Calendar');
+            } else {
+                showAlert('warning', response.data.horario || 'No se encontraron eventos coincidentes en el calendario');
+            }
+        } else {
+            throw new Error(response.message || 'Error al sincronizar');
+        }
+        
+    } catch (error) {
+        console.error('Error syncing schedule:', error);
+        showAlert('danger', 'No se pudo sincronizar: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalIcon;
+    }
+}
+
 // ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
@@ -2731,6 +2804,7 @@ window.loadPaymentHistory = loadPaymentHistory;
 window.showPaymentHistory = showPaymentHistory;
 window.viewPaymentTransactionDetail = viewPaymentTransactionDetail;
 window.renderTransactionsTable = renderTransactionsTable;
+window.syncStudentSchedule = syncStudentSchedule;
 
 // Exponer funciones globalmente
 window.createEditStudentModalHTML = createEditStudentModalHTML;

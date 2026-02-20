@@ -734,6 +734,78 @@ class TransaccionesController {
 
             error_log("✅ Alumno creado: $nombre");
 
+            // ============================================================
+            // INTEGRACIÓN GOOGLE CALENDAR: Agendar clase recurrente
+            // ============================================================
+            if ($horario && $estatus === 'Activo') {
+                try {
+                    // 1. Obtener nombre del maestro
+                    $teacherName = '';
+                    if ($maestro_id) {
+                        $maestro = executeQuery("SELECT nombre FROM maestros WHERE id = ?", [$maestro_id]);
+                        if (!empty($maestro)) {
+                            $teacherName = $maestro[0]['nombre'];
+                        }
+                    }
+
+                    // 2. Acortar nombre del alumno (Heurística: Primer Nombre + Primer Apellido)
+                    // Ej: "Marco Antonio Delgado Yáñez" -> "Marco Delgado"
+                    $nameParts = explode(' ', trim($nombre));
+                    $shortName = $nameParts[0];
+                    if (count($nameParts) >= 3) {
+                        $shortName .= ' ' . $nameParts[count($nameParts) - 2];
+                    } elseif (count($nameParts) == 2) {
+                        $shortName .= ' ' . $nameParts[1];
+                    }
+
+                    // 3. Parsear Horario (Ej: "19:00 a 20:00 Vie")
+                    $horarioNorm = mb_strtolower($horario);
+                    if (preg_match('/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})\s+(.+)/', $horarioNorm, $matches)) {
+                        $startTime = $matches[1];
+                        $endTime = $matches[2];
+                        $daysStr = $matches[3];
+
+                        $daysMap = [
+                            'lunes' => 'Monday', 'lun' => 'Monday',
+                            'martes' => 'Tuesday', 'mar' => 'Tuesday',
+                            'miércoles' => 'Wednesday', 'miercoles' => 'Wednesday', 'mie' => 'Wednesday',
+                            'jueves' => 'Thursday', 'jue' => 'Thursday',
+                            'viernes' => 'Friday', 'vie' => 'Friday',
+                            'sábado' => 'Saturday', 'sabado' => 'Saturday', 'sab' => 'Saturday',
+                            'domingo' => 'Sunday', 'dom' => 'Sunday'
+                        ];
+                        
+                        $rruleMap = ['Monday'=>'MO', 'Tuesday'=>'TU', 'Wednesday'=>'WE', 'Thursday'=>'TH', 'Friday'=>'FR', 'Saturday'=>'SA', 'Sunday'=>'SU'];
+
+                        require_once __DIR__ . '/../config/GoogleCalendarService.php';
+                        $calendarService = new GoogleCalendarService();
+
+                        foreach ($daysMap as $es => $en) {
+                            if (mb_strpos($daysStr, $es) !== false) {
+                                // Calcular próxima ocurrencia
+                                $startDT = new DateTime("next $en $startTime", new DateTimeZone('America/Mexico_City'));
+                                $endDT = new DateTime("next $en $endTime", new DateTimeZone('America/Mexico_City'));
+                                
+                                // Regla de recurrencia semanal
+                                $recurrence = ["RRULE:FREQ=WEEKLY;BYDAY=" . $rruleMap[$en]];
+
+                                $link = $calendarService->scheduleClassEvent(
+                                    $shortName, 
+                                    $clase, 
+                                    $teacherName, 
+                                    $startDT->format('c'), 
+                                    $endDT->format('c'),
+                                    $recurrence
+                                );
+                                if ($link) error_log("📅 Evento recurrente creado en Calendar: $link");
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("⚠️ Error agendando en Google Calendar: " . $e->getMessage());
+                }
+            }
+
             http_response_code(201);
             echo json_encode([
                 'success' => true,
@@ -770,7 +842,7 @@ class TransaccionesController {
             error_log("🗑️ Eliminando alumno ID: $id por usuario: " . $user['email']);
 
             // Verificar que el alumno existe
-            $alumno = executeQuery("SELECT id, nombre FROM alumnos WHERE id = ?", [$id]);
+            $alumno = executeQuery("SELECT id, nombre, clase FROM alumnos WHERE id = ?", [$id]);
 
             if (empty($alumno)) {
                 http_response_code(404);
@@ -779,6 +851,18 @@ class TransaccionesController {
             }
 
             $nombreOriginal = $alumno[0]['nombre'];
+            $claseOriginal = $alumno[0]['clase'];
+
+            // ============================================================
+            // INTEGRACIÓN GOOGLE CALENDAR: Eliminar evento al borrar alumno
+            // ============================================================
+            try {
+                require_once __DIR__ . '/../config/GoogleCalendarService.php';
+                $calendarService = new GoogleCalendarService();
+                $calendarService->removeStudentFromSchedule($nombreOriginal, $claseOriginal);
+            } catch (Exception $e) {
+                error_log("⚠️ Error eliminando evento de Calendar: " . $e->getMessage());
+            }
 
             // Soft delete: renombrar con prefijo [ELIMINADO]
             executeQuery("
@@ -829,7 +913,7 @@ class TransaccionesController {
 
             // Validar que el alumno existe
             $alumnoExistente = executeQuery("
-                SELECT id, nombre FROM alumnos WHERE id = ?
+                SELECT id, nombre, estatus, clase, maestro_id, horario FROM alumnos WHERE id = ?
             ", [$id]);
 
             if (empty($alumnoExistente)) {
@@ -839,6 +923,89 @@ class TransaccionesController {
                     'error' => 'Alumno no encontrado'
                 ]);
                 return;
+            }
+
+            // ============================================================
+            // INTEGRACIÓN GOOGLE CALENDAR: Eliminar evento si pasa a BAJA
+            // ============================================================
+            if (isset($input['estatus']) && $input['estatus'] === 'Baja' && $alumnoExistente[0]['estatus'] === 'Activo') {
+                try {
+                    require_once __DIR__ . '/../config/GoogleCalendarService.php';
+                    $calendarService = new GoogleCalendarService();
+                    $calendarService->removeStudentFromSchedule($alumnoExistente[0]['nombre'], $alumnoExistente[0]['clase']);
+                } catch (Exception $e) {
+                    error_log("⚠️ Error eliminando evento de Calendar (Baja): " . $e->getMessage());
+                }
+            }
+
+            // ============================================================
+            // INTEGRACIÓN GOOGLE CALENDAR: Reactivación (Baja -> Activo)
+            // ============================================================
+            if (isset($input['estatus']) && $input['estatus'] === 'Activo' && $alumnoExistente[0]['estatus'] === 'Baja') {
+                $horarioNuevo = $input['horario'] ?? null;
+                
+                if ($horarioNuevo) {
+                    try {
+                        require_once __DIR__ . '/../config/GoogleCalendarService.php';
+                        $calendarService = new GoogleCalendarService();
+                        
+                        // Datos para el evento (usar input si existe, sino fallback a DB)
+                        $nombreFinal = $input['nombre'] ?? $alumnoExistente[0]['nombre'];
+                        $claseFinal = $input['clase'] ?? $alumnoExistente[0]['clase'];
+                        $maestroIdFinal = $input['maestro_id'] ?? $alumnoExistente[0]['maestro_id'];
+                        
+                        // 1. Obtener nombre del maestro
+                        $teacherName = '';
+                        if ($maestroIdFinal) {
+                            $maestro = executeQuery("SELECT nombre FROM maestros WHERE id = ?", [$maestroIdFinal]);
+                            if (!empty($maestro)) {
+                                $teacherName = $maestro[0]['nombre'];
+                            }
+                        }
+
+                        // 2. Acortar nombre del alumno
+                        $nameParts = explode(' ', trim($nombreFinal));
+                        $shortName = $nameParts[0];
+                        if (count($nameParts) >= 3) {
+                            $shortName .= ' ' . $nameParts[count($nameParts) - 2];
+                        } elseif (count($nameParts) == 2) {
+                            $shortName .= ' ' . $nameParts[1];
+                        }
+
+                        // 3. Parsear Horario y Agendar
+                        $horarioNorm = mb_strtolower($horarioNuevo);
+                        if (preg_match('/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})\s+(.+)/', $horarioNorm, $matches)) {
+                            $startTime = $matches[1];
+                            $endTime = $matches[2];
+                            $daysStr = $matches[3];
+
+                            $daysMap = [
+                                'lunes' => 'Monday', 'lun' => 'Monday',
+                                'martes' => 'Tuesday', 'mar' => 'Tuesday',
+                                'miércoles' => 'Wednesday', 'miercoles' => 'Wednesday', 'mie' => 'Wednesday',
+                                'jueves' => 'Thursday', 'jue' => 'Thursday',
+                                'viernes' => 'Friday', 'vie' => 'Friday',
+                                'sábado' => 'Saturday', 'sabado' => 'Saturday', 'sab' => 'Saturday',
+                                'domingo' => 'Sunday', 'dom' => 'Sunday'
+                            ];
+                            
+                            $rruleMap = ['Monday'=>'MO', 'Tuesday'=>'TU', 'Wednesday'=>'WE', 'Thursday'=>'TH', 'Friday'=>'FR', 'Saturday'=>'SA', 'Sunday'=>'SU'];
+
+                            foreach ($daysMap as $es => $en) {
+                                if (mb_strpos($daysStr, $es) !== false) {
+                                    $startDT = new DateTime("next $en $startTime", new DateTimeZone('America/Mexico_City'));
+                                    $endDT = new DateTime("next $en $endTime", new DateTimeZone('America/Mexico_City'));
+                                    $recurrence = ["RRULE:FREQ=WEEKLY;BYDAY=" . $rruleMap[$en]];
+
+                                    $link = $calendarService->scheduleClassEvent($shortName, $claseFinal, $teacherName, $startDT->format('c'), $endDT->format('c'), $recurrence);
+                                    if ($link) error_log("📅 Evento reactivado en Calendar: $link");
+                                }
+                            }
+                        }
+                    } catch (Exception $e) {
+                        error_log("⚠️ Error reactivando evento en Calendar: " . $e->getMessage());
+                    }
+                }
             }
 
             // Construir query UPDATE dinámicamente
@@ -2182,12 +2349,22 @@ class TransaccionesController {
                 return;
             }
 
-            // 1. Obtener todos los alumnos de la empresa (excluir eliminados)
+            // 1. Obtener alumnos de la empresa agrupados por nombre único (excluir eliminados)
+            // GROUP BY nombre para que alumnos multi-inscripción cuenten como 1 persona,
+            // igual que el gestor con unificar=1. Evita el bug del break en el matching
+            // de transacciones donde filas secundarias del mismo nombre quedaban sin lastTx.
             $alumnosQuery = "
-                SELECT id, nombre, estatus, precio_mensual, fecha_inscripcion, tipo_clase
+                SELECT
+                    MIN(id)                                                                   AS id,
+                    nombre,
+                    MAX(CASE WHEN estatus = 'Activo' THEN 'Activo' ELSE 'Baja' END)         AS estatus,
+                    MIN(fecha_inscripcion)                                                    AS fecha_inscripcion,
+                    SUM(COALESCE(precio_mensual, 0))                                         AS precio_mensual,
+                    GROUP_CONCAT(DISTINCT tipo_clase ORDER BY tipo_clase SEPARATOR ', ')     AS tipo_clase
                 FROM alumnos
                 WHERE empresa_id = ?
                   AND nombre NOT LIKE '[ELIMINADO]%'
+                GROUP BY nombre
                 ORDER BY nombre
             ";
             $alumnos = executeQuery($alumnosQuery, [(int)$empresa]);
@@ -2312,6 +2489,14 @@ class TransaccionesController {
                         continue;
                     }
 
+                    // Fallback mes actual: alumno Activo en BD sin transacciones detectadas
+                    // (concepto en transacción puede tener discrepancia de acentos u ortografía)
+                    // Solo aplica al mes en curso para no distorsionar el historial
+                    if (!$esBaja && $lastTx === null && $mes === $mesActual) {
+                        $alumnoActivoEnMes[$id][$mes] = true;
+                        continue;
+                    }
+
                     // Cualquier otro caso: no activo
                     // - Gap histórico entre transacciones (baja temporal)
                     // - Estatus Baja después de última transacción (baja definitiva)
@@ -2370,7 +2555,8 @@ class TransaccionesController {
                         'total_altas' => $totalAltas,
                         'total_bajas' => $totalBajas,
                         'neto' => $totalAltas - $totalBajas,
-                        'total_alumnos' => count($alumnos)
+                        // Contar solo alumnos únicos con estatus Activo (coherente con gestor unificar=1)
+                    'total_alumnos' => count(array_filter($alumnos, function($a) { return $a['estatus'] === 'Activo'; }))
                     ]
                 ]
             ]);
@@ -2386,6 +2572,57 @@ class TransaccionesController {
                 'error' => 'Error generando reporte de altas y bajas',
                 'message' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Obtener horario calculado desde Google Calendar
+     * GET /alumnos/{id}/horario-calendar
+     */
+    public static function getHorarioFromCalendar($id) {
+        AuthController::requireAuth();
+        
+        try {
+            // Obtener datos del alumno
+            $alumno = executeQuery("SELECT nombre, clase FROM alumnos WHERE id = ?", [$id]);
+            
+            if (empty($alumno)) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Alumno no encontrado']);
+                return;
+            }
+            
+            $nombre = $alumno[0]['nombre'];
+            $clase = $alumno[0]['clase'];
+            
+            // Verificar autoloader de Composer
+            $autoloadPath = __DIR__ . '/../../vendor/autoload.php';
+            if (!file_exists($autoloadPath)) {
+                throw new Exception("No se encuentra vendor/autoload.php. Ejecuta 'composer install'.");
+            }
+
+            $servicePath = __DIR__ . '/../config/GoogleCalendarService.php';
+            if (!file_exists($servicePath)) {
+                throw new Exception("El archivo de servicio de calendario no existe en: $servicePath");
+            }
+            require_once $servicePath;
+            $calendarService = new GoogleCalendarService();
+            
+            $horario = $calendarService->getStudentSchedule($nombre, $clase);
+            
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'horario' => $horario,
+                    'alumno' => $nombre,
+                    'clase' => $clase
+                ]
+            ]);
+            
+        } catch (Throwable $e) {
+            error_log("Error obteniendo horario de calendar: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }

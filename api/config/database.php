@@ -21,7 +21,8 @@ class Database {
     private function __construct() {
         // Cargar variables de entorno desde .env si existe
         if (file_exists(__DIR__ . '/../../.env')) {
-            $env = parse_ini_file(__DIR__ . '/../../.env');
+            $env = @parse_ini_file(__DIR__ . '/../../.env');
+            if ($env === false) $env = [];
             $this->host = $env['DB_HOST'] ?? 'localhost';
             $this->database = $env['DB_DATABASE'] ?? 'gastos_app_db';
             $this->username = $env['DB_USERNAME'] ?? 'gastos_user';

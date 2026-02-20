@@ -85,10 +85,12 @@ function getPaymentStatusHomologado(student) {
  * Devuelve cuántos slots de clase por semana representa una inscripción.
  *
  * Criterio 1 (precio): precio_mensual == $2,550 → 2 slots (ej: Diego Grajeda 2×$1,275).
- * Criterio 2 (horario): cuenta días únicos en el campo horario.
- *   "17:00 a 18:00 Lun y 16:00 a 17:00 Mar" → 2 días → multiplier 2 → maestro cobra ×2
- *   "Lun, Mie y Vie 17:00"                  → 3 días → multiplier 3 → maestro cobra ×3
- * Las filas de multi-instrumento (Joshua) tienen 1 día c/u → multiplier 1 por fila, sin falso positivo.
+ * Criterio 2 (días): cuenta días únicos en el campo horario.
+ *   "17:00 a 18:00 Lun y 16:00 a 17:00 Mar" → 2 días → multiplier 2
+ *   "Lun, Mie y Vie 17:00"                  → 3 días → multiplier 3
+ * Criterio 3 (duración): bloque de 2+ horas en un solo día.
+ *   "16:00 a 18:00 Jue" → 2 horas → multiplier 2 (ej: hermanas Alcaraz, grupal $400×2)
+ * Las filas de multi-instrumento (Joshua) tienen 1 día/1h c/u → multiplier 1 por fila.
  *
  * Retorna el número de sesiones semanales (mínimo 1).
  */
@@ -103,6 +105,15 @@ function getClassMultiplier(student) {
         var dias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
         var encontrados = dias.filter(function(d) { return horario.indexOf(d) !== -1; });
         if (encontrados.length >= 2) return encontrados.length;
+
+        // Criterio 3: duración >= 2 horas en un solo día (ej: "16:00 a 18:00 Jue")
+        var match = horario.match(/(\d{1,2}):(\d{2})\s+a\s+(\d{1,2}):(\d{2})/);
+        if (match) {
+            var startMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+            var endMin   = parseInt(match[3]) * 60 + parseInt(match[4]);
+            var duracion = Math.round((endMin - startMin) / 60);
+            if (duracion >= 2) return duracion;
+        }
     }
 
     return 1;
