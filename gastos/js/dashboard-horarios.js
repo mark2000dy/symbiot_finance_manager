@@ -99,8 +99,9 @@ async function _loadAndRenderHorarios() {
         });
         if (!result.success || !result.data) throw new Error('Sin datos');
 
-        var slots = _buildSlotsMatrix(result.data);
-        var html  = _buildFullHTML(slots);
+        var students = result.data;
+        var slots    = _buildSlotsMatrix(students);
+        var html     = _buildFullHTML(slots, students);
 
         if (container) { container.innerHTML = html; container.style.display = 'block'; }
         if (loading)   loading.style.display = 'none';
@@ -179,12 +180,12 @@ function _buildSlotsMatrix(students) {
 
 // ---- HTML: contenedor completo ----
 
-function _buildFullHTML(slots) {
+function _buildFullHTML(slots, students) {
     // Rango horario fijo según horario escolar
     // Lun–Vie 15:00–20:00 | Sáb 11:00–16:00  → unión de horas visibles
     var hours = SCHOOL_HOURS;
 
-    return _buildSummaryRow(slots) +
+    return _buildSummaryRow(slots, students) +
            _buildLegend() +
            Object.entries(SALA_CFG).map(function(e) {
                return _buildRoomSection(e[0], e[1], slots, hours);
@@ -193,41 +194,53 @@ function _buildFullHTML(slots) {
 
 // ---- HTML: fila de resumen por instrumento ----
 
-function _buildSummaryRow(slots) {
-    // Calcular totales globales de la escuela
-    var grandUsed = 0, grandCap = 0;
-    Object.entries(INSTR_CFG).forEach(function(e) {
-        var inst = e[0];
-        HR_DIAS_NUM.forEach(function(day) {
-            if (!slots[day]) return;
-            Object.keys(slots[day]).forEach(function(hour) {
-                var info = slots[day][hour][inst];
-                if (info) { grandUsed += info.count; grandCap += info.cap; }
-            });
+function _buildSummaryRow(slots, students) {
+    var SHARED_INSTR = ['Canto', 'Bajo', 'Teclado'];
+
+    // ── 1. Alumnos inscritos por instrumento (peso proporcional para salón compartido)
+    var enrolled = {};
+    Object.keys(INSTR_CFG).forEach(function(inst) { enrolled[inst] = 0; });
+    students.forEach(function(s) {
+        if (enrolled[s.clase] !== undefined) enrolled[s.clase]++;
+    });
+
+    // ── 2. Horas operativas totales del salón compartido (unión Lun-Vie + Sáb)
+    var totalSharedHours = HR_DIAS_NUM.reduce(function(sum, day) {
+        var sched = SCHOOL_SCHEDULE[day];
+        return sum + (sched ? sched.end - sched.start : 0);
+    }, 0);
+
+    // ── 3. Horas del salón compartido ya ocupadas (cualquiera de los 3 instrumentos)
+    var sharedOccupied = 0;
+    HR_DIAS_NUM.forEach(function(day) {
+        if (!slots[day]) return;
+        Object.keys(slots[day]).forEach(function(hour) {
+            if (!_isOperatingHour(day, parseInt(hour))) return;
+            if (SHARED_INSTR.some(function(i) { return slots[day][hour][i]; })) sharedOccupied++;
         });
     });
-    var grandAvail = grandCap - grandUsed;
-    var grandPct   = grandCap > 0 ? Math.round((grandUsed / grandCap) * 100) : 0;
-    var grandBc    = grandAvail === 0 ? 'danger' : grandPct >= 70 ? 'warning' : 'success';
+    var freeSharedHours = totalSharedHours - sharedOccupied;
 
-    // Card "Total Escuela" (primera, con borde más visible)
-    var html = '<div class="row g-2 mb-4">' +
-        '<div class="col">' +
-        '<div class="rounded p-2 text-center h-100" ' +
-        'style="background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.25);">' +
-        '<i class="fas fa-school mb-1" style="color:#94a3b8;font-size:1.4rem;display:block;"></i>' +
-        '<div class="fw-bold" style="font-size:0.82rem;color:#fff;">Total Escuela</div>' +
-        '<div class="mt-1"><span class="badge bg-' + grandBc + '">' +
-        grandAvail + ' libre' + (grandAvail !== 1 ? 's' : '') + '</span></div>' +
-        '<div style="font-size:0.67rem;color:rgba(255,255,255,0.55);margin-top:4px;">' +
-        grandUsed + '/' + grandCap + ' slots &bull; ' + grandPct + '%</div>' +
-        '</div></div>';
+    // ── 4. Pesos proporcionales por inscripción (fallback equitativo si todos=0)
+    var totalSharedEnrolled = SHARED_INSTR.reduce(function(s, i) { return s + enrolled[i]; }, 0);
+    var weights = {};
+    SHARED_INSTR.forEach(function(inst) {
+        weights[inst] = totalSharedEnrolled > 0
+            ? enrolled[inst] / totalSharedEnrolled
+            : 1 / SHARED_INSTR.length;
+    });
 
-    // Cards por instrumento
+    // ── 5. Calcular "libres" compuesto por instrumento
+    //   Guitarra/Batería : spots en grupos existentes (sin modificar)
+    //   Canto/Bajo/Teclado : spots en grupos + horas salón proporcionales
+    var instrLibres = {}; // total "libres" a mostrar en badge
+    var instrUsed   = {}; // para subtext y grand total
+    var instrCap    = {}; // cap de grupos agendados
+    var instrProp   = {}; // horas proporcionales (solo compartido)
+
     Object.entries(INSTR_CFG).forEach(function(e) {
-        var inst = e[0], cfg = e[1];
+        var inst = e[0];
         var usedTotal = 0, capTotal = 0;
-
         HR_DIAS_NUM.forEach(function(day) {
             if (!slots[day]) return;
             Object.keys(slots[day]).forEach(function(hour) {
@@ -235,10 +248,57 @@ function _buildSummaryRow(slots) {
                 if (info) { usedTotal += info.count; capTotal += info.cap; }
             });
         });
+        instrUsed[inst] = usedTotal;
+        instrCap[inst]  = capTotal;
+        var groupLibres = capTotal - usedTotal;
 
-        var avail = capTotal - usedTotal;
-        var bc    = avail === 0 ? 'danger' : avail <= 2 ? 'warning' : 'success';
-        var pct   = capTotal > 0 ? Math.round((usedTotal / capTotal) * 100) : 0;
+        if (SHARED_INSTR.indexOf(inst) !== -1) {
+            var prop = Math.round(freeSharedHours * weights[inst]);
+            instrProp[inst]   = prop;
+            instrLibres[inst] = groupLibres + prop;
+        } else {
+            instrProp[inst]   = 0;
+            instrLibres[inst] = groupLibres;
+        }
+    });
+
+    // ── 6. Grand total (suma de todos los libres compuestos)
+    var grandLibres = Object.values(instrLibres).reduce(function(s, v) { return s + v; }, 0);
+    var grandUsed   = Object.values(instrUsed).reduce(function(s, v) { return s + v; }, 0);
+    var grandCap    = Object.values(instrCap).reduce(function(s, v) { return s + v; }, 0) + freeSharedHours;
+    var grandPct    = grandCap > 0 ? Math.round((grandUsed / grandCap) * 100) : 0;
+    var grandBc     = grandLibres === 0 ? 'danger' : grandPct >= 70 ? 'warning' : 'success';
+
+    // ── 7. Render card Total Escuela
+    var html = '<div class="row g-2 mb-4">' +
+        '<div class="col">' +
+        '<div class="rounded p-2 text-center h-100" ' +
+        'style="background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.25);">' +
+        '<i class="fas fa-school mb-1" style="color:#94a3b8;font-size:1.4rem;display:block;"></i>' +
+        '<div class="fw-bold" style="font-size:0.82rem;color:#fff;">Total Escuela</div>' +
+        '<div class="mt-1"><span class="badge bg-' + grandBc + '">' +
+        grandLibres + ' libre' + (grandLibres !== 1 ? 's' : '') + '</span></div>' +
+        '<div style="font-size:0.67rem;color:rgba(255,255,255,0.55);margin-top:4px;">' +
+        grandUsed + '/' + grandCap + ' &bull; ' + grandPct + '% ocupado</div>' +
+        '</div></div>';
+
+    // ── 8. Render cards por instrumento
+    Object.entries(INSTR_CFG).forEach(function(e) {
+        var inst = e[0], cfg = e[1];
+        var libres = instrLibres[inst];
+        var used   = instrUsed[inst];
+        var cap    = instrCap[inst];
+        var prop   = instrProp[inst];
+        var pct    = cap > 0 ? Math.round((used / cap) * 100) : 0;
+        var bc     = libres === 0 ? 'danger' : libres <= 2 ? 'warning' : 'success';
+
+        // Subtext diferente para instrumentos de salón compartido
+        var subtext = used + '/' + cap + ' grupos &bull; ' + pct + '%';
+        if (prop > 0) {
+            subtext += '<br><span style="color:#a5b4fc;">' +
+                       '~' + prop + ' h sala (' +
+                       Math.round(weights[inst] * 100) + '% demanda)</span>';
+        }
 
         html +=
             '<div class="col">' +
@@ -247,9 +307,9 @@ function _buildSummaryRow(slots) {
             '<i class="fas ' + cfg.icon + ' mb-1" style="color:' + cfg.color + ';font-size:1.4rem;display:block;"></i>' +
             '<div class="fw-semibold" style="font-size:0.82rem;color:#fff;">' + inst + '</div>' +
             '<div class="mt-1"><span class="badge bg-' + bc + '">' +
-            avail + ' libre' + (avail !== 1 ? 's' : '') + '</span></div>' +
+            libres + ' libre' + (libres !== 1 ? 's' : '') + '</span></div>' +
             '<div style="font-size:0.67rem;color:rgba(255,255,255,0.55);margin-top:4px;">' +
-            usedTotal + '/' + capTotal + ' slots &bull; ' + pct + '%</div>' +
+            subtext + '</div>' +
             '</div></div>';
     });
 
