@@ -79,12 +79,34 @@ body {
     }
     
     .welcome-banner {
-        padding: 1.5rem 1rem;
-        margin-bottom: 1.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: nowrap;
+        align-items: center !important;
     }
-    
+
+    /* Texto del banner: ocupa el espacio disponible y hace wrap sin desbordarse */
+    .welcome-banner > div:first-child {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
     .welcome-banner h4 {
-        font-size: 1.2rem;
+        font-size: 1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .welcome-banner p {
+        font-size: 0.78rem;
+    }
+
+    /* Logo empresa: tamaño reducido, nunca se aplasta */
+    #companyLogo {
+        height: 38px !important;
+        flex-shrink: 0;
+        margin-left: 10px;
     }
     
     .stat-card .card-body {
