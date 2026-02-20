@@ -351,6 +351,7 @@ function _buildLegend() {
         '<span>' + dot('#ffc107') + 'Casi lleno (≥70%)</span>' +
         '<span>' + dot('#dc3545') + 'Lleno</span>' +
         '<span>' + dot('#6c757d') + 'Sin clase</span>' +
+        '<span>' + dot('#a855f7') + 'Clase Individual</span>' +
         '</div>';
 }
 
