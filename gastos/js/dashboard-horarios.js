@@ -11,7 +11,7 @@ var INSTR_CFG = {
     'Batería':  { sala: 'bateria',    cap: 2, icon: 'fa-drum',       color: '#f39c12' },
     'Canto':    { sala: 'compartido', cap: 3, icon: 'fa-microphone', color: '#a855f7' },
     'Bajo':     { sala: 'compartido', cap: 3, icon: 'fa-guitar',     color: '#22c55e' },
-    'Teclado':  { sala: 'compartido', cap: 2, icon: 'fa-keyboard',   color: '#3b82f6' }
+    'Teclado':  { sala: 'compartido', cap: 2, icon: 'fa-music',      color: '#3b82f6' }
 };
 
 var SALA_CFG = {
@@ -194,8 +194,36 @@ function _buildFullHTML(slots) {
 // ---- HTML: fila de resumen por instrumento ----
 
 function _buildSummaryRow(slots) {
-    var html = '<div class="row g-2 mb-4">';
+    // Calcular totales globales de la escuela
+    var grandUsed = 0, grandCap = 0;
+    Object.entries(INSTR_CFG).forEach(function(e) {
+        var inst = e[0];
+        HR_DIAS_NUM.forEach(function(day) {
+            if (!slots[day]) return;
+            Object.keys(slots[day]).forEach(function(hour) {
+                var info = slots[day][hour][inst];
+                if (info) { grandUsed += info.count; grandCap += info.cap; }
+            });
+        });
+    });
+    var grandAvail = grandCap - grandUsed;
+    var grandPct   = grandCap > 0 ? Math.round((grandUsed / grandCap) * 100) : 0;
+    var grandBc    = grandAvail === 0 ? 'danger' : grandPct >= 70 ? 'warning' : 'success';
 
+    // Card "Total Escuela" (primera, con borde más visible)
+    var html = '<div class="row g-2 mb-4">' +
+        '<div class="col">' +
+        '<div class="rounded p-2 text-center h-100" ' +
+        'style="background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.25);">' +
+        '<i class="fas fa-school mb-1" style="color:#94a3b8;font-size:1.4rem;display:block;"></i>' +
+        '<div class="fw-bold" style="font-size:0.82rem;color:#fff;">Total Escuela</div>' +
+        '<div class="mt-1"><span class="badge bg-' + grandBc + '">' +
+        grandAvail + ' libre' + (grandAvail !== 1 ? 's' : '') + '</span></div>' +
+        '<div style="font-size:0.67rem;color:rgba(255,255,255,0.55);margin-top:4px;">' +
+        grandUsed + '/' + grandCap + ' slots &bull; ' + grandPct + '%</div>' +
+        '</div></div>';
+
+    // Cards por instrumento
     Object.entries(INSTR_CFG).forEach(function(e) {
         var inst = e[0], cfg = e[1];
         var usedTotal = 0, capTotal = 0;
@@ -208,19 +236,20 @@ function _buildSummaryRow(slots) {
             });
         });
 
-        var avail  = capTotal - usedTotal;
-        var bc     = avail === 0 ? 'danger' : avail <= 2 ? 'warning' : 'success';
-        var pct    = capTotal > 0 ? Math.round((usedTotal / capTotal) * 100) : 0;
+        var avail = capTotal - usedTotal;
+        var bc    = avail === 0 ? 'danger' : avail <= 2 ? 'warning' : 'success';
+        var pct   = capTotal > 0 ? Math.round((usedTotal / capTotal) * 100) : 0;
 
         html +=
             '<div class="col">' +
             '<div class="rounded p-2 text-center h-100" ' +
             'style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">' +
             '<i class="fas ' + cfg.icon + ' mb-1" style="color:' + cfg.color + ';font-size:1.4rem;display:block;"></i>' +
-            '<div class="fw-semibold" style="font-size:0.82rem;">' + inst + '</div>' +
+            '<div class="fw-semibold" style="font-size:0.82rem;color:#fff;">' + inst + '</div>' +
             '<div class="mt-1"><span class="badge bg-' + bc + '">' +
             avail + ' libre' + (avail !== 1 ? 's' : '') + '</span></div>' +
-            '<div class="text-muted mt-1" style="font-size:0.67rem;">' + usedTotal + '/' + capTotal + ' slots &bull; ' + pct + '%</div>' +
+            '<div style="font-size:0.67rem;color:rgba(255,255,255,0.55);margin-top:4px;">' +
+            usedTotal + '/' + capTotal + ' slots &bull; ' + pct + '%</div>' +
             '</div></div>';
     });
 
@@ -449,7 +478,7 @@ function _buildConflictSuggestion(conflicting, day, hour, slots) {
 
         if (pending.length > 0) {
             html += '<div style="font-size:0.6rem;color:#94a3b8;line-height:1.4;">' +
-                    pending.join(' + ') + ' permanece en Compartido</div>';
+                    pending.join(' + ') + ' permanece en Salón Múltiple</div>';
         }
     } else {
         html += '<div style="font-size:0.6rem;color:#9ca3af;margin-top:2px;">' +
