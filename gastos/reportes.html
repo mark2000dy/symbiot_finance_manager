@@ -321,14 +321,17 @@
 
     <div class="container-fluid main-content">
         <!-- Welcome Banner -->
-        <div class="welcome-banner" id="welcomeBanner">
-            <h4 class="mb-1"><i class="fas fa-file-chart-line me-2"></i>Centro de Reportes</h4>
-            <p class="mb-0 text-muted">
-                ¡Bienvenido, <span id="userNameDisplay">Usuario</span>! • 
-                <i class="fas fa-building me-1"></i>
-                <span id="userCompany">Cargando...</span> • 
-                <span id="currentDate"></span>
-            </p>
+        <div class="welcome-banner d-flex align-items-center justify-content-between" id="welcomeBanner">
+            <div>
+                <h4 class="mb-1"><i class="fas fa-file-chart-line me-2"></i>Centro de Reportes</h4>
+                <p class="mb-0 text-muted">
+                    ¡Bienvenido, <span id="userNameDisplay">Usuario</span>! •
+                    <i class="fas fa-building me-1"></i>
+                    <span id="userCompany">Cargando...</span> •
+                    <span id="currentDate"></span>
+                </p>
+            </div>
+            <img id="companyLogo" src="" alt="Logo empresa" style="height:48px;object-fit:contain;display:none;filter:drop-shadow(0 0 4px rgba(0,0,0,0.4));">
         </div>
 
         <!-- Alert Container -->

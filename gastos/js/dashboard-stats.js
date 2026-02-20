@@ -718,7 +718,12 @@ async function handleCompanyChange() {
         }
         
         console.log('✅ Cambio de empresa completado');
-        
+
+        // Actualizar logo en welcome banner
+        if (typeof window.updateCompanyLogo === 'function') {
+            window.updateCompanyLogo(selectedCompany);
+        }
+
     } catch (error) {
         console.error('❌ Error en handleCompanyChange:', error);
         if (typeof showAlert === 'function') {

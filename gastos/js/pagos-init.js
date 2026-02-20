@@ -135,6 +135,10 @@ document.addEventListener('DOMContentLoaded', initPagosPage);
 
 async function initPagosPage() {
     console.log('💰 Inicializando pagina de corte de pagos...');
+    // Pagos siempre opera bajo Rockstar Skull
+    if (typeof window.updateCompanyLogo === 'function') {
+        window.updateCompanyLogo('1');
+    }
 
     try {
         // 1. Verificar autenticacion

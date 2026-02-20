@@ -41,7 +41,12 @@ async function initializeDashboard() {
 
         // Restaurar filtro guardado
         const restoredFilter = restoreCompanyFilter();
-        
+
+        // Logo inicial según empresa guardada
+        if (typeof window.updateCompanyLogo === 'function') {
+            window.updateCompanyLogo(restoredFilter);
+        }
+
         // Verificar que los módulos están cargados
         if (!verifyModulesLoaded()) {
             throw new Error('No todos los módulos requeridos están cargados');

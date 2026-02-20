@@ -396,6 +396,11 @@ async function applyFilters() {
 
     // Obtener valores actuales de filtros
     currentFilters.empresa = document.getElementById('filterEmpresa')?.value || '';
+
+    // Actualizar logo en welcome banner
+    if (typeof window.updateCompanyLogo === 'function') {
+        window.updateCompanyLogo(currentFilters.empresa);
+    }
     currentFilters.ano = document.getElementById('filterAno')?.value || '';
     currentFilters.mes = document.getElementById('filterMes')?.value || '';
     currentFilters.tipo = document.getElementById('filterTipo')?.value || '';

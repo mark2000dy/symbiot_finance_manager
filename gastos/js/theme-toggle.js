@@ -43,7 +43,35 @@
         // Actualizar icono del botón si existe
         updateToggleIcon(theme);
 
+        // Refrescar logo de empresa si está activo
+        if (typeof window._companyLogoFilter !== 'undefined') {
+            updateCompanyLogo(window._companyLogoFilter);
+        }
+
         console.log(`🎨 Tema aplicado: ${theme}`);
+    }
+
+    /**
+     * Actualizar el logo de empresa en el welcome banner.
+     * Llamar con el valor del selector de empresa ('1', '2', '').
+     */
+    function updateCompanyLogo(empresaId) {
+        const logo = document.getElementById('companyLogo');
+        if (!logo) return;
+        window._companyLogoFilter = empresaId;
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        if (String(empresaId) === '1') {
+            // Rockstar Skull — logo único independiente del tema
+            logo.src = '../assets/img/LOGO_CM_R.png';
+            logo.style.display = 'block';
+        } else if (String(empresaId) === '2') {
+            // Symbiot Technologies — variante por tema
+            logo.src = isLight ? 'assets/images/Symbiot_logo.png' : 'assets/images/Symbiot_logo_dark.png';
+            logo.style.display = 'block';
+        } else {
+            // Todas las empresas — ocultar logo
+            logo.style.display = 'none';
+        }
     }
 
     /**
@@ -169,6 +197,7 @@
     window.toggleTheme = toggleTheme;
     window.initTheme = initTheme;
     window.createToggleButton = createToggleButton;
+    window.updateCompanyLogo = updateCompanyLogo;
 
     // Inicializar inmediatamente
     initTheme();
