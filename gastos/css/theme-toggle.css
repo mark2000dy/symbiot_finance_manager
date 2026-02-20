@@ -1021,3 +1021,34 @@ body,
 [data-theme="light"] .corte-total-row {
     border-top: 2px solid rgba(0, 0, 0, 0.35) !important;
 }
+
+/* ========================================= */
+/* MODALES: historial de pagos y detalle tx  */
+/* ========================================= */
+
+/* thead con inline style="background:#191C24" — !important supera inline style */
+[data-theme="light"] .table-dark thead,
+[data-theme="light"] .table-dark thead tr,
+[data-theme="light"] .table-dark thead th {
+    background: rgba(0, 0, 0, 0.06) !important;
+    background-color: rgba(0, 0, 0, 0.06) !important;
+    color: #1a1a1a !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Filas alternas (table-striped) — sobrescribir variable Bootstrap */
+[data-theme="light"] .table-dark.table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: rgba(0, 0, 0, 0.03);
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    color: #1a1a1a !important;
+}
+[data-theme="light"] .table-dark.table-striped > tbody > tr:nth-of-type(even) > * {
+    background-color: transparent !important;
+    color: #1a1a1a !important;
+}
+
+/* div.bg-dark en Concepto del modal Detalle de Transacción */
+[data-theme="light"] .bg-dark:not(.navbar):not(.btn):not(.badge):not(.modal-content) {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+    color: #1a1a1a !important;
+}
