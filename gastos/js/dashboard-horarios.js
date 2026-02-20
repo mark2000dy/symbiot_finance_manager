@@ -230,16 +230,32 @@ function _buildSummaryRow(slots, students) {
             : 1 / SHARED_INSTR.length;
     });
 
-    // ── 5. Calcular "libres" compuesto por instrumento
-    //   Guitarra/Batería : spots en grupos existentes (sin modificar)
-    //   Canto/Bajo/Teclado : spots en grupos + horas salón proporcionales
-    var instrLibres = {}; // total "libres" a mostrar en badge
-    var instrUsed   = {}; // para subtext y grand total
-    var instrCap    = {}; // cap de grupos agendados
-    var instrProp   = {}; // horas proporcionales (solo compartido)
-
+    // ── 4b. Horas libres por salón exclusivo (Guitarra, Batería)
+    var instrFreeHours = {};
     Object.entries(INSTR_CFG).forEach(function(e) {
         var inst = e[0];
+        if (SHARED_INSTR.indexOf(inst) !== -1) return;
+        var occupied = 0;
+        HR_DIAS_NUM.forEach(function(day) {
+            if (!slots[day]) return;
+            Object.keys(slots[day]).forEach(function(hour) {
+                if (!_isOperatingHour(day, parseInt(hour))) return;
+                if (slots[day][hour][inst]) occupied++;
+            });
+        });
+        instrFreeHours[inst] = totalSharedHours - occupied;
+    });
+
+    // ── 5. Calcular "libres" compuesto por instrumento
+    //   Guitarra/Batería : spots en grupos + (horas libres × capacidad)
+    //   Canto/Bajo/Teclado : spots en grupos + horas salón proporcionales
+    var instrLibres  = {}; // total "libres" a mostrar en badge
+    var instrUsed    = {}; // para subtext y grand total
+    var instrCap     = {}; // cap de grupos agendados
+    var instrProp    = {}; // slots libres adicionales (shared=prop, exclusivo=h×cap)
+
+    Object.entries(INSTR_CFG).forEach(function(e) {
+        var inst = e[0], cfg = e[1];
         var usedTotal = 0, capTotal = 0;
         HR_DIAS_NUM.forEach(function(day) {
             if (!slots[day]) return;
@@ -257,15 +273,21 @@ function _buildSummaryRow(slots, students) {
             instrProp[inst]   = prop;
             instrLibres[inst] = groupLibres + prop;
         } else {
-            instrProp[inst]   = 0;
-            instrLibres[inst] = groupLibres;
+            var freeH    = instrFreeHours[inst] || 0;
+            var freeCap  = freeH * cfg.cap;
+            instrProp[inst]   = freeCap;
+            instrLibres[inst] = groupLibres + freeCap;
         }
     });
 
     // ── 6. Grand total (suma de todos los libres compuestos)
     var grandLibres = Object.values(instrLibres).reduce(function(s, v) { return s + v; }, 0);
     var grandUsed   = Object.values(instrUsed).reduce(function(s, v) { return s + v; }, 0);
-    var grandCap    = Object.values(instrCap).reduce(function(s, v) { return s + v; }, 0) + freeSharedHours;
+    var grandCap    = Object.values(instrCap).reduce(function(s, v) { return s + v; }, 0)
+                    + freeSharedHours
+                    + Object.entries(instrFreeHours).reduce(function(s, e) {
+                          return s + e[1] * INSTR_CFG[e[0]].cap;
+                      }, 0);
     var grandPct    = grandCap > 0 ? Math.round((grandUsed / grandCap) * 100) : 0;
     var grandBc     = grandLibres === 0 ? 'danger' : grandPct >= 70 ? 'warning' : 'success';
 
@@ -292,12 +314,19 @@ function _buildSummaryRow(slots, students) {
         var pct    = cap > 0 ? Math.round((used / cap) * 100) : 0;
         var bc     = libres === 0 ? 'danger' : libres <= 2 ? 'warning' : 'success';
 
-        // Subtext diferente para instrumentos de salón compartido
+        // Subtext diferente para instrumentos de salón compartido vs exclusivo
         var subtext = used + '/' + cap + ' grupos &bull; ' + pct + '%';
         if (prop > 0) {
-            subtext += '<br><span style="color:#a5b4fc;">' +
-                       '~' + prop + ' h sala (' +
-                       Math.round(weights[inst] * 100) + '% demanda)</span>';
+            if (SHARED_INSTR.indexOf(inst) !== -1) {
+                subtext += '<br><span style="color:#a5b4fc;">' +
+                           '~' + prop + ' h sala (' +
+                           Math.round(weights[inst] * 100) + '% demanda)</span>';
+            } else {
+                var freeH = instrFreeHours[inst] || 0;
+                subtext += '<br><span style="color:#86efac;">' +
+                           '~' + prop + ' slots libres (' + freeH + ' h &times; ' +
+                           INSTR_CFG[inst].cap + ' cap)</span>';
+            }
         }
 
         html +=
@@ -353,10 +382,14 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
         '</h6>' + headerBtns +
         '</div>' +
         '<div class="table-responsive">' +
-        '<table class="table table-dark table-bordered table-sm mb-0" style="min-width:560px;">' +
+        '<table class="table table-dark table-bordered table-sm mb-0" style="width:100%;table-layout:fixed;min-width:560px;">' +
+        '<colgroup>' +
+        '<col style="width:90px;">' +
+        HR_DIAS.map(function() { return '<col>'; }).join('') +
+        '</colgroup>' +
         '<thead>' +
         '<tr>' +
-        '<th style="width:100px;font-size:0.78rem;">Horario</th>';
+        '<th style="font-size:0.78rem;">Horario</th>';
 
     HR_DIAS.forEach(function(d, i) {
         // Highlight "today" column
