@@ -388,15 +388,20 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
         'style="font-size:0.65rem;padding:2px 8px;" onclick="refreshHorariosTab()" ' +
         'title="Actualizar"><i class="fas fa-sync-alt"></i></button>';
 
+    var tableClass = isLight
+        ? 'table table-bordered table-sm mb-0'
+        : 'table table-dark table-bordered table-sm mb-0';
+    var titleColor = isLight ? 'text-dark' : 'text-white';
+
     var html =
         '<div class="mb-4">' +
         '<div class="d-flex align-items-center mb-2">' +
-        '<h6 class="text-white mb-0">' +
+        '<h6 class="' + titleColor + ' mb-0">' +
         '<i class="fas ' + sala.icon + ' me-2" style="color:#60a5fa;"></i>' + sala.label + titleExtra +
         '</h6>' + headerBtns +
         '</div>' +
         '<div class="table-responsive">' +
-        '<table class="table table-dark table-bordered table-sm mb-0" style="width:100%;table-layout:fixed;min-width:560px;">' +
+        '<table class="' + tableClass + '" style="width:100%;table-layout:fixed;min-width:560px;">' +
         '<colgroup>' +
         '<col style="width:' + (mobile ? '42px' : '90px') + ';">' +
         HR_DIAS.map(function() { return '<col>'; }).join('') +
@@ -425,7 +430,7 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
 
         HR_DIAS_NUM.forEach(function(day) {
             html += '<td style="padding:' + (mobile ? '2px 3px' : '4px 5px') + ';vertical-align:middle;">' +
-                    _buildCell(salaKey, sala, day, hour, slots, mobile) +
+                    _buildCell(salaKey, sala, day, hour, slots, mobile, isLight) +
                     '</td>';
         });
         html += '</tr>';
@@ -437,7 +442,7 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
 
 // ---- HTML: celda individual ----
 
-function _buildCell(salaKey, sala, day, hour, slots, mobile) {
+function _buildCell(salaKey, sala, day, hour, slots, mobile, isLight) {
     // Fuera del horario operativo de la escuela → celda bloqueada
     if (!_isOperatingHour(day, hour)) {
         return mobile
@@ -465,12 +470,15 @@ function _buildCell(salaKey, sala, day, hour, slots, mobile) {
                    '<i class="fas fa-lock" style="color:#c084fc;font-size:0.55rem;margin-left:2px;"></i>' +
                    '</div>';
         }
+        var colorIndivLabel = isLight ? '#7c3aed' : '#c084fc';
+        var colorIndivInst  = isLight ? '#4c1d95' : '#e9d5ff';
+        var colorIndivMaest = isLight ? '#374151' : '#94a3b8';
         return '<div title="' + tip + '" style="background:rgba(168,85,247,0.15);border:1px solid #a855f7;' +
                'border-radius:4px;padding:3px 5px;text-align:center;">' +
-               '<div style="font-size:0.6rem;color:#c084fc;font-weight:600;line-height:1.4;">' +
+               '<div style="font-size:0.6rem;color:' + colorIndivLabel + ';font-weight:600;line-height:1.4;">' +
                '<i class="fas fa-lock me-1"></i>Clase Individual</div>' +
-               '<div style="font-size:0.6rem;color:#e9d5ff;line-height:1.3;">' + indivInst + '</div>' +
-               (iMaestro ? '<div style="font-size:0.6rem;color:#94a3b8;">' + iMaestro + '</div>' : '') +
+               '<div style="font-size:0.6rem;color:' + colorIndivInst + ';line-height:1.3;">' + indivInst + '</div>' +
+               (iMaestro ? '<div style="font-size:0.6rem;color:' + colorIndivMaest + ';">' + iMaestro + '</div>' : '') +
                '</div>';
     }
 
@@ -537,7 +545,8 @@ function _buildCell(salaKey, sala, day, hour, slots, mobile) {
             // Spots disponibles
             var libre = info.cap - info.count;
             if (libre > 0) {
-                content += '<small style="font-size:0.6rem;color:#6ee7b7;line-height:1.2;display:block;">' +
+                var colorLibre = isLight ? '#166534' : '#6ee7b7';
+                content += '<small style="font-size:0.6rem;color:' + colorLibre + ';line-height:1.2;display:block;">' +
                            libre + ' lugar' + (libre !== 1 ? 'es' : '') + ' libre' + (libre !== 1 ? 's' : '') +
                            '</small>';
             }
