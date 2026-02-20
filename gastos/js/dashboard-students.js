@@ -547,7 +547,8 @@ async function saveSingleStudentChanges() {
             parseFloat(document.getElementById('editStudentMonthlyFee').value) : null,
         forma_pago: document.getElementById('editStudentPaymentMethod').value || null,
         domiciliado: document.getElementById('editStudentDomiciled').value === 'Si',
-        titular_domicilado: document.getElementById('editStudentDomiciliedName').value || null
+        titular_domicilado: document.getElementById('editStudentDomiciliedName').value || null,
+        salon_id: document.getElementById('editStudentSalon')?.value ? parseInt(document.getElementById('editStudentSalon').value) : null
     };
 
     console.log('📤 Datos a actualizar (simple):', studentData);
@@ -1794,6 +1795,17 @@ function editStudentSimple(modalElement, student) {
         `;
     }
 
+    // Poblar select de salones
+    const salonSelect = document.getElementById('editStudentSalon');
+    if (salonSelect) {
+        salonSelect.innerHTML = `
+            <option value="">Sin asignar</option>
+            <option value="1">🥁 Salón Batería (máx 2)</option>
+            <option value="2">🎸 Salón Guitarra (máx 5)</option>
+            <option value="3">🎹 Salón Múltiple (Bajo/Canto/Teclado)</option>
+        `;
+    }
+
     const setFieldValue = (fieldId, value) => {
         const field = document.getElementById(fieldId);
         if (field) {
@@ -1837,6 +1849,7 @@ function editStudentSimple(modalElement, student) {
     setFieldValue('editStudentPaymentMethod', student.forma_pago);
     setFieldValue('editStudentDomiciled', student.domiciliado ? 'Si' : 'No');
     setFieldValue('editStudentDomiciliedName', student.titular_domicilado);
+    setFieldValue('editStudentSalon', student.salon_id || '');
 
     toggleDomiciliadoName();
 

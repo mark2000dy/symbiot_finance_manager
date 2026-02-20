@@ -404,18 +404,18 @@
                                 <h6 class="text-white mb-0">
                                     <i class="fas fa-graduation-cap me-2"></i>Gestión de Alumnos - RockstarSkull
                                 </h6>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-info" onclick="exportStudentsList()">
-                                        <i class="fas fa-download me-1"></i>Exportar
+                                <div class="d-flex flex-wrap gap-1 justify-content-end">
+                                    <button class="btn btn-sm btn-outline-info" onclick="exportStudentsList()" title="Exportar lista">
+                                        <i class="fas fa-download"></i><span class="d-none d-sm-inline ms-1">Exportar</span>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="refreshStudentsList()">
-                                        <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                    <button class="btn btn-sm btn-outline-primary" onclick="refreshStudentsList()" title="Actualizar">
+                                        <i class="fas fa-sync-alt"></i><span class="d-none d-sm-inline ms-1">Actualizar</span>
                                     </button>
-                                    <button id="syncAllCalendarBtn" class="btn btn-sm btn-outline-warning" onclick="syncAllStudentsCalendar()" title="Sincronizar horarios de todos los alumnos activos con Google Calendar">
-                                        <i class="fab fa-google me-1"></i>Sincronizar Google Calendar
+                                    <button id="syncAllCalendarBtn" class="btn btn-sm btn-outline-warning" onclick="syncAllStudentsCalendar()" title="Sincronizar Google Calendar">
+                                        <i class="fab fa-google"></i><span class="d-none d-md-inline ms-1">Sincronizar</span>
                                     </button>
-                                    <button class="btn btn-sm btn-success" onclick="showAddStudentModal()">
-                                        <i class="fas fa-plus me-1"></i>Nuevo Alumno
+                                    <button class="btn btn-sm btn-success" onclick="showAddStudentModal()" title="Nuevo Alumno">
+                                        <i class="fas fa-plus"></i><span class="d-none d-sm-inline ms-1">Nuevo Alumno</span>
                                     </button>
                                 </div>
                             </div>

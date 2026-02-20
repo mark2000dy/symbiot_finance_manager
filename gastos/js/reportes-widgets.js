@@ -461,6 +461,13 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
     const mobile = isMobileViewport();
     const chartData = mobile ? aggregateByTrimester(detalleMensual) : detalleMensual;
 
+    // En móvil, fijar altura del canvas para que la leyenda abajo tenga espacio
+    if (mobile) {
+        ctx.style.height = '220px';
+    } else {
+        ctx.style.height = '';
+    }
+
     const meses = chartData.map(d => d.mes);
     const entradas = chartData.map(d => d.entradas);
     const salidas = chartData.map(d => d.salidas);
@@ -525,14 +532,24 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: !mobile,
+            aspectRatio: mobile ? undefined : 2,
             plugins: {
                 legend: {
+                    position: mobile ? 'bottom' : 'top',
                     labels: {
                         color: chartColors.text,
-                        font: { size: mobile ? 10 : 12 }
+                        font: { size: mobile ? 9 : 12 },
+                        boxWidth: mobile ? 10 : 40,
+                        padding: mobile ? 6 : 10
                     }
                 }
+            },
+            layout: {
+                padding: mobile ? { top: 4, bottom: 4, left: 2, right: 2 } : 0
+            },
+            elements: {
+                point: { radius: mobile ? 1 : 3, hitRadius: 8 }
             },
             scales: {
                 y: {
@@ -553,7 +570,7 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
                     ticks: {
                         color: chartColors.text,
                         maxRotation: mobile ? 0 : 50,
-                        font: { size: mobile ? 10 : 12 }
+                        font: { size: mobile ? 9 : 12 }
                     },
                     grid: {
                         color: chartColors.grid

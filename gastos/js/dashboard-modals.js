@@ -83,7 +83,7 @@ function createEditStudentModalHTML() {
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="editStudentTeacher" class="form-label">
                                     <i class="fas fa-chalkboard-teacher me-1"></i>Maestro Asignado
                                 </label>
@@ -92,11 +92,22 @@ function createEditStudentModalHTML() {
                                     <!-- Se llena dinámicamente -->
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label for="editStudentSchedule" class="form-label">
                                     <i class="fas fa-clock me-1"></i>Horario
                                 </label>
                                 <input type="text" class="form-control" id="editStudentSchedule" placeholder="Ej: Lunes 4:00 PM">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="editStudentSalon" class="form-label">
+                                    <i class="fas fa-door-open me-1"></i>Salón
+                                </label>
+                                <select class="form-select" id="editStudentSalon">
+                                    <option value="">Sin asignar</option>
+                                    <option value="1">🥁 Salón Batería (máx 2)</option>
+                                    <option value="2">🎸 Salón Guitarra (máx 5)</option>
+                                    <option value="3">🎹 Salón Múltiple (Bajo/Canto/Teclado)</option>
+                                </select>
                             </div>
                         </div>
                         <div class="row">

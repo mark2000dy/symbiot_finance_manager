@@ -614,6 +614,7 @@ class TransaccionesController {
                         a.domiciliado,
                         a.estatus,
                         a.maestro_id,
+                        a.salon_id,
                         COALESCE(m.nombre, 'Sin asignar') as maestro,
                         1 as num_clases
                     FROM alumnos a
@@ -1077,6 +1078,10 @@ class TransaccionesController {
                 $fields[] = 'titular_domicilado = ?';
                 $params[] = $input['nombre_domiciliado'];
             }
+            if (isset($input['salon_id'])) {
+                $fields[] = 'salon_id = ?';
+                $params[] = $input['salon_id'] ? (int)$input['salon_id'] : null;
+            }
 
             if (empty($fields)) {
                 http_response_code(400);
@@ -1321,18 +1326,29 @@ class TransaccionesController {
             $distribucion_maestros = executeQuery($maestrosQuery, [$empresa_id]);
 
             // 3b. INGRESOS REALES desde transacciones (suma de pagos históricos)
-            // JOIN por nombre en concepto (cliente_id no está poblado)
+            // Captura TODOS los ingresos cuyo concepto mencione algún nombre de alumno.
+            // La subquery deduplica alumnos (1 fila por persona) para evitar doble conteo
+            // en alumnos multi-inscripción.
+            // Nota: transacciones donde el concepto no contiene ningún nombre de alumno
+            // no serán atribuidas a ningún maestro y quedarán fuera del widget.
             $ingresosQuery = "
                 SELECT
                     t.socio as maestro,
-                    al.estatus,
+                    dedup.estatus,
                     SUM(t.total) as total_ingresos
                 FROM transacciones t
-                INNER JOIN alumnos al ON t.concepto LIKE CONCAT('Mensualidad Clase % ', al.nombre)
-                WHERE t.concepto LIKE 'Mensualidad Clase %'
+                INNER JOIN (
+                    SELECT
+                        nombre,
+                        MAX(CASE WHEN estatus = 'Activo' THEN 'Activo' ELSE 'Baja' END) AS estatus
+                    FROM alumnos
+                    WHERE empresa_id = ?
+                      AND nombre NOT LIKE '[ELIMINADO]%'
+                    GROUP BY nombre
+                ) dedup ON t.concepto LIKE CONCAT('%', dedup.nombre, '%')
+                WHERE t.tipo = 'I'
                     AND t.empresa_id = ?
-                    AND al.empresa_id = ?
-                GROUP BY t.socio, al.estatus
+                GROUP BY t.socio, dedup.estatus
             ";
             $ingresos = executeQuery($ingresosQuery, [$empresa_id, $empresa_id]);
 

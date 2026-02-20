@@ -1,0 +1,43 @@
+{
+    "name": "mark6/symbiot_finance_manager",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Marco Delgado",
+            "email": "marco.delgado@symbiot.com.mx"
+        }
+    ],
+    "minimum-stability": "stable",
+    "config": {
+        "platform": {
+            "php": "7.3.10"
+        },
+        "audit": {
+            "ignore": {
+                "firebase/php-jwt": "*"
+            }
+        }
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://repo.packagist.org",
+            "options": {
+                "ssl": {
+                    "verify_peer": false,
+                    "verify_peer_name": false
+                }
+            }
+        }
+    ],
+    "require": {
+        "dompdf/dompdf": "^2.0",
+        "google/apiclient": "2.12.1",
+        "google/auth": "1.17.0",
+        "psr/log": "^1.1",
+        "psr/cache": "^1.0",
+        "monolog/monolog": "^2.0",
+        "firebase/php-jwt": "^5.0"
+    }
+}

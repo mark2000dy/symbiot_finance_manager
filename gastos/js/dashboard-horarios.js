@@ -6,6 +6,8 @@
 
 // ---- Configuración de negocio ----
 
+function _isMobile() { return window.innerWidth < 768; }
+
 var INSTR_CFG = {
     'Guitarra': { sala: 'guitarra',   cap: 5, icon: 'fa-guitar',     color: '#e74c3c' },
     'Batería':  { sala: 'bateria',    cap: 2, icon: 'fa-drum',       color: '#f39c12' },
@@ -371,6 +373,7 @@ function _buildLegend() {
 // ---- HTML: sección de salón ----
 
 function _buildRoomSection(salaKey, sala, slots, hours) {
+    var mobile = _isMobile();
     var isShared   = sala.instrumentos.length > 1;
     var titleExtra = isShared
         ? ' <small class="fw-normal text-muted ms-1" style="font-size:0.78rem;">(Canto · Bajo · Teclado)</small>'
@@ -391,31 +394,34 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
         '<div class="table-responsive">' +
         '<table class="table table-dark table-bordered table-sm mb-0" style="width:100%;table-layout:fixed;min-width:560px;">' +
         '<colgroup>' +
-        '<col style="width:90px;">' +
+        '<col style="width:' + (mobile ? '42px' : '90px') + ';">' +
         HR_DIAS.map(function() { return '<col>'; }).join('') +
         '</colgroup>' +
         '<thead>' +
         '<tr>' +
-        '<th style="font-size:0.78rem;">Horario</th>';
+        '<th style="font-size:' + (mobile ? '0.65rem' : '0.78rem') + ';position:sticky;left:0;z-index:3;background:#1e2126;">' + (mobile ? 'Hora' : 'Horario') + '</th>';
 
     HR_DIAS.forEach(function(d, i) {
         // Highlight "today" column
         var todayDayNum = new Date().getDay(); // 0=Dom,1=Lun,...
         var isToday = HR_DIAS_NUM[i] === todayDayNum;
-        html += '<th class="text-center' + (isToday ? ' table-active' : '') + '" style="font-size:0.78rem;">' +
-                d + (isToday ? ' <span class="badge bg-primary" style="font-size:0.55rem;">hoy</span>' : '') +
+        html += '<th class="text-center' + (isToday ? ' table-active' : '') + '" style="font-size:' + (mobile ? '0.65rem' : '0.78rem') + ';">' +
+                d + (isToday && !mobile ? ' <span class="badge bg-primary" style="font-size:0.55rem;">hoy</span>' : (isToday ? '<span style="display:block;width:4px;height:4px;border-radius:50%;background:#3b82f6;margin:1px auto 0;"></span>' : '')) +
                 '</th>';
     });
 
     html += '</tr></thead><tbody>';
 
     hours.forEach(function(hour) {
-        html += '<tr><td class="text-muted text-nowrap align-middle" style="font-size:0.78rem;">' +
-                _pad(hour) + ':00 – ' + _pad(hour + 1) + ':00</td>';
+        var horaLabel = mobile
+            ? (_pad(hour) + 'h')
+            : (_pad(hour) + ':00 – ' + _pad(hour + 1) + ':00');
+        html += '<tr><td class="text-muted text-nowrap align-middle" style="font-size:' + (mobile ? '0.65rem' : '0.78rem') + ';position:sticky;left:0;z-index:1;background:#1a1d21;">' +
+                horaLabel + '</td>';
 
         HR_DIAS_NUM.forEach(function(day) {
-            html += '<td style="padding:4px 5px;vertical-align:middle;">' +
-                    _buildCell(salaKey, sala, day, hour, slots) +
+            html += '<td style="padding:' + (mobile ? '2px 3px' : '4px 5px') + ';vertical-align:middle;">' +
+                    _buildCell(salaKey, sala, day, hour, slots, mobile) +
                     '</td>';
         });
         html += '</tr>';
@@ -427,10 +433,12 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
 
 // ---- HTML: celda individual ----
 
-function _buildCell(salaKey, sala, day, hour, slots) {
+function _buildCell(salaKey, sala, day, hour, slots, mobile) {
     // Fuera del horario operativo de la escuela → celda bloqueada
     if (!_isOperatingHour(day, hour)) {
-        return '<div class="hr-cerrado">Cerrado</div>';
+        return mobile
+            ? '<div style="text-align:center;color:#4b5563;font-size:0.65rem;">—</div>'
+            : '<div class="hr-cerrado">Cerrado</div>';
     }
 
     // Clase Individual → bloquea el salón completo para ese slot
@@ -446,6 +454,12 @@ function _buildCell(salaKey, sala, day, hour, slots) {
         var tip      = 'Individual · ' + indivInst +
                        (iMaestro ? ' · ' + iMaestro : '') +
                        (iAlumno  ? '\nAlumno: ' + iAlumno : '');
+        if (mobile) {
+            return '<div title="' + tip + '" style="background:rgba(168,85,247,0.2);border:1px solid #a855f7;' +
+                   'border-radius:4px;text-align:center;padding:3px 2px;">' +
+                   '<i class="fas fa-lock" style="color:#c084fc;font-size:0.65rem;"></i>' +
+                   '</div>';
+        }
         return '<div title="' + tip + '" style="background:rgba(168,85,247,0.15);border:1px solid #a855f7;' +
                'border-radius:4px;padding:3px 5px;text-align:center;">' +
                '<div style="font-size:0.6rem;color:#c084fc;font-weight:600;line-height:1.4;">' +
@@ -477,29 +491,39 @@ function _buildCell(salaKey, sala, day, hour, slots) {
 
         content += '<div style="margin-bottom:2px;" title="' + tip + '">';
 
-        // Etiqueta de instrumento (solo en salón compartido)
-        if (sala.instrumentos.length > 1) {
-            content += '<small style="font-size:0.6rem;color:' + cfg.color +
-                       ';line-height:1.2;display:block;font-weight:600;">' + inst + '</small>';
-        }
+        if (mobile) {
+            // Modo compacto: solo punto de color + "X/Y"
+            content +=
+                '<div style="display:flex;align-items:center;gap:2px;">' +
+                '<span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + barColor + ';display:inline-block;"></span>' +
+                '<span style="font-size:0.65rem;font-weight:600;color:#fff;white-space:nowrap;">' +
+                info.count + '/' + info.cap + '</span>' +
+                '</div>';
+        } else {
+            // Etiqueta de instrumento (solo en salón compartido)
+            if (sala.instrumentos.length > 1) {
+                content += '<small style="font-size:0.6rem;color:' + cfg.color +
+                           ';line-height:1.2;display:block;font-weight:600;">' + inst + '</small>';
+            }
 
-        // Barra de capacidad
-        content +=
-            '<div class="hr-bar-bg">' +
-            '<div style="width:' + barW + '%;height:100%;background:' + barColor + ';transition:width .3s;"></div>' +
-            '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
-                   'font-size:0.7rem;font-weight:600;color:#fff;gap:3px;">' +
-            info.count + '/' + info.cap +
-            (maestro ? '<span style="opacity:.85;font-weight:400;">· ' + maestro + '</span>' : '') +
-            '</span>' +
-            '</div>';
+            // Barra de capacidad
+            content +=
+                '<div class="hr-bar-bg">' +
+                '<div style="width:' + barW + '%;height:100%;background:' + barColor + ';transition:width .3s;"></div>' +
+                '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
+                       'font-size:0.7rem;font-weight:600;color:#fff;gap:3px;">' +
+                info.count + '/' + info.cap +
+                (maestro ? '<span style="opacity:.85;font-weight:400;">· ' + maestro + '</span>' : '') +
+                '</span>' +
+                '</div>';
 
-        // Spots disponibles
-        var libre = info.cap - info.count;
-        if (libre > 0) {
-            content += '<small style="font-size:0.6rem;color:#6ee7b7;line-height:1.2;display:block;">' +
-                       libre + ' lugar' + (libre !== 1 ? 'es' : '') + ' libre' + (libre !== 1 ? 's' : '') +
-                       '</small>';
+            // Spots disponibles
+            var libre = info.cap - info.count;
+            if (libre > 0) {
+                content += '<small style="font-size:0.6rem;color:#6ee7b7;line-height:1.2;display:block;">' +
+                           libre + ' lugar' + (libre !== 1 ? 'es' : '') + ' libre' + (libre !== 1 ? 's' : '') +
+                           '</small>';
+            }
         }
 
         content += '</div>';
@@ -511,25 +535,47 @@ function _buildCell(salaKey, sala, day, hour, slots) {
             return slots[day] && slots[day][hour] && slots[day][hour][inst];
         });
         if (conflicting.length >= 2) {
-            content += _buildConflictSuggestion(conflicting, day, hour, slots);
+            if (mobile) {
+                // En móvil: solo ícono de advertencia, detalles en tooltip
+                var tipConflicto = 'Conflicto: ' + conflicting.join(' + ');
+                content += '<div title="' + tipConflicto + '" style="text-align:center;margin-top:2px;">' +
+                           '<i class="fas fa-exclamation-triangle" style="color:#f87171;font-size:0.6rem;"></i>' +
+                           '</div>';
+            } else {
+                content += _buildConflictSuggestion(conflicting, day, hour, slots);
+            }
         }
     }
 
     if (!hasAny) {
         if (salaKey === 'compartido') {
-            // Mostrar "libre" por cada instrumento del salón compartido
-            content = sala.instrumentos.map(function(inst) {
-                var cfg = INSTR_CFG[inst];
-                return '<div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;">' +
-                       '<span style="width:6px;height:6px;border-radius:50%;background:' + cfg.color +
-                       ';display:inline-block;"></span>' +
-                       '<small style="font-size:0.6rem;color:#6b7280;">' + inst +
-                       ' <span style="color:#6ee7b7;">libre</span></small>' +
-                       '</div>';
-            }).join('');
+            if (mobile) {
+                // Modo compacto: un punto verde por instrumento
+                content = sala.instrumentos.map(function(inst) {
+                    var cfg = INSTR_CFG[inst];
+                    return '<span style="width:6px;height:6px;border-radius:50%;background:' + cfg.color +
+                           ';display:inline-block;margin:1px;" title="' + inst + ' libre"></span>';
+                }).join('');
+            } else {
+                // Mostrar "libre" por cada instrumento del salón compartido
+                content = sala.instrumentos.map(function(inst) {
+                    var cfg = INSTR_CFG[inst];
+                    return '<div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;">' +
+                           '<span style="width:6px;height:6px;border-radius:50%;background:' + cfg.color +
+                           ';display:inline-block;"></span>' +
+                           '<small style="font-size:0.6rem;color:#6b7280;">' + inst +
+                           ' <span style="color:#6ee7b7;">libre</span></small>' +
+                           '</div>';
+                }).join('');
+            }
         } else {
-            content = '<div class="text-center" style="color:#198754;font-size:0.75rem;">' +
-                      '<i class="fas fa-check-circle me-1"></i>Libre</div>';
+            if (mobile) {
+                content = '<div class="text-center" style="color:#198754;font-size:0.75rem;">' +
+                          '<i class="fas fa-check-circle"></i></div>';
+            } else {
+                content = '<div class="text-center" style="color:#198754;font-size:0.75rem;">' +
+                          '<i class="fas fa-check-circle me-1"></i>Libre</div>';
+            }
         }
     }
 
