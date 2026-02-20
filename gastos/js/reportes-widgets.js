@@ -461,12 +461,9 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
     const mobile = isMobileViewport();
     const chartData = mobile ? aggregateByTrimester(detalleMensual) : detalleMensual;
 
-    // En móvil, fijar altura del canvas para que la leyenda abajo tenga espacio
-    if (mobile) {
-        ctx.style.height = '220px';
-    } else {
-        ctx.style.height = '';
-    }
+    // Fijar altura del canvas explícitamente para evitar que el chart
+    // crezca sin control en pantallas anchas (col-12 full-width)
+    ctx.style.height = mobile ? '220px' : '300px';
 
     const meses = chartData.map(d => d.mes);
     const entradas = chartData.map(d => d.entradas);
@@ -532,8 +529,7 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: !mobile,
-            aspectRatio: mobile ? undefined : 2,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: mobile ? 'bottom' : 'top',
