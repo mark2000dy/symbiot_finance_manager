@@ -461,9 +461,20 @@ function updateGastosRealesChart(detalleMensual, tipoFiltro = '') {
     const mobile = isMobileViewport();
     const chartData = mobile ? aggregateByTrimester(detalleMensual) : detalleMensual;
 
-    // Fijar altura del canvas explícitamente para evitar que el chart
-    // crezca sin control en pantallas anchas (col-12 full-width)
-    ctx.style.height = mobile ? '220px' : '300px';
+    // Chart.js con responsive:true+maintainAspectRatio:false requiere que el
+    // CONTENEDOR tenga altura explícita (no el canvas). Lo envolvemos una sola
+    // vez en un <div> con position:relative y asignamos la altura ahí.
+    let chartWrapper = ctx.parentElement;
+    if (!chartWrapper.dataset.chartWrapper) {
+        const div = document.createElement('div');
+        div.dataset.chartWrapper = '1';
+        div.style.position = 'relative';
+        ctx.parentNode.insertBefore(div, ctx);
+        div.appendChild(ctx);
+        chartWrapper = div;
+    }
+    chartWrapper.style.height = mobile ? '220px' : '300px';
+    ctx.style.height = ''; // dejar que Chart.js controle el canvas dentro del wrapper
 
     const meses = chartData.map(d => d.mes);
     const entradas = chartData.map(d => d.entradas);
@@ -1578,6 +1589,20 @@ function updateAltasBajasChart(meses) {
 
     const mobile = isMobileViewport();
 
+    // Mismo patrón que chartGastosReales: envolver canvas en un div con altura
+    // explícita para que Chart.js responsive no crezca sin límite en móvil.
+    let chartWrapper = ctx.parentElement;
+    if (!chartWrapper.dataset.chartWrapper) {
+        const div = document.createElement('div');
+        div.dataset.chartWrapper = '1';
+        div.style.position = 'relative';
+        ctx.parentNode.insertBefore(div, ctx);
+        div.appendChild(ctx);
+        chartWrapper = div;
+    }
+    chartWrapper.style.height = mobile ? '200px' : '280px';
+    ctx.style.height = '';
+
     // Obtener colores según el tema actual
     const chartColors = getChartColors();
 
@@ -1615,12 +1640,15 @@ function updateAltasBajasChart(meses) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
+                    position: mobile ? 'bottom' : 'top',
                     labels: {
                         color: chartColors.text,
-                        font: { size: mobile ? 10 : 12 }
+                        font: { size: mobile ? 9 : 12 },
+                        boxWidth: mobile ? 10 : 40,
+                        padding: mobile ? 6 : 10
                     }
                 }
             },

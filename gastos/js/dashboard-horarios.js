@@ -461,7 +461,8 @@ function _buildCell(salaKey, sala, day, hour, slots, mobile) {
         if (mobile) {
             return '<div title="' + tip + '" style="background:rgba(168,85,247,0.2);border:1px solid #a855f7;' +
                    'border-radius:4px;text-align:center;padding:3px 2px;">' +
-                   '<i class="fas fa-lock" style="color:#c084fc;font-size:0.65rem;"></i>' +
+                   '<i class="fas fa-user" style="color:#c084fc;font-size:0.65rem;"></i>' +
+                   '<i class="fas fa-lock" style="color:#c084fc;font-size:0.55rem;margin-left:2px;"></i>' +
                    '</div>';
         }
         return '<div title="' + tip + '" style="background:rgba(168,85,247,0.15);border:1px solid #a855f7;' +
