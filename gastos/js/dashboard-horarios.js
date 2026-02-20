@@ -53,15 +53,28 @@ function _isOperatingHour(dayNum, hour) {
 (function() {
     var s = document.createElement('style');
     s.textContent =
-        // Celda "Cerrado" — tema oscuro (default)
+        // Celda "Cerrado" — oscuro / claro
         '.hr-cerrado{text-align:center;font-size:0.7rem;border-radius:3px;padding:4px 2px;' +
         'background:#2d2d2d;color:rgba(255,255,255,0.5);}' +
-        // Celda "Cerrado" — tema claro
         '[data-theme="light"] .hr-cerrado{background:#b8b8b8;color:rgba(0,0,0,0.55);}' +
-        // Leyenda — tema oscuro
+        // Leyenda
         '.hr-legend{font-size:0.78rem;color:rgba(255,255,255,0.82);}' +
-        // Leyenda — tema claro
-        '[data-theme="light"] .hr-legend{color:rgba(0,0,0,0.72);}';
+        '[data-theme="light"] .hr-legend{color:rgba(0,0,0,0.72);}' +
+        // Cards resumen — wrapper Total Escuela
+        '.hr-card-total{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.25);}' +
+        '[data-theme="light"] .hr-card-total{background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.15);}' +
+        // Cards resumen — wrapper instrumento
+        '.hr-card-instr{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);}' +
+        '[data-theme="light"] .hr-card-instr{background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.1);}' +
+        // Cards resumen — título (nombre instrumento / Total Escuela)
+        '.hr-card-title{font-size:0.82rem;color:#fff;}' +
+        '[data-theme="light"] .hr-card-title{color:#1a1a1a;}' +
+        // Cards resumen — subtexto (alumnos · grupos/sem)
+        '.hr-card-sub{font-size:0.67rem;color:rgba(255,255,255,0.55);margin-top:4px;}' +
+        '[data-theme="light"] .hr-card-sub{color:rgba(0,0,0,0.6);}' +
+        // Span "~N slots libres"
+        '.hr-free-slots{color:#86efac;}' +
+        '[data-theme="light"] .hr-free-slots{color:#166534;}';
     document.head.appendChild(s);
 })();
 
@@ -294,13 +307,12 @@ function _buildSummaryRow(slots, students) {
     // ── 7. Render card Total Escuela
     var html = '<div class="row g-2 mb-4">' +
         '<div class="col">' +
-        '<div class="rounded p-2 text-center h-100" ' +
-        'style="background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.25);">' +
+        '<div class="rounded p-2 text-center h-100 hr-card-total">' +
         '<i class="fas fa-school mb-1" style="color:#94a3b8;font-size:1.4rem;display:block;"></i>' +
-        '<div class="fw-bold" style="font-size:0.82rem;color:#fff;">Total Escuela</div>' +
+        '<div class="fw-bold hr-card-title">Total Escuela</div>' +
         '<div class="mt-1"><span class="badge bg-' + grandBc + '">' +
         grandLibres + ' libre' + (grandLibres !== 1 ? 's' : '') + '</span></div>' +
-        '<div style="font-size:0.67rem;color:rgba(255,255,255,0.55);margin-top:4px;">' +
+        '<div class="hr-card-sub">' +
         grandTotalEnrolled + ' alumnos &bull; ' + grandTotalGrupos + ' grupos/sem</div>' +
         '</div></div>';
 
@@ -317,21 +329,19 @@ function _buildSummaryRow(slots, students) {
         var subtext = alumnos + ' alumno' + (alumnos !== 1 ? 's' : '') +
                       ' &bull; ' + grupos + ' grupo' + (grupos !== 1 ? 's' : '') + '/sem';
         if (prop > 0) {
-            subtext += '<br><span style="color:#86efac;">' +
+            subtext += '<br><span class="hr-free-slots">' +
                        '~' + prop + ' slots libres (' + instrFreeH[inst] + ' h &times; ' +
                        cfg.cap + ' cap)</span>';
         }
 
         html +=
             '<div class="col">' +
-            '<div class="rounded p-2 text-center h-100" ' +
-            'style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">' +
+            '<div class="rounded p-2 text-center h-100 hr-card-instr">' +
             '<i class="fas ' + cfg.icon + ' mb-1" style="color:' + cfg.color + ';font-size:1.4rem;display:block;"></i>' +
-            '<div class="fw-semibold" style="font-size:0.82rem;color:#fff;">' + inst + '</div>' +
+            '<div class="fw-semibold hr-card-title">' + inst + '</div>' +
             '<div class="mt-1"><span class="badge bg-' + bc + '">' +
             libres + ' libre' + (libres !== 1 ? 's' : '') + '</span></div>' +
-            '<div style="font-size:0.67rem;color:rgba(255,255,255,0.55);margin-top:4px;">' +
-            subtext + '</div>' +
+            '<div class="hr-card-sub">' + subtext + '</div>' +
             '</div></div>';
     });
 
