@@ -373,7 +373,11 @@ function _buildLegend() {
 // ---- HTML: sección de salón ----
 
 function _buildRoomSection(salaKey, sala, slots, hours) {
-    var mobile = _isMobile();
+    var mobile  = _isMobile();
+    var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    var bgHoraTh = isLight ? '#dee2e6' : '#1e2126';
+    var bgHoraTd = isLight ? '#e9ecef' : '#1a1d21';
+    var colorHora = isLight ? '#333' : '#9ca3af';
     var isShared   = sala.instrumentos.length > 1;
     var titleExtra = isShared
         ? ' <small class="fw-normal text-muted ms-1" style="font-size:0.78rem;">(Canto · Bajo · Teclado)</small>'
@@ -399,7 +403,7 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
         '</colgroup>' +
         '<thead>' +
         '<tr>' +
-        '<th style="font-size:' + (mobile ? '0.65rem' : '0.78rem') + ';position:sticky;left:0;z-index:3;background:#1e2126;">' + (mobile ? 'Hora' : 'Horario') + '</th>';
+        '<th style="font-size:' + (mobile ? '0.65rem' : '0.78rem') + ';position:sticky;left:0;z-index:3;background:' + bgHoraTh + ';">' + (mobile ? 'Hora' : 'Horario') + '</th>';
 
     HR_DIAS.forEach(function(d, i) {
         // Highlight "today" column
@@ -416,7 +420,7 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
         var horaLabel = mobile
             ? (_pad(hour) + 'h')
             : (_pad(hour) + ':00 – ' + _pad(hour + 1) + ':00');
-        html += '<tr><td class="text-muted text-nowrap align-middle" style="font-size:' + (mobile ? '0.65rem' : '0.78rem') + ';position:sticky;left:0;z-index:1;background:#1a1d21;">' +
+        html += '<tr><td class="text-nowrap align-middle" style="font-size:' + (mobile ? '0.65rem' : '0.78rem') + ';position:sticky;left:0;z-index:1;background:' + bgHoraTd + ';color:' + colorHora + ';font-weight:500;">' +
                 horaLabel + '</td>';
 
         HR_DIAS_NUM.forEach(function(day) {
@@ -492,13 +496,24 @@ function _buildCell(salaKey, sala, day, hour, slots, mobile) {
         content += '<div style="margin-bottom:2px;" title="' + tip + '">';
 
         if (mobile) {
-            // Modo compacto: solo punto de color + "X/Y"
-            content +=
-                '<div style="display:flex;align-items:center;gap:2px;">' +
-                '<span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + barColor + ';display:inline-block;"></span>' +
-                '<span style="font-size:0.65rem;font-weight:600;color:#fff;white-space:nowrap;">' +
-                info.count + '/' + info.cap + '</span>' +
-                '</div>';
+            if (pct >= 1) {
+                // Lleno → candado rojo (igual que individual pero rojo)
+                content +=
+                    '<div style="display:flex;align-items:center;justify-content:center;gap:2px;' +
+                    'background:rgba(220,53,69,0.12);border:1px solid #dc3545;border-radius:4px;padding:2px 3px;">' +
+                    '<i class="fas fa-lock" style="color:#dc3545;font-size:0.6rem;"></i>' +
+                    '<span style="font-size:0.6rem;font-weight:700;color:#dc3545;white-space:nowrap;">' +
+                    info.count + '/' + info.cap + '</span>' +
+                    '</div>';
+            } else {
+                // Parcial → ícono de grupo + X/Y, centrado
+                content +=
+                    '<div style="display:flex;align-items:center;justify-content:center;gap:2px;">' +
+                    '<i class="fas fa-users" style="color:' + barColor + ';font-size:0.55rem;flex-shrink:0;"></i>' +
+                    '<span style="font-size:0.65rem;font-weight:600;color:' + barColor + ';white-space:nowrap;">' +
+                    info.count + '/' + info.cap + '</span>' +
+                    '</div>';
+            }
         } else {
             // Etiqueta de instrumento (solo en salón compartido)
             if (sala.instrumentos.length > 1) {
@@ -550,12 +565,13 @@ function _buildCell(salaKey, sala, day, hour, slots, mobile) {
     if (!hasAny) {
         if (salaKey === 'compartido') {
             if (mobile) {
-                // Modo compacto: un punto verde por instrumento
-                content = sala.instrumentos.map(function(inst) {
-                    var cfg = INSTR_CFG[inst];
-                    return '<span style="width:6px;height:6px;border-radius:50%;background:' + cfg.color +
-                           ';display:inline-block;margin:1px;" title="' + inst + ' libre"></span>';
-                }).join('');
+                // Modo compacto: puntos de color centrados
+                content = '<div style="display:flex;align-items:center;justify-content:center;gap:2px;">' +
+                    sala.instrumentos.map(function(inst) {
+                        var cfg = INSTR_CFG[inst];
+                        return '<span style="width:6px;height:6px;border-radius:50%;background:' + cfg.color +
+                               ';display:inline-block;flex-shrink:0;" title="' + inst + ' libre"></span>';
+                    }).join('') + '</div>';
             } else {
                 // Mostrar "libre" por cada instrumento del salón compartido
                 content = sala.instrumentos.map(function(inst) {
