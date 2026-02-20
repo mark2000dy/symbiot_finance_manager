@@ -2773,6 +2773,79 @@ async function syncStudentSchedule(index = null) {
 }
 
 // ============================================================
+// SINCRONIZACIÓN MASIVA CON GOOGLE CALENDAR
+// ============================================================
+
+/**
+ * Sincroniza el horario de TODOS los alumnos activos consultando Google Calendar.
+ * Para cada fila de inscripción activa: GET horario → si encontrado, PUT para guardar.
+ */
+async function syncAllStudentsCalendar() {
+    const btn = document.getElementById('syncAllCalendarBtn');
+    if (!confirm(
+        '¿Sincronizar horarios de TODOS los alumnos activos con Google Calendar?\n\n' +
+        'Esto consultará el calendario por cada alumno y actualizará el campo "Horario" automáticamente.\n' +
+        'El proceso puede tardar varios minutos.'
+    )) return;
+
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+
+    try {
+        // Obtener todas las filas de inscripción activas (unificar=0 → una fila por clase)
+        const result = await window.apiGet('alumnos', {
+            estatus: 'Activo',
+            empresa_id: 1,
+            unificar: '0',
+            limit: 1000
+        });
+
+        if (!result.success || !result.data) {
+            throw new Error(result.message || 'No se pudo obtener la lista de alumnos');
+        }
+
+        const students = result.data;
+        const total = students.length;
+        let ok = 0, skipped = 0, errors = 0;
+
+        for (let i = 0; i < students.length; i++) {
+            const student = students[i];
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>${i + 1}/${total}`;
+
+            try {
+                const res = await window.apiGet(`alumnos/${student.id}/horario-calendar`);
+                const horario = res.success && res.data && res.data.horario;
+
+                if (horario && !horario.startsWith('Error:')) {
+                    // Guardar horario actualizado manteniendo todos los demás campos
+                    await window.apiPut(`alumnos/${student.id}`, { ...student, horario });
+                    ok++;
+                } else {
+                    skipped++; // Sin evento coincidente en el calendario
+                }
+            } catch (e) {
+                console.warn(`⚠️ Error sincronizando ${student.nombre}:`, e);
+                errors++;
+            }
+        }
+
+        showAlert(
+            errors === 0 ? 'success' : 'warning',
+            `Sincronización completada — ` +
+            `${ok} actualizados · ${skipped} sin coincidencia · ${errors} errores`
+        );
+        refreshStudentsList();
+
+    } catch (error) {
+        console.error('❌ Error en sincronización masiva:', error);
+        showAlert('danger', 'Error durante la sincronización: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
+// ============================================================
 // 🔗 EXPOSICIÓN DE FUNCIONES GLOBALES
 // ============================================================
 
@@ -2798,6 +2871,7 @@ window.filterStudentsByStatus = filterStudentsByStatus;
 // Funciones de acciones adicionales
 window.refreshStudentsList = refreshStudentsList;
 window.exportStudentsList = exportStudentsList;
+window.syncAllStudentsCalendar = syncAllStudentsCalendar;
 
 // Funciones de visualización y reportes
 window.loadPaymentHistory = loadPaymentHistory;
