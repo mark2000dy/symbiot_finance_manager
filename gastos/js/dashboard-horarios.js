@@ -498,10 +498,11 @@ function _buildCell(salaKey, sala, day, hour, slots, mobile) {
 
         if (mobile) {
             if (pct >= 1) {
-                // Lleno → candado rojo (igual que individual pero rojo)
+                // Lleno → icono grupal + candado rojo
                 content +=
                     '<div style="display:flex;align-items:center;justify-content:center;gap:2px;' +
-                    'background:rgba(220,53,69,0.12);border:1px solid #dc3545;border-radius:4px;padding:2px 3px;">' +
+                    'background:rgba(220,53,69,0.12);border:1px solid #dc3545;border-radius:4px;padding:3px 2px;">' +
+                    '<i class="fas fa-users" style="color:#dc3545;font-size:0.55rem;"></i>' +
                     '<i class="fas fa-lock" style="color:#dc3545;font-size:0.6rem;"></i>' +
                     '<span style="font-size:0.6rem;font-weight:700;color:#dc3545;white-space:nowrap;">' +
                     info.count + '/' + info.cap + '</span>' +
@@ -566,12 +567,15 @@ function _buildCell(salaKey, sala, day, hour, slots, mobile) {
     if (!hasAny) {
         if (salaKey === 'compartido') {
             if (mobile) {
-                // Modo compacto: puntos de color centrados
-                content = '<div style="display:flex;align-items:center;justify-content:center;gap:2px;">' +
+                // Modo compacto: punto de color + 0/cap por instrumento
+                content = '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;">' +
                     sala.instrumentos.map(function(inst) {
                         var cfg = INSTR_CFG[inst];
-                        return '<span style="width:6px;height:6px;border-radius:50%;background:' + cfg.color +
-                               ';display:inline-block;flex-shrink:0;" title="' + inst + ' libre"></span>';
+                        return '<div style="display:flex;align-items:center;gap:2px;" title="' + inst + ' libre">' +
+                               '<span style="width:6px;height:6px;border-radius:50%;background:' + cfg.color +
+                               ';display:inline-block;flex-shrink:0;"></span>' +
+                               '<span style="font-size:0.6rem;color:' + cfg.color + ';font-weight:600;white-space:nowrap;">0/' + cfg.cap + '</span>' +
+                               '</div>';
                     }).join('') + '</div>';
             } else {
                 // Mostrar "libre" por cada instrumento del salón compartido
@@ -587,8 +591,12 @@ function _buildCell(salaKey, sala, day, hour, slots, mobile) {
             }
         } else {
             if (mobile) {
-                content = '<div class="text-center" style="color:#198754;font-size:0.75rem;">' +
-                          '<i class="fas fa-check-circle"></i></div>';
+                var instLibre = sala.instrumentos[0];
+                var capLibre  = INSTR_CFG[instLibre] ? INSTR_CFG[instLibre].cap : '?';
+                content = '<div style="display:flex;align-items:center;justify-content:center;gap:2px;color:#198754;">' +
+                          '<i class="fas fa-check-circle" style="font-size:0.65rem;"></i>' +
+                          '<span style="font-size:0.6rem;font-weight:600;white-space:nowrap;">0/' + capLibre + '</span>' +
+                          '</div>';
             } else {
                 content = '<div class="text-center" style="color:#198754;font-size:0.75rem;">' +
                           '<i class="fas fa-check-circle me-1"></i>Libre</div>';
