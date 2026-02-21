@@ -269,8 +269,14 @@ async function initMaestroPage() {
             });
         }
 
-        // 4. Cargar alumnos del maestro
+        // 4. Cargar alumnos del maestro (los banners 2 y 3 dependen de esta data)
         await loadMaestroStudents(maestroInfo.id);
+
+        // 5. Cargar clases de hoy desde Google Calendar (independiente)
+        loadClasesHoy(maestroInfo.nombre);
+
+        // 6. Cargar espacios libres basados en horarios BD
+        loadEspaciosLibres(maestroInfo.id);
 
     } catch (error) {
         console.error('❌ Error inicializando portal de maestro:', error);
@@ -310,6 +316,7 @@ async function loadMaestroStudents(maestroId) {
         document.getElementById('studentsTableContainer').style.display = 'block';
 
         renderMaestroStudentsTable(students);
+        renderAlumnosStatus(students);
 
     } catch (error) {
         console.error('❌ Error cargando alumnos:', error);
@@ -354,6 +361,156 @@ function renderMaestroStudentsTable(students) {
             <td>${getPaymentStatusBadge(student)}</td>
         </tr>
     `}).join('');
+}
+
+// ============================================================
+// BANNER 1: MIS CLASES HOY (Google Calendar)
+// ============================================================
+
+async function loadClasesHoy(maestroNombre) {
+    const loading = document.getElementById('clasesHoyLoading');
+    const content = document.getElementById('clasesHoyContent');
+
+    try {
+        const result = await window.apiGet('maestros/clases-hoy', { maestro_nombre: maestroNombre });
+        loading.style.display = 'none';
+        content.style.display = 'block';
+
+        const clases = (result.success && result.data) ? result.data : [];
+
+        if (clases.length === 0) {
+            content.innerHTML = `
+                <div class="text-muted py-1" style="font-size:0.88em;">
+                    <i class="fas fa-moon me-1"></i>Sin clases programadas para hoy.
+                </div>`;
+            return;
+        }
+
+        content.innerHTML = clases.map(c => `
+            <div class="d-flex align-items-start py-1 border-bottom border-secondary">
+                <span class="text-warning fw-bold me-2" style="min-width:95px;font-size:0.85em;">
+                    ${c.hora_inicio} – ${c.hora_fin}
+                </span>
+                <div style="font-size:0.88em;">
+                    <span class="text-info fw-bold">${c.instrumento}</span>
+                    ${c.alumnos ? `<span class="text-white ms-1">· ${c.alumnos}</span>` : ''}
+                </div>
+            </div>
+        `).join('');
+
+    } catch (e) {
+        loading.style.display = 'none';
+        content.style.display = 'block';
+        content.innerHTML = `<small class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>Calendario no disponible.</small>`;
+    }
+}
+
+// ============================================================
+// BANNER 2: ESTADO DE ALUMNOS (calculado de la data ya cargada)
+// ============================================================
+
+function renderAlumnosStatus(students) {
+    const loading = document.getElementById('alumnosStatusLoading');
+    const content = document.getElementById('alumnosStatusContent');
+    if (!loading || !content) return;
+
+    loading.style.display = 'none';
+    content.style.display = 'block';
+
+    if (!students || students.length === 0) {
+        content.innerHTML = `<small class="text-muted">Sin alumnos activos.</small>`;
+        return;
+    }
+
+    let corriente = 0, proximo = 0, vencido = 0;
+    students.forEach(s => {
+        const st = getPaymentStatusHomologado(s);
+        if (st === 'current')  corriente++;
+        else if (st === 'upcoming') proximo++;
+        else if (st === 'overdue')  vencido++;
+    });
+
+    content.innerHTML = `
+        <div class="d-flex flex-wrap gap-3 py-1" style="font-size:0.9em;">
+            <span>
+                <i class="fas fa-circle text-success me-1" style="font-size:0.7em;"></i>
+                <strong class="text-success">${corriente}</strong>
+                <span class="text-muted ms-1">Al corriente</span>
+            </span>
+            <span>
+                <i class="fas fa-circle text-warning me-1" style="font-size:0.7em;"></i>
+                <strong class="text-warning">${proximo}</strong>
+                <span class="text-muted ms-1">Próximo pago</span>
+            </span>
+            <span>
+                <i class="fas fa-circle text-danger me-1" style="font-size:0.7em;"></i>
+                <strong class="text-danger">${vencido}</strong>
+                <span class="text-muted ms-1">Vencidos</span>
+            </span>
+        </div>`;
+}
+
+// ============================================================
+// BANNER 3: ESPACIOS LIBRES HOY
+// ============================================================
+
+async function loadEspaciosLibres(maestroId) {
+    const loading = document.getElementById('espaciosLoading');
+    const content = document.getElementById('espaciosContent');
+
+    try {
+        const result = await window.apiGet('maestros/espacios-libres', {
+            maestro_id: maestroId,
+            empresa_id: 1
+        });
+        loading.style.display = 'none';
+        content.style.display = 'block';
+
+        const slots = (result.success && result.data) ? result.data : [];
+
+        if (slots.length === 0) {
+            content.innerHTML = `
+                <div class="text-muted py-1" style="font-size:0.88em;">
+                    <i class="fas fa-check-circle me-1"></i>No hay horarios registrados para hoy.
+                </div>`;
+            return;
+        }
+
+        const hayDisponibles = slots.some(s => s.disponibles > 0);
+
+        content.innerHTML = slots.map(s => {
+            const pct     = s.capacidad > 0 ? Math.round((s.inscritos / s.capacidad) * 100) : 100;
+            const barColor = s.disponibles === 0 ? 'bg-danger' : s.disponibles === 1 ? 'bg-warning' : 'bg-success';
+            return `
+            <div class="py-1 border-bottom border-secondary">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div style="font-size:0.85em;">
+                        <span class="text-warning fw-bold">${s.hora_inicio} – ${s.hora_fin}</span>
+                        <span class="text-info ms-2">${s.clase}</span>
+                        <span class="text-muted ms-1" style="font-size:0.8em;">${s.salon}</span>
+                    </div>
+                    <div style="font-size:0.82em;">
+                        ${s.disponibles > 0
+                            ? `<span class="text-success fw-bold">${s.disponibles} libre${s.disponibles > 1 ? 's' : ''}</span>`
+                            : `<span class="text-danger fw-bold">Lleno</span>`}
+                        <span class="text-muted ms-1">(${s.inscritos}/${s.capacidad})</span>
+                    </div>
+                </div>
+                <div class="progress" style="height:4px;">
+                    <div class="progress-bar ${barColor}" style="width:${pct}%;"></div>
+                </div>
+            </div>`;
+        }).join('') + (hayDisponibles ? `
+            <div class="mt-2" style="font-size:0.8em;">
+                <i class="fas fa-lightbulb text-warning me-1"></i>
+                <span class="text-warning">Hay espacios disponibles para vender hoy.</span>
+            </div>` : '');
+
+    } catch (e) {
+        loading.style.display = 'none';
+        content.style.display = 'block';
+        content.innerHTML = `<small class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>No se pudo calcular.</small>`;
+    }
 }
 
 // ============================================================

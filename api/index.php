@@ -273,6 +273,106 @@ try {
     }
 
     // ============================================================
+    // RUTAS DE MAESTROS - PANEL
+    // ============================================================
+
+    // Clases de hoy del maestro (Google Calendar)
+    if ($requestUri === '/maestros/clases-hoy' && $requestMethod === 'GET') {
+        AuthController::requireAuth();
+        require_once __DIR__ . '/config/GoogleCalendarService.php';
+        try {
+            $maestroNombre = $_GET['maestro_nombre'] ?? '';
+            if (!$maestroNombre) {
+                echo json_encode(['success' => false, 'message' => 'Falta maestro_nombre']);
+                exit;
+            }
+            $cal    = new GoogleCalendarService();
+            $clases = $cal->isConnected() ? $cal->getClasesHoy($maestroNombre) : [];
+            echo json_encode(['success' => true, 'data' => $clases]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => true, 'data' => [], 'warning' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    // Espacios libres hoy del maestro (basado en horario en BD + capacidad de salón)
+    if ($requestUri === '/maestros/espacios-libres' && $requestMethod === 'GET') {
+        AuthController::requireAuth();
+        try {
+            $maestroId = $_GET['maestro_id'] ?? 0;
+            $empresaId = $_GET['empresa_id'] ?? 1;
+            if (!$maestroId) {
+                echo json_encode(['success' => false, 'message' => 'Falta maestro_id']);
+                exit;
+            }
+
+            // Día de hoy en español corto para comparar con alumnos.horario
+            $diasMap = [0=>'Dom',1=>'Lun',2=>'Mar',3=>'Mie',4=>'Jue',5=>'Vie',6=>'Sab'];
+            $diaHoy  = $diasMap[(int)date('w')];
+
+            // Traer alumnos activos del maestro con su horario y salon
+            $sql = "
+                SELECT a.horario, a.salon_id, a.clase, s.capacidad, s.nombre as salon_nombre
+                FROM alumnos a
+                LEFT JOIN salones s ON a.salon_id = s.id
+                WHERE a.maestro_id = ?
+                  AND a.empresa_id = ?
+                  AND a.estatus = 'Activo'
+                  AND a.nombre NOT LIKE '[ELIMINADO]%'
+            ";
+            $alumnos = executeQuery($sql, [$maestroId, $empresaId]);
+
+            // Parsear horario de texto: "HH:mm a HH:mm Día[, ...]"
+            // Extraer los slots que correspondan a hoy
+            $slots = []; // key: "HH:mm-HH:mm|salon_id" → {inicio,fin,salon,capacidad,inscritos}
+            foreach ($alumnos as $al) {
+                $horarioStr = $al['horario'] ?? '';
+                if (!$horarioStr) continue;
+
+                // Dividir por coma para múltiples horarios
+                $segmentos = preg_split('/,\s*/', $horarioStr);
+                foreach ($segmentos as $seg) {
+                    $seg = trim($seg);
+                    // Patrón: "HH:mm a HH:mm Día"
+                    if (!preg_match('/(\d{1,2}:\d{2})\s+a\s+(\d{1,2}:\d{2})\s+(\w+)/i', $seg, $m)) continue;
+                    $diaSlot = ucfirst(mb_strtolower(trim($m[3])));
+                    if ($diaSlot !== $diaHoy) continue;
+
+                    $inicio   = $m[1];
+                    $fin      = $m[2];
+                    $salonId  = $al['salon_id'] ?? 0;
+                    $key      = "$inicio-$fin|$salonId|{$al['clase']}";
+
+                    if (!isset($slots[$key])) {
+                        $slots[$key] = [
+                            'hora_inicio' => $inicio,
+                            'hora_fin'    => $fin,
+                            'clase'       => $al['clase'],
+                            'salon'       => $al['salon_nombre'] ?? 'Sin salón',
+                            'capacidad'   => (int)($al['capacidad'] ?? 0),
+                            'inscritos'   => 0,
+                        ];
+                    }
+                    $slots[$key]['inscritos']++;
+                }
+            }
+
+            // Calcular disponibles y ordenar por hora
+            $resultado = [];
+            foreach ($slots as $s) {
+                $s['disponibles'] = max(0, $s['capacidad'] - $s['inscritos']);
+                $resultado[] = $s;
+            }
+            usort($resultado, function($a, $b) { return strcmp($a['hora_inicio'], $b['hora_inicio']); });
+
+            echo json_encode(['success' => true, 'data' => $resultado]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    // ============================================================
     // RUTAS ADICIONALES DE TRANSACCIONES
     // ============================================================
     if ($requestUri === '/transacciones/rango-fechas' && $requestMethod === 'GET') {

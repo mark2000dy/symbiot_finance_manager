@@ -1326,33 +1326,49 @@ class TransaccionesController {
             $distribucion_maestros = executeQuery($maestrosQuery, [$empresa_id]);
 
             // 3b. INGRESOS REALES desde transacciones (suma de pagos históricos)
-            // Captura TODOS los ingresos cuyo concepto mencione algún nombre de alumno.
-            // La subquery deduplica alumnos (1 fila por persona) para evitar doble conteo
-            // en alumnos multi-inscripción.
-            // Nota: transacciones donde el concepto no contiene ningún nombre de alumno
-            // no serán atribuidas a ningún maestro y quedarán fuera del widget.
+            // Join directo con alumnos usando nombre+clase para evitar que alumnos
+            // multi-instrumento (ej. Joshua: Guitarra/Batería/Canto/Bajo) acumulen
+            // todas sus transacciones en un solo maestro. Cada tx matchea exactamente
+            // la inscripción correcta por concepto que incluye instrumento y nombre.
             $ingresosQuery = "
                 SELECT
-                    t.socio as maestro,
-                    dedup.estatus,
+                    COALESCE(m.nombre, 'Sin asignar') as maestro,
+                    a.estatus,
                     SUM(t.total) as total_ingresos
                 FROM transacciones t
-                INNER JOIN (
-                    SELECT
-                        nombre,
-                        MAX(CASE WHEN estatus = 'Activo' THEN 'Activo' ELSE 'Baja' END) AS estatus
-                    FROM alumnos
-                    WHERE empresa_id = ?
-                      AND nombre NOT LIKE '[ELIMINADO]%'
-                    GROUP BY nombre
-                ) dedup ON t.concepto LIKE CONCAT('%', dedup.nombre, '%')
+                INNER JOIN alumnos a
+                    ON  t.concepto LIKE CONCAT('%', a.nombre, '%')
+                    AND t.concepto LIKE CONCAT('%', a.clase, '%')
+                LEFT JOIN maestros m ON a.maestro_id = m.id
                 WHERE t.tipo = 'I'
                     AND t.empresa_id = ?
-                GROUP BY t.socio, dedup.estatus
+                    AND a.empresa_id = ?
+                    AND a.nombre NOT LIKE '[ELIMINADO]%'
+                GROUP BY m.nombre, a.estatus
             ";
             $ingresos = executeQuery($ingresosQuery, [$empresa_id, $empresa_id]);
 
-            // Crear mapa de ingresos por maestro
+            // 3c. INGRESOS DEL MES ACTUAL por maestro (mismo patrón, filtrado por mes corriente)
+            $ingresosMesQuery = "
+                SELECT
+                    COALESCE(m.nombre, 'Sin asignar') as maestro,
+                    SUM(t.total) as total_ingresos
+                FROM transacciones t
+                INNER JOIN alumnos a
+                    ON  t.concepto LIKE CONCAT('%', a.nombre, '%')
+                    AND t.concepto LIKE CONCAT('%', a.clase, '%')
+                LEFT JOIN maestros m ON a.maestro_id = m.id
+                WHERE t.tipo = 'I'
+                    AND t.empresa_id = ?
+                    AND a.empresa_id = ?
+                    AND a.nombre NOT LIKE '[ELIMINADO]%'
+                    AND YEAR(t.fecha) = YEAR(CURDATE())
+                    AND MONTH(t.fecha) = MONTH(CURDATE())
+                GROUP BY m.nombre
+            ";
+            $ingresosMes = executeQuery($ingresosMesQuery, [$empresa_id, $empresa_id]);
+
+            // Crear mapa de ingresos históricos por maestro
             $ingresosMap = [];
             foreach ($ingresos as $ing) {
                 $maestro = $ing['maestro'];
@@ -1366,11 +1382,18 @@ class TransaccionesController {
                 }
             }
 
+            // Crear mapa de ingresos del mes actual por maestro
+            $ingresosMesMap = [];
+            foreach ($ingresosMes as $ing) {
+                $ingresosMesMap[$ing['maestro']] = (float)$ing['total_ingresos'];
+            }
+
             // Agregar ingresos reales a la distribución de maestros
             foreach ($distribucion_maestros as &$maestro) {
                 $nombre = $maestro['maestro'];
                 $maestro['ingresos_activos'] = $ingresosMap[$nombre]['activos'] ?? 0;
-                $maestro['ingresos_bajas'] = $ingresosMap[$nombre]['bajas'] ?? 0;
+                $maestro['ingresos_bajas']   = $ingresosMap[$nombre]['bajas']   ?? 0;
+                $maestro['ingresos_mes']     = $ingresosMesMap[$nombre]         ?? 0;
             }
             unset($maestro);
 

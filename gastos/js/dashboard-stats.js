@@ -846,7 +846,8 @@ function updateTeachersOverview(maestros = []) {
             ${maestros.map(maestro => {
                 const ingresosActivos = parseFloat(maestro.ingresos_activos) || 0;
                 const ingresosBajas = parseFloat(maestro.ingresos_bajas) || 0;
-                
+                const ingresosMes = parseFloat(maestro.ingresos_mes) || 0;
+
                 return `
                     <div class="teacher-card mb-3 p-3" style="background: rgba(255,255,255,0.1); border-radius: 8px; border-left: 4px solid #007bff;">
                         <!-- Header del maestro -->
@@ -859,27 +860,28 @@ function updateTeachersOverview(maestros = []) {
                                 <small class="text-info fw-bold">${maestro.especialidad}</small>
                             </div>
                         </div>
-                        
-                        <!-- Alumnos activos vs bajas -->
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <i class="fas fa-users me-1 text-info"></i>
-                                <strong class="text-white">${maestro.alumnos_activos || 0}</strong> 
-                                <span class="text-success">activos</span>
-                                ${(maestro.alumnos_bajas > 0) ? 
-                                    `<span class="text-muted ms-2">| ${maestro.alumnos_bajas} bajas</span>` : 
-                                    ''}
-                            </div>
+
+                        <!-- Resumen en línea: activos | bajas | este mes -->
+                        <div class="mb-3" style="font-size: 0.85em;">
+                            <i class="fas fa-users me-1 text-info"></i>
+                            <strong class="text-white">${maestro.alumnos_activos || 0}</strong>
+                            <span class="text-success">activos</span>
+                            <span class="text-muted mx-1">|</span>
+                            <strong class="text-white">${maestro.alumnos_bajas || 0}</strong>
+                            <span class="text-danger">bajas</span>
+                            <span class="text-muted mx-1">|</span>
+                            <strong class="text-warning">${formatCurrency(ingresosMes)}</strong>
+                            <span class="text-warning">este mes</span>
                         </div>
-                        
-                        <!-- Ingresos separados -->
-                        <div class="row mt-3">
+
+                        <!-- Ingresos históricos (banners) -->
+                        <div class="row">
                             <div class="col-6">
                                 <div class="text-center p-2" style="background: rgba(40,167,69,0.3); border-radius: 6px; border: 1px solid rgba(40,167,69,0.5);">
                                     <div class="text-white fw-bold" style="font-size: 0.95em;">
                                         ${formatCurrency(ingresosActivos)}
                                     </div>
-                                    <small class="text-white fw-bold">Alumnos Activos</small>
+                                    <small class="text-white fw-bold">Activos</small>
                                 </div>
                             </div>
                             <div class="col-6">
@@ -887,7 +889,7 @@ function updateTeachersOverview(maestros = []) {
                                     <div class="text-white fw-bold" style="font-size: 0.95em;">
                                         ${formatCurrency(ingresosBajas)}
                                     </div>
-                                    <small class="text-white fw-bold">Alumnos en Baja</small>
+                                    <small class="text-white fw-bold">Bajas</small>
                                 </div>
                             </div>
                         </div>

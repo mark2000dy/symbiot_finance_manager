@@ -64,7 +64,6 @@
                 </ul>
 
                 <ul class="navbar-nav">
-                    <!-- Theme Toggle Button -->
                     <li class="nav-item d-flex align-items-center">
                         <button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar tema">
                             <i class="fas fa-sun"></i>
@@ -92,8 +91,8 @@
         <div class="main-content">
 
             <!-- Banner de Bienvenida -->
-            <div class="card mb-4">
-                <div class="card-body py-3">
+            <div class="card mb-3">
+                <div class="card-body py-3 text-center">
                     <h4 class="text-white mb-1">
                         <i class="fas fa-guitar me-2"></i>Bienvenido, <span id="maestroName">Maestro</span>
                     </h4>
@@ -101,34 +100,86 @@
                 </div>
             </div>
 
-            <!-- Google Calendar -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="text-white mb-0">
-                        <i class="fas fa-calendar-alt me-2"></i>Calendario RockstarSkull
-                    </h6>
+            <!-- Layout principal: banners izq + calendario der en desktop -->
+            <div class="row g-3 mb-3">
+
+                <!-- Columna izquierda: los 3 banners -->
+                <div class="col-12 col-lg-5 order-1 order-lg-1">
+
+                    <!-- Banner 1: Mis clases hoy -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="text-white mb-0">
+                                <i class="fas fa-chalkboard me-2"></i>Mis clases hoy
+                            </h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div id="clasesHoyLoading" class="text-center py-2">
+                                <i class="fas fa-spinner fa-spin text-info"></i>
+                                <small class="text-muted ms-2">Consultando calendario...</small>
+                            </div>
+                            <div id="clasesHoyContent" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Banner 2: Estado de alumnos -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="text-white mb-0">
+                                <i class="fas fa-users me-2"></i>Alumnos
+                            </h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div id="alumnosStatusLoading" class="text-center py-2">
+                                <i class="fas fa-spinner fa-spin text-info"></i>
+                                <small class="text-muted ms-2">Calculando...</small>
+                            </div>
+                            <div id="alumnosStatusContent" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Banner 3: Espacios libres hoy -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="text-white mb-0">
+                                <i class="fas fa-door-open me-2"></i>Espacios libres hoy
+                            </h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div id="espaciosLoading" class="text-center py-2">
+                                <i class="fas fa-spinner fa-spin text-info"></i>
+                                <small class="text-muted ms-2">Calculando...</small>
+                            </div>
+                            <div id="espaciosContent" style="display:none;"></div>
+                        </div>
+                    </div>
+
                 </div>
-                <div class="card-body p-0">
-                    <!--
-                        INSTRUCCIONES PARA CONFIGURAR GOOGLE CALENDAR PUBLICO:
-                        1. Ir a https://calendar.google.com con la cuenta rockstarskull10@gmail.com
-                        2. Click en el engranaje (Configuracion) > seleccionar el calendario
-                        3. En "Permisos de acceso a los eventos" > marcar "Hacer disponible para el publico"
-                        4. En la seccion "Integrar calendario" copiar el "ID del calendario"
-                        5. Reemplazar CALENDAR_ID en el src del iframe con ese ID
-                           (normalmente es el email: rockstarskull10@gmail.com)
-                    -->
-                    <iframe
-                        id="googleCalendarFrame"
-                        src="https://calendar.google.com/calendar/embed?src=rockstarskull10%40gmail.com&ctz=America%2FMexico_City&wkst=2&bgcolor=%23191C24&color=%23E4C441&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=1&showCalendars=0&mode=AGENDA"
-                        style="border: 0; width: 100%; height: 500px;"
-                        frameborder="0"
-                        scrolling="no">
-                    </iframe>
+
+                <!-- Columna derecha: Calendario Google -->
+                <div class="col-12 col-lg-7 order-2 order-lg-2">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="text-white mb-0">
+                                <i class="fas fa-calendar-alt me-2"></i>Calendario RockstarSkull
+                            </h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <iframe
+                                id="googleCalendarFrame"
+                                title="Calendario RockstarSkull"
+                                src="https://calendar.google.com/calendar/embed?src=rockstarskull10%40gmail.com&ctz=America%2FMexico_City&wkst=2&bgcolor=%23191C24&color=%23E4C441&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=1&showCalendars=0&mode=AGENDA"
+                                style="border: 0; width: 100%; height: 500px; min-height: 400px;"
+                                frameborder="0"
+                                scrolling="no">
+                            </iframe>
+                        </div>
+                    </div>
                 </div>
+
             </div>
 
-            <!-- Listado de Alumnos -->
+            <!-- Listado de Alumnos (siempre ancho completo, debajo) -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="text-white mb-0">
@@ -186,6 +237,6 @@
     <script>if (typeof window.checkPageAccess === 'function') window.checkPageAccess();</script>
 
     <!-- Maestros Init (autocontenido) -->
-    <script src="js/maestros-init.js?v=1.0.0"></script>
+    <script src="js/maestros-init.js?v=1.1.0"></script>
 </body>
 </html>
