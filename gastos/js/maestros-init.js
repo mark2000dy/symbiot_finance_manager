@@ -312,6 +312,12 @@ async function loadMaestroStudents(maestroId) {
         const students = result.data;
         console.log(`✅ ${students.length} alumnos cargados`);
 
+        // Guardar instrumentos del maestro para loadEspaciosLibres
+        _maestroClases = students.reduce(function(acc, s) {
+            if (INSTR_CFG_ESP[s.clase] && acc.indexOf(s.clase) === -1) acc.push(s.clase);
+            return acc;
+        }, []);
+
         document.getElementById('totalStudentsBadge').textContent = students.length;
         document.getElementById('studentsTableContainer').style.display = 'block';
 
@@ -452,64 +458,177 @@ function renderAlumnosStatus(students) {
 
 // ============================================================
 // BANNER 3: ESPACIOS LIBRES HOY
+// Replica la lógica de dashboard-horarios.js (mismas constantes)
 // ============================================================
 
+// Capacidades hardcodeadas idénticas a dashboard-horarios.js
+var INSTR_CFG_ESP = {
+    'Guitarra': { cap: 5 },
+    'Batería':  { cap: 2 },
+    'Canto':    { cap: 3 },
+    'Bajo':     { cap: 3 },
+    'Teclado':  { cap: 2 }
+};
+
+// Horario operativo: Lun-Vie 15-20, Sáb 11-16
+var SCHOOL_SCHED_ESP = {
+    1: { start: 15, end: 20 },
+    2: { start: 15, end: 20 },
+    3: { start: 15, end: 20 },
+    4: { start: 15, end: 20 },
+    5: { start: 15, end: 20 },
+    6: { start: 11, end: 16 }
+};
+
+var _DIA_NUM_ESP = {
+    lun:1, lunes:1, mar:2, martes:2,
+    mie:3, miercoles:3, jue:4, jueves:4,
+    vie:5, viernes:5, sab:6, sabado:6,
+    dom:0, domingo:0
+};
+
+function _normDayEsp(str) {
+    return str.toLowerCase()
+        .replace(/á/g,'a').replace(/é/g,'e')
+        .replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u');
+}
+
+function _parseSlotsEsp(horarioStr) {
+    if (!horarioStr) return [];
+    var out = [];
+    var re = /(\d{1,2}):(\d{2})\s+a\s+(\d{1,2}):(\d{2})\s+([A-Za-záéíóúÁÉÍÓÚ]+)/g;
+    var m;
+    while ((m = re.exec(horarioStr)) !== null) {
+        var startH = parseInt(m[1]);
+        var endH   = parseInt(m[3]);
+        var nd     = _normDayEsp(m[5]);
+        var dn     = _DIA_NUM_ESP[nd] !== undefined ? _DIA_NUM_ESP[nd] : _DIA_NUM_ESP[nd.slice(0,3)];
+        if (dn === undefined) continue;
+        for (var h = startH; h < endH; h++) out.push({ day: dn, hour: h });
+    }
+    return out;
+}
+
+// Instrumento(s) del maestro actual — se llena en loadMaestroStudents
+var _maestroClases = [];
+
 async function loadEspaciosLibres(maestroId) {
-    const loading = document.getElementById('espaciosLoading');
-    const content = document.getElementById('espaciosContent');
+    var loading = document.getElementById('espaciosLoading');
+    var content = document.getElementById('espaciosContent');
 
     try {
-        const result = await window.apiGet('maestros/espacios-libres', {
-            maestro_id: maestroId,
-            empresa_id: 1
+        // Cargar TODOS los alumnos activos (igual que dashboard-horarios)
+        var result = await window.apiGet('alumnos', {
+            empresa_id: 1,
+            estatus: 'Activo',
+            unificar: '0',
+            limit: 1000
         });
+
         loading.style.display = 'none';
         content.style.display = 'block';
 
-        const slots = (result.success && result.data) ? result.data : [];
+        var allStudents = (result.success && result.data) ? result.data : [];
 
-        if (slots.length === 0) {
-            content.innerHTML = `
-                <div class="text-muted py-1" style="font-size:0.88em;">
-                    <i class="fas fa-check-circle me-1"></i>No hay horarios registrados para hoy.
-                </div>`;
+        // Determinar instrumentos del maestro
+        var instrToShow = _maestroClases.length > 0
+            ? _maestroClases
+            : allStudents
+                .filter(function(s) { return String(s.maestro_id) === String(maestroId) && INSTR_CFG_ESP[s.clase]; })
+                .reduce(function(acc, s) {
+                    if (acc.indexOf(s.clase) === -1) acc.push(s.clase);
+                    return acc;
+                }, []);
+
+        if (instrToShow.length === 0) {
+            content.innerHTML = '<div class="text-muted py-1" style="font-size:0.88em;">' +
+                '<i class="fas fa-info-circle me-1"></i>No se encontraron instrumentos asignados.</div>';
             return;
         }
 
-        const hayDisponibles = slots.some(s => s.disponibles > 0);
+        // Día de hoy (JS: 0=Dom, 1=Lun, ..., 6=Sáb)
+        var todayNum = new Date().getDay();
+        var sched = SCHOOL_SCHED_ESP[todayNum];
 
-        content.innerHTML = slots.map(s => {
-            const pct     = s.capacidad > 0 ? Math.round((s.inscritos / s.capacidad) * 100) : 100;
-            const barColor = s.disponibles === 0 ? 'bg-danger' : s.disponibles === 1 ? 'bg-warning' : 'bg-success';
-            return `
-            <div class="py-1 border-bottom border-secondary">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <div style="font-size:0.85em;">
-                        <span class="text-warning fw-bold">${s.hora_inicio} – ${s.hora_fin}</span>
-                        <span class="text-info ms-2">${s.clase}</span>
-                        <span class="text-muted ms-1" style="font-size:0.8em;">${s.salon}</span>
-                    </div>
-                    <div style="font-size:0.82em;">
-                        ${s.disponibles > 0
-                            ? `<span class="text-success fw-bold">${s.disponibles} libre${s.disponibles > 1 ? 's' : ''}</span>`
-                            : `<span class="text-danger fw-bold">Lleno</span>`}
-                        <span class="text-muted ms-1">(${s.inscritos}/${s.capacidad})</span>
-                    </div>
-                </div>
-                <div class="progress" style="height:4px;">
-                    <div class="progress-bar ${barColor}" style="width:${pct}%;"></div>
-                </div>
-            </div>`;
-        }).join('') + (hayDisponibles ? `
-            <div class="mt-2" style="font-size:0.8em;">
-                <i class="fas fa-lightbulb text-warning me-1"></i>
-                <span class="text-warning">Hay espacios disponibles para vender hoy.</span>
-            </div>` : '');
+        if (!sched) {
+            content.innerHTML = '<div class="text-muted py-1" style="font-size:0.88em;">' +
+                '<i class="fas fa-moon me-1"></i>La escuela no opera hoy (domingo).</div>';
+            return;
+        }
+
+        // Construir matriz de ocupación para HOY
+        // slots[hour][instrumento] = { count, cap }
+        var slots = {};
+        allStudents.forEach(function(s) {
+            if (!INSTR_CFG_ESP[s.clase]) return;
+            _parseSlotsEsp(s.horario).forEach(function(slot) {
+                if (slot.day !== todayNum) return;
+                if (!slots[slot.hour]) slots[slot.hour] = {};
+                if (!slots[slot.hour][s.clase]) {
+                    slots[slot.hour][s.clase] = { count: 0, cap: INSTR_CFG_ESP[s.clase].cap };
+                }
+                slots[slot.hour][s.clase].count++;
+            });
+        });
+
+        // Generar lista de slots para hoy para los instrumentos del maestro
+        var horaSlots = [];
+        for (var h = sched.start; h < sched.end; h++) {
+            instrToShow.forEach(function(inst) {
+                var info = (slots[h] && slots[h][inst]) || { count: 0, cap: INSTR_CFG_ESP[inst].cap };
+                var disponibles = Math.max(0, info.cap - info.count);
+                horaSlots.push({
+                    hora:       h,
+                    horaStr:    (h < 10 ? '0' : '') + h + ':00',
+                    horaFinStr: (h + 1 < 10 ? '0' : '') + (h + 1) + ':00',
+                    clase:      inst,
+                    inscritos:  info.count,
+                    capacidad:  info.cap,
+                    disponibles: disponibles
+                });
+            });
+        }
+
+        if (horaSlots.length === 0) {
+            content.innerHTML = '<div class="text-muted py-1" style="font-size:0.88em;">' +
+                '<i class="fas fa-check-circle me-1"></i>Sin horarios operativos para hoy.</div>';
+            return;
+        }
+
+        var hayDisponibles = horaSlots.some(function(s) { return s.disponibles > 0; });
+
+        content.innerHTML = horaSlots.map(function(s) {
+            var pct      = s.capacidad > 0 ? Math.round((s.inscritos / s.capacidad) * 100) : 100;
+            var barClass = s.disponibles === 0 ? 'bg-danger' : s.disponibles === 1 ? 'bg-warning' : 'bg-success';
+            return '<div class="py-1 border-bottom border-secondary">' +
+                '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                '<div style="font-size:0.85em;">' +
+                '<span class="text-warning fw-bold">' + s.horaStr + ' – ' + s.horaFinStr + '</span>' +
+                '<span class="text-info ms-2">' + s.clase + '</span>' +
+                '</div>' +
+                '<div style="font-size:0.82em;">' +
+                (s.disponibles > 0
+                    ? '<span class="text-success fw-bold">' + s.disponibles + ' libre' + (s.disponibles > 1 ? 's' : '') + '</span>'
+                    : '<span class="text-danger fw-bold">Lleno</span>') +
+                '<span class="text-muted ms-1">(' + s.inscritos + '/' + s.capacidad + ')</span>' +
+                '</div>' +
+                '</div>' +
+                '<div class="progress" style="height:4px;">' +
+                '<div class="progress-bar ' + barClass + '" style="width:' + pct + '%;"></div>' +
+                '</div>' +
+                '</div>';
+        }).join('') + (hayDisponibles
+            ? '<div class="mt-2" style="font-size:0.8em;">' +
+              '<i class="fas fa-lightbulb text-warning me-1"></i>' +
+              '<span class="text-warning">Hay espacios disponibles para vender hoy.</span>' +
+              '</div>'
+            : '');
 
     } catch (e) {
+        console.error('Error espacios libres:', e);
         loading.style.display = 'none';
         content.style.display = 'block';
-        content.innerHTML = `<small class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>No se pudo calcular.</small>`;
+        content.innerHTML = '<small class="text-muted"><i class="fas fa-exclamation-circle me-1"></i>No se pudo calcular.</small>';
     }
 }
 
