@@ -381,11 +381,11 @@ function _buildRoomSection(salaKey, sala, slots, hours) {
     var isShared   = sala.instrumentos.length > 1;
     var titleExtra = isShared
         ? ' <small class="fw-normal ms-1" style="font-size:0.75rem;">' +
-          '<i class="fas fa-microphone me-1" style="color:#a855f7;"></i><span style="color:#a855f7;">Canto</span>' +
+          '<i class="fas fa-microphone me-1" style="color:#a855f7;font-size:0.7rem;"></i><span style="color:#a855f7;">Canto</span>' +
           ' <span style="opacity:0.4;">·</span> ' +
-          '<i class="fas fa-guitar me-1" style="color:#22c55e;"></i><span style="color:#22c55e;">Bajo</span>' +
+          '<i class="fas fa-guitar me-1" style="color:#22c55e;font-size:0.7rem;"></i><span style="color:#22c55e;">Bajo</span>' +
           ' <span style="opacity:0.4;">·</span> ' +
-          '<i class="fas fa-music me-1" style="color:#3b82f6;"></i><span style="color:#3b82f6;">Teclado</span>' +
+          '<i class="fas fa-music me-1" style="color:#3b82f6;font-size:0.7rem;"></i><span style="color:#3b82f6;">Teclado</span>' +
           '</small>'
         : '';
 
