@@ -80,6 +80,18 @@ class AuthController {
 
             error_log("✅ Login exitoso: {$user['email']} ({$user['rol']})");
 
+            // Notificación: inicio de sesión de maestro
+            $maestroEmailsNot = [
+                'hvazquez@rockstarskull.com', 'jolvera@rockstarskull.com',
+                'dandrade@rockstarskull.com', 'ihernandez@rockstarskull.com',
+                'nperez@rockstarskull.com',   'lblanquet@rockstarskull.com',
+                'mreyes@rockstarskull.com',   'hlopez@rockstarskull.com'
+            ];
+            if (in_array($user['email'], $maestroEmailsNot)) {
+                require_once __DIR__ . '/NotificacionesController.php';
+                NotificacionesController::crearNotificacion('login_maestro', "{$user['nombre']} ha iniciado sesión", $user['empresa'] ?? 1);
+            }
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Login exitoso',

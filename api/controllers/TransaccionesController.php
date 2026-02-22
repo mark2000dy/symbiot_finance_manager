@@ -238,6 +238,10 @@ class TransaccionesController {
 
             error_log("✅ " . ($tipo === 'G' ? 'Gasto' : 'Ingreso') . " creado: $concepto - $" . ($cantidad * $precio_unitario));
 
+            // Notificación: nueva transacción (usar nombre del usuario logueado, no el socio)
+            $nombreUsuarioNot = $user['nombre'] ?? 'Sistema';
+            NotificacionesController::crearNotificacion('transaccion', "$tipo - $nombreUsuarioNot ha registrado una nueva transacción", $empresa_id);
+
             http_response_code(201);
             echo json_encode([
                 'success' => true,
@@ -567,7 +571,8 @@ class TransaccionesController {
                         END as estatus,
                         GROUP_CONCAT(DISTINCT COALESCE(m.nombre, 'Sin asignar') ORDER BY a.clase SEPARATOR ', ') as maestro,
                         GROUP_CONCAT(DISTINCT a.id ORDER BY a.clase SEPARATOR ',') as all_ids,
-                        COUNT(DISTINCT a.id) as num_clases
+                        COUNT(DISTINCT a.id) as num_clases,
+                        MIN(a.salon_id) as salon_id
                     FROM alumnos a
                     LEFT JOIN maestros m ON a.maestro_id = m.id
                     $whereClause
@@ -807,6 +812,14 @@ class TransaccionesController {
                 }
             }
 
+            // Notificación admin: alta de alumno
+            $nombreUsuarioNot = $user['nombre'] ?? 'Sistema';
+            NotificacionesController::crearNotificacion('alta_alumno', "$nombreUsuarioNot acaba de registrar un nuevo alumno", $empresa_id);
+            // Notificación maestro: nuevo alumno en su clase (si tiene maestro asignado)
+            if ($maestro_id > 0) {
+                NotificacionesController::crearNotificacion('alta_alumno', "Nuevo alumno registrado en tu clase: $nombre", $empresa_id, $maestro_id);
+            }
+
             http_response_code(201);
             echo json_encode([
                 'success' => true,
@@ -832,8 +845,9 @@ class TransaccionesController {
     public static function deleteAlumno($id) {
         $user = AuthController::requireAuth();
 
-        // Solo admins o escuela@rockstarskull.com pueden eliminar alumnos
-        if ($user['rol'] !== 'admin' && $user['email'] !== 'escuela@rockstarskull.com') {
+        // Maestros puros no pueden eliminar alumnos; admins y coordinadores (incluido Hugo) sí
+        $pureMaestroEmails = ['jolvera@rockstarskull.com','dandrade@rockstarskull.com','ihernandez@rockstarskull.com','nperez@rockstarskull.com','lblanquet@rockstarskull.com','mreyes@rockstarskull.com','hlopez@rockstarskull.com'];
+        if (in_array($user['email'], $pureMaestroEmails)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'No tienes permisos para eliminar alumnos']);
             return;
@@ -843,7 +857,7 @@ class TransaccionesController {
             error_log("🗑️ Eliminando alumno ID: $id por usuario: " . $user['email']);
 
             // Verificar que el alumno existe
-            $alumno = executeQuery("SELECT id, nombre, clase FROM alumnos WHERE id = ?", [$id]);
+            $alumno = executeQuery("SELECT id, nombre, clase, maestro_id, empresa_id FROM alumnos WHERE id = ?", [$id]);
 
             if (empty($alumno)) {
                 http_response_code(404);
@@ -860,9 +874,13 @@ class TransaccionesController {
             try {
                 require_once __DIR__ . '/../config/GoogleCalendarService.php';
                 $calendarService = new GoogleCalendarService();
-                $calendarService->removeStudentFromSchedule($nombreOriginal, $claseOriginal);
+                error_log("🗑️ [Calendar] Eliminando evento de '$nombreOriginal' ($claseOriginal) por ELIMINACIÓN...");
+                $ok = $calendarService->removeStudentFromSchedule($nombreOriginal, $claseOriginal);
+                if ($ok === false) {
+                    error_log("⚠️ [Calendar] removeStudentFromSchedule devolvió false — ¿token vencido o sin conexión?");
+                }
             } catch (Exception $e) {
-                error_log("⚠️ Error eliminando evento de Calendar: " . $e->getMessage());
+                error_log("⚠️ Error eliminando evento de Calendar (delete): " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine());
             }
 
             // Soft delete: renombrar con prefijo [ELIMINADO]
@@ -874,6 +892,16 @@ class TransaccionesController {
             ", [$id]);
 
             error_log("✅ Alumno eliminado (soft): $nombreOriginal (ID: $id)");
+
+            // Notificación admin: baja de alumno
+            $nombreUsuarioNot = $user['nombre'] ?? 'Sistema';
+            $empresaIdDelNot  = (int)($alumno[0]['empresa_id'] ?? 1);
+            NotificacionesController::crearNotificacion('baja_alumno', "El alumno $nombreOriginal fue dado de baja, registró $nombreUsuarioNot", $empresaIdDelNot);
+            // Notificación maestro: alumno removido de su clase (si tenía maestro)
+            $maestroIdDel = (int)($alumno[0]['maestro_id'] ?? 0);
+            if ($maestroIdDel > 0) {
+                NotificacionesController::crearNotificacion('baja_alumno', "El alumno $nombreOriginal fue dado de baja de tu clase", $empresaIdDelNot, $maestroIdDel);
+            }
 
             echo json_encode([
                 'success' => true,
@@ -898,9 +926,10 @@ class TransaccionesController {
     public static function updateAlumno($id) {
         $user = AuthController::requireAuth();
 
-        // Security: Only admins or escuela@rockstarskull.com can update students
-        $allowedRoles = ['admin', 'escuela@rockstarskull.com'];
-        if (!in_array($user['rol'], $allowedRoles) && $user['email'] !== 'escuela@rockstarskull.com') {
+        // Security: maestros no pueden editar alumnos; cualquier otro usuario autenticado sí
+        // Maestros puros no pueden actualizar alumnos; admins y coordinadores (incluido Hugo) sí
+        $pureMaestroEmails = ['jolvera@rockstarskull.com','dandrade@rockstarskull.com','ihernandez@rockstarskull.com','nperez@rockstarskull.com','lblanquet@rockstarskull.com','mreyes@rockstarskull.com','hlopez@rockstarskull.com'];
+        if (in_array($user['email'], $pureMaestroEmails)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'No tienes permisos para actualizar alumnos.']);
             return;
@@ -933,28 +962,46 @@ class TransaccionesController {
                 try {
                     require_once __DIR__ . '/../config/GoogleCalendarService.php';
                     $calendarService = new GoogleCalendarService();
-                    $calendarService->removeStudentFromSchedule($alumnoExistente[0]['nombre'], $alumnoExistente[0]['clase']);
+                    $nombreBaja = $alumnoExistente[0]['nombre'];
+                    $claseBaja  = $alumnoExistente[0]['clase'];
+                    error_log("🗑️ [Calendar] Eliminando evento de '$nombreBaja' ($claseBaja) por BAJA...");
+                    $ok = $calendarService->removeStudentFromSchedule($nombreBaja, $claseBaja);
+                    if ($ok === false) {
+                        error_log("⚠️ [Calendar] removeStudentFromSchedule devolvió false — ¿token vencido o sin conexión?");
+                    }
                 } catch (Exception $e) {
-                    error_log("⚠️ Error eliminando evento de Calendar (Baja): " . $e->getMessage());
+                    error_log("⚠️ Error eliminando evento de Calendar (Baja): " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine());
                 }
             }
 
             // ============================================================
             // INTEGRACIÓN GOOGLE CALENDAR: Reactivación (Baja -> Activo)
+            // También cubre el caso donde el alumno ya es Activo pero
+            // se le asigna horario por primera vez o se cambia.
             // ============================================================
-            if (isset($input['estatus']) && $input['estatus'] === 'Activo' && $alumnoExistente[0]['estatus'] === 'Baja') {
-                $horarioNuevo = $input['horario'] ?? null;
-                
+            $estudianteEsActivo = ($input['estatus'] ?? $alumnoExistente[0]['estatus']) === 'Activo';
+            $horarioEntrada     = isset($input['horario']) && $input['horario'] !== '' ? $input['horario'] : null;
+            $horarioDB          = $alumnoExistente[0]['horario'] ?? null;
+            $esReactivacion     = isset($input['estatus']) && $input['estatus'] === 'Activo' && $alumnoExistente[0]['estatus'] === 'Baja';
+            $horarioCambia      = $horarioEntrada !== null && $horarioEntrada !== $horarioDB;
+
+            if ($estudianteEsActivo && ($esReactivacion || $horarioCambia)) {
+                $horarioNuevo = $horarioEntrada ?: $horarioDB;
+
+                error_log("📅 [Calendar check] esReactivacion=$esReactivacion horarioCambia=$horarioCambia horarioNuevo=" . json_encode($horarioNuevo));
+
                 if ($horarioNuevo) {
                     try {
                         require_once __DIR__ . '/../config/GoogleCalendarService.php';
+                        error_log("📅 [Calendar] Iniciando GoogleCalendarService para reactivación...");
                         $calendarService = new GoogleCalendarService();
-                        
+                        error_log("📅 [Calendar] GoogleCalendarService instanciado OK");
+
                         // Datos para el evento (usar input si existe, sino fallback a DB)
                         $nombreFinal = $input['nombre'] ?? $alumnoExistente[0]['nombre'];
                         $claseFinal = $input['clase'] ?? $alumnoExistente[0]['clase'];
                         $maestroIdFinal = $input['maestro_id'] ?? $alumnoExistente[0]['maestro_id'];
-                        
+
                         // 1. Obtener nombre del maestro
                         $teacherName = '';
                         if ($maestroIdFinal) {
@@ -975,10 +1022,12 @@ class TransaccionesController {
 
                         // 3. Parsear Horario y Agendar
                         $horarioNorm = mb_strtolower($horarioNuevo);
+                        error_log("📅 [Calendar] Parseando horario: '$horarioNorm' para alumno '$shortName' clase '$claseFinal' maestro '$teacherName'");
                         if (preg_match('/(\d{1,2}:\d{2})\s*a\s*(\d{1,2}:\d{2})\s+(.+)/', $horarioNorm, $matches)) {
                             $startTime = $matches[1];
                             $endTime = $matches[2];
                             $daysStr = $matches[3];
+                            error_log("📅 [Calendar] Regex match: start=$startTime end=$endTime days='$daysStr'");
 
                             $daysMap = [
                                 'lunes' => 'Monday', 'lun' => 'Monday',
@@ -989,7 +1038,7 @@ class TransaccionesController {
                                 'sábado' => 'Saturday', 'sabado' => 'Saturday', 'sab' => 'Saturday',
                                 'domingo' => 'Sunday', 'dom' => 'Sunday'
                             ];
-                            
+
                             $rruleMap = ['Monday'=>'MO', 'Tuesday'=>'TU', 'Wednesday'=>'WE', 'Thursday'=>'TH', 'Friday'=>'FR', 'Saturday'=>'SA', 'Sunday'=>'SU'];
 
                             foreach ($daysMap as $es => $en) {
@@ -998,13 +1047,20 @@ class TransaccionesController {
                                     $endDT = new DateTime("next $en $endTime", new DateTimeZone('America/Mexico_City'));
                                     $recurrence = ["RRULE:FREQ=WEEKLY;BYDAY=" . $rruleMap[$en]];
 
+                                    error_log("📅 [Calendar] Llamando scheduleClassEvent para $en " . $startDT->format('c'));
                                     $link = $calendarService->scheduleClassEvent($shortName, $claseFinal, $teacherName, $startDT->format('c'), $endDT->format('c'), $recurrence);
-                                    if ($link) error_log("📅 Evento reactivado en Calendar: $link");
+                                    if ($link) {
+                                        error_log("📅 Evento reactivado en Calendar: $link");
+                                    } else {
+                                        error_log("⚠️ [Calendar] scheduleClassEvent devolvió null/false");
+                                    }
                                 }
                             }
+                        } else {
+                            error_log("⚠️ [Calendar] Regex no coincidió con horario: '$horarioNorm'");
                         }
                     } catch (Exception $e) {
-                        error_log("⚠️ Error reactivando evento en Calendar: " . $e->getMessage());
+                        error_log("⚠️ Error reactivando evento en Calendar: " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine());
                     }
                 }
             }
@@ -1118,13 +1174,53 @@ class TransaccionesController {
                     a.domiciliado,
                     a.titular_domicilado,
                     a.estatus,
+                    a.salon_id,
                     COALESCE(m.nombre, 'Sin asignar') as maestro
                 FROM alumnos a
                 LEFT JOIN maestros m ON a.maestro_id = m.id
                 WHERE a.id = ?
             ", [$id]);
 
-            error_log("✅ Alumno actualizado: " . $input['nombre']);
+            error_log("✅ Alumno actualizado: " . ($input['nombre'] ?? $alumnoExistente[0]['nombre']));
+
+            // Notificaciones: baja, reactivación o modificación
+            $nombreUsuarioNot = $user['nombre'] ?? 'Sistema';
+            $nombreAlumnoNot  = $alumnoExistente[0]['nombre'];
+            $empresaIdNot     = (int)($input['empresa_id'] ?? 1);
+            $viejoEstatus     = $alumnoExistente[0]['estatus'] ?? '';
+            $viejoMaestroId   = (int)($alumnoExistente[0]['maestro_id'] ?? 0);
+            $nuevoMaestroId   = isset($input['maestro_id']) ? (int)($input['maestro_id'] ?: 0) : $viejoMaestroId;
+            $viejoHorario     = $alumnoExistente[0]['horario'] ?? '';
+            $nuevoHorario     = isset($input['horario']) ? (string)$input['horario'] : $viejoHorario;
+
+            if (isset($input['estatus']) && $input['estatus'] === 'Baja') {
+                // Baja: notificar admin y maestro actual
+                NotificacionesController::crearNotificacion('baja_alumno', "El alumno $nombreAlumnoNot fue dado de baja, registró $nombreUsuarioNot", $empresaIdNot);
+                if ($viejoMaestroId > 0) {
+                    NotificacionesController::crearNotificacion('baja_alumno', "El alumno $nombreAlumnoNot fue dado de baja de tu clase", $empresaIdNot, $viejoMaestroId);
+                }
+            } elseif (isset($input['estatus']) && $input['estatus'] === 'Activo' && $viejoEstatus === 'Baja') {
+                // Reactivación: notificar admin y maestro asignado
+                NotificacionesController::crearNotificacion('alta_alumno', "$nombreUsuarioNot ha reactivado al alumno $nombreAlumnoNot", $empresaIdNot);
+                if ($viejoMaestroId > 0) {
+                    NotificacionesController::crearNotificacion('alta_alumno', "El alumno $nombreAlumnoNot ha sido reactivado en tu clase", $empresaIdNot, $viejoMaestroId);
+                }
+            } else {
+                // Modificación genérica: notificar admin
+                NotificacionesController::crearNotificacion('modificacion_alumno', "$nombreUsuarioNot ha actualizado al alumno $nombreAlumnoNot", $empresaIdNot);
+                // Cambio de maestro: baja al viejo, alta al nuevo
+                if ($viejoMaestroId !== $nuevoMaestroId) {
+                    if ($viejoMaestroId > 0) {
+                        NotificacionesController::crearNotificacion('baja_alumno', "El alumno $nombreAlumnoNot fue removido de tu clase", $empresaIdNot, $viejoMaestroId);
+                    }
+                    if ($nuevoMaestroId > 0) {
+                        NotificacionesController::crearNotificacion('alta_alumno', "El alumno $nombreAlumnoNot fue asignado a tu clase", $empresaIdNot, $nuevoMaestroId);
+                    }
+                } elseif ($viejoMaestroId > 0 && $viejoHorario !== $nuevoHorario && $nuevoHorario !== '') {
+                    // Mismo maestro, cambio de horario
+                    NotificacionesController::crearNotificacion('modificacion_alumno', "Se actualizó el horario de $nombreAlumnoNot", $empresaIdNot, $viejoMaestroId);
+                }
+            }
 
             echo json_encode([
                 'success' => true,

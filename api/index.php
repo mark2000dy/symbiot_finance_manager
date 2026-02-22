@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/controllers/AuthController.php';
 require_once __DIR__ . '/controllers/TransaccionesController.php';
+require_once __DIR__ . '/controllers/NotificacionesController.php';
 
 // Obtener la URI y método
 $requestUri = $_SERVER['REQUEST_URI'];
@@ -503,6 +504,19 @@ try {
                 'periodo_consultado' => "Últimos $periodo meses"
             ]
         ]);
+        exit;
+    }
+
+    // ============================================================
+    // RUTAS DE NOTIFICACIONES
+    // ============================================================
+    if ($requestUri === '/notificaciones' && $requestMethod === 'GET') {
+        NotificacionesController::getNotificaciones();
+        exit;
+    }
+
+    if (preg_match('#^/notificaciones/(\d+)/leida$#', $requestUri, $matches) && $requestMethod === 'PUT') {
+        NotificacionesController::marcarLeida($matches[1]);
         exit;
     }
 

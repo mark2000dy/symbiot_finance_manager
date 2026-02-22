@@ -1377,7 +1377,7 @@ function createEditStudentModalHTML() {
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="editStudentClassType" class="form-label">
                                     <i class="fas fa-users me-1"></i>Tipo de Clase *
                                 </label>
@@ -1386,7 +1386,7 @@ function createEditStudentModalHTML() {
                                     <option value="Grupal">👥 Grupal</option>
                                 </select>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="editStudentStatus" class="form-label">
                                     <i class="fas fa-toggle-on me-1"></i>Estatus *
                                 </label>
@@ -1395,11 +1395,22 @@ function createEditStudentModalHTML() {
                                     <option value="Baja">❌ Baja</option>
                                 </select>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label for="editStudentPromotion" class="form-label">
                                     <i class="fas fa-tag me-1"></i>Promoción
                                 </label>
                                 <input type="text" class="form-control" id="editStudentPromotion">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="editStudentSalon" class="form-label">
+                                    <i class="fas fa-door-open me-1"></i>Salón
+                                </label>
+                                <select class="form-select" id="editStudentSalon">
+                                    <option value="">Sin asignar</option>
+                                    <option value="1">🥁 Salón Batería (máx 2)</option>
+                                    <option value="2">🎸 Salón Guitarra (máx 5)</option>
+                                    <option value="3">🎹 Salón Múltiple (Bajo/Canto/Teclado)</option>
+                                </select>
                             </div>
                         </div>
                         
@@ -1861,14 +1872,7 @@ function editStudentSimple(modalElement, student) {
         // Guardar estado inicial
         statusSelect.setAttribute('data-initial', student.estatus || 'Activo');
         
-        statusSelect.onchange = function() {
-            const initialStatus = this.getAttribute('data-initial');
-            // Si estaba en Baja y se cambia a Activo -> Limpiar horario para obligar a reasignar
-            if (initialStatus === 'Baja' && this.value === 'Activo') {
-                const scheduleInput = document.getElementById('editStudentSchedule');
-                if (scheduleInput) scheduleInput.value = '';
-            }
-        };
+        statusSelect.onchange = function() {};
     }
 
     const modal = new bootstrap.Modal(modalElement);
