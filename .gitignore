@@ -7,6 +7,9 @@
 .env.production
 .env.*.local
 
+# Configuración SMTP con credenciales reales
+forms/smtp-config.php
+
 # Archivos de debug/test
 debug_*.py
 test_*.php

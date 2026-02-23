@@ -18,17 +18,15 @@ require_once __DIR__ . '/PHPMailer/Exception.php';
 require_once __DIR__ . '/PHPMailer/PHPMailer.php';
 require_once __DIR__ . '/PHPMailer/SMTP.php';
 
-// ============================================
-// CONFIGURACIÓN SMTP - MODIFICAR ESTOS VALORES
-// ============================================
-define('SMTP_HOST', 'symbiot.com.mx');
-define('SMTP_PORT', 465);
-define('SMTP_USER', 'contacto@symbiot.com.mx');
-define('SMTP_PASS', 'Symb10t2026$');
-define('SMTP_FROM_EMAIL', 'contacto@symbiot.com.mx');
-define('SMTP_FROM_NAME', 'Formulario Web Symbiot');
-define('RECEIVING_EMAIL', 'contacto@symbiot.com.mx');
-// ============================================
+// Cargar credenciales SMTP desde archivo de configuración local (no en git)
+$smtpConfig = __DIR__ . '/smtp-config.php';
+if (!file_exists($smtpConfig)) {
+    http_response_code(500);
+    error_log("❌ Falta forms/smtp-config.php — copia smtp-config.example.php y configura las credenciales");
+    echo 'Error de configuración del servidor';
+    exit;
+}
+require_once $smtpConfig;
 
 // Headers de seguridad
 header('Content-Type: text/plain; charset=UTF-8');
