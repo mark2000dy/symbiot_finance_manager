@@ -54,8 +54,8 @@ function validate_email($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
-// Obtener datos del formulario
-$name = isset($_POST['name']) ? clean_input($_POST['name']) : '';
+// Obtener datos del formulario (strip \r\n para prevenir inyección de headers)
+$name = isset($_POST['name']) ? str_replace(["\r", "\n"], '', clean_input($_POST['name'])) : '';
 $email = isset($_POST['email']) ? clean_input($_POST['email']) : '';
 $subject = isset($_POST['subject']) ? clean_input($_POST['subject']) : '';
 $message = isset($_POST['message']) ? clean_input($_POST['message']) : '';

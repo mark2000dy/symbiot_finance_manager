@@ -15,7 +15,7 @@ class Session {
         // Configuración de sesión compatible con Plesk y AppServ
         ini_set('session.cookie_httponly', '1');
         ini_set('session.use_only_cookies', '1');
-        ini_set('session.cookie_samesite', 'Lax');
+        ini_set('session.cookie_samesite', 'Strict');
 
         // Tiempo de vida de la sesión: 24 horas
         ini_set('session.gc_maxlifetime', '86400');
@@ -35,13 +35,15 @@ class Session {
             $cookie_path = $parts[0] . '/gastos';
         }
 
+        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                 || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
         session_set_cookie_params([
             'lifetime' => 86400,
             'path' => $cookie_path,
             'domain' => '',
-            'secure' => false, // Cambiar a true en producción con HTTPS
+            'secure' => $isSecure,
             'httponly' => true,
-            'samesite' => 'Lax'
+            'samesite' => 'Strict'
         ]);
 
         error_log("🔧 Session configurada - Cookie path: {$cookie_path}");

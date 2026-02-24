@@ -84,13 +84,10 @@ function getPaymentStatusHomologado(student) {
 /**
  * Devuelve cuántos slots de clase por semana representa una inscripción.
  *
- * Criterio 1 (precio): precio_mensual == $2,550 → 2 slots (ej: Diego Grajeda 2×$1,275).
- * Criterio 2 (días): cuenta días únicos en el campo horario.
- *   "17:00 a 18:00 Lun y 16:00 a 17:00 Mar" → 2 días → multiplier 2
- *   "Lun, Mie y Vie 17:00"                  → 3 días → multiplier 3
- * Criterio 3 (duración): bloque de 2+ horas en un solo día.
- *   "16:00 a 18:00 Jue" → 2 horas → multiplier 2 (ej: hermanas Alcaraz, grupal $400×2)
- * Las filas de multi-instrumento (Joshua) tienen 1 día/1h c/u → multiplier 1 por fila.
+ * Criterio 1 (precio $2,550): Diego Alonso Grajeda — 1 fila, 2 días → mult=2, maestro $800
+ * Criterio 2 (2+ días): Cano Soto — $2,300, "17:00 a 18:00 Lun, 16:00 a 17:00 Mar" → mult=2, maestro $800
+ * Criterio 3 (bloque 2+h): Alcaraz — $2,300, "16:00 a 18:00 Jue" → mult=2, maestro $800
+ * Sin criterio (1 día, 1h por fila): Joshua 4 instrumentos, Carlos Maya 2 filas → mult=1 por fila
  *
  * Retorna el número de sesiones semanales (mínimo 1).
  */
@@ -135,6 +132,14 @@ document.addEventListener('DOMContentLoaded', initPagosPage);
 
 async function initPagosPage() {
     console.log('💰 Inicializando pagina de corte de pagos...');
+
+    if (typeof window.apiGet !== 'function') {
+        console.error('❌ api-client.js no cargado — window.apiGet no disponible');
+        document.getElementById('pageLoading').innerHTML =
+            '<p class="text-danger mt-3">Error: cliente API no disponible. Recarga la página.</p>';
+        return;
+    }
+
     // Pagos siempre opera bajo Rockstar Skull
     if (typeof window.updateCompanyLogo === 'function') {
         window.updateCompanyLogo('1');
@@ -551,7 +556,9 @@ async function logout() {
         var confirmLogout = confirm('¿Estas seguro de que quieres cerrar sesion?');
         if (!confirmLogout) return;
 
-        await window.apiPost('logout');
+        if (typeof window.apiPost === 'function') {
+            await window.apiPost('logout');
+        }
 
         localStorage.removeItem('user_data');
         localStorage.removeItem('dashboardPreferences');

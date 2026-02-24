@@ -11,6 +11,12 @@ require_once __DIR__ . '/AuthController.php';
 
 class TransaccionesController {
 
+    // Buffer interno para evitar doble lectura de php://input en helpers
+    private static $inputOverride = null;
+
+    // Buffer para forzar filtro tipo ('G'/'I') sin mutar $_GET
+    private static $tipoOverride = null;
+
     // Constantes SQL para cálculo de pagos
     const SQL_FECHA_CORTE_ACTUAL = "
         LEAST(
@@ -35,7 +41,8 @@ class TransaccionesController {
         AuthController::requireAuth();
 
         try {
-            $tipo = $_GET['tipo'] ?? null;
+            $tipo = self::$tipoOverride ?? $_GET['tipo'] ?? null;
+            self::$tipoOverride = null;
             $empresa_id = $_GET['empresa_id'] ?? null;
             $socio = $_GET['socio'] ?? null;
             $fechaInicio = $_GET['fechaInicio'] ?? null;
@@ -178,7 +185,8 @@ class TransaccionesController {
         }
 
         try {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = self::$inputOverride ?? json_decode(file_get_contents('php://input'), true);
+            self::$inputOverride = null;
 
             $fecha = $input['fecha'] ?? null;
             $concepto = $input['concepto'] ?? null;
@@ -1454,26 +1462,26 @@ class TransaccionesController {
 
     // Métodos helpers para gastos e ingresos
     public static function getGastos() {
-        $_GET['tipo'] = 'G';
+        self::$tipoOverride = 'G';
         self::getTransacciones();
     }
 
     public static function getIngresos() {
-        $_GET['tipo'] = 'I';
+        self::$tipoOverride = 'I';
         self::getTransacciones();
     }
 
     public static function createGasto() {
         $input = json_decode(file_get_contents('php://input'), true);
         $input['tipo'] = 'G';
-        file_put_contents('php://input', json_encode($input));
+        self::$inputOverride = $input;
         self::createTransaccion();
     }
 
     public static function createIngreso() {
         $input = json_decode(file_get_contents('php://input'), true);
         $input['tipo'] = 'I';
-        file_put_contents('php://input', json_encode($input));
+        self::$inputOverride = $input;
         self::createTransaccion();
     }
 
@@ -2126,27 +2134,27 @@ class TransaccionesController {
         AuthController::requireAuth();
 
         try {
-            $empresa = $_GET['empresa'] ?? '';
-            $ano = $_GET['ano'] ?? '';
-            $mes = $_GET['mes'] ?? '';
-            $tipo = $_GET['tipo'] ?? '';
+            $empresa = (int)($_GET['empresa'] ?? 0);
+            $ano    = (int)($_GET['ano'] ?? 0);
+            $mes    = (int)($_GET['mes'] ?? 0);
+            $tipo   = $_GET['tipo'] ?? '';
 
             $whereConditions = [];
             $params = [];
 
-            if (!empty($ano)) {
+            if ($ano > 0) {
                 $whereConditions[] = "YEAR(fecha) = ?";
-                $params[] = (int)$ano;
+                $params[] = $ano;
             }
 
-            if (!empty($empresa)) {
+            if ($empresa > 0) {
                 $whereConditions[] = "empresa_id = ?";
-                $params[] = (int)$empresa;
+                $params[] = $empresa;
             }
 
-            if (!empty($mes)) {
+            if ($mes > 0) {
                 $whereConditions[] = "MONTH(fecha) = ?";
-                $params[] = (int)$mes;
+                $params[] = $mes;
             }
 
             if (!empty($tipo)) {

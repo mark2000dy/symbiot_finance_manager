@@ -59,19 +59,23 @@ if (!file_exists($main_api_path)) {
 
 // Extraer el endpoint de la ruta
 $endpoint = '';
+$endpoint_source = '';
 if ($path_info) {
+    $endpoint_source = 'PATH_INFO';
     $endpoint = trim($path_info, '/');
 } else {
-    // Intentar extraer de request_uri
+    // Fallback: extraer del REQUEST_URI eliminando el prefijo del proxy
+    $endpoint_source = 'REQUEST_URI';
     $uri_parts = explode('?', $request_uri);
     $path = $uri_parts[0];
-
-    // Remover /gastos/api/index.php/ de la ruta
-    $path = preg_replace('#^.*/api/index\.php/#', '', $path);
+    $path = preg_replace('#^.*/api/index\.php/?#', '', $path);
     $endpoint = trim($path, '/');
 }
 
-error_log("🎯 Endpoint detectado: {$endpoint}");
+if ($endpoint === '') {
+    error_log("⚠️ PROXY: endpoint vacío — source={$endpoint_source}, PATH_INFO={$path_info}, REQUEST_URI={$request_uri}");
+}
+error_log("🎯 Endpoint detectado [{$endpoint_source}]: {$endpoint}");
 error_log("📂 Redirigiendo a API principal: {$main_api_path}");
 
 // Simular el PATH_INFO para la API principal

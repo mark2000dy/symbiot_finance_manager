@@ -68,8 +68,10 @@ class AuthController {
                 return;
             }
 
-            // Crear sesión
-            session_start();
+            // Crear sesión (guard: evita error si ya fue iniciada por otro include)
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
             $_SESSION['user'] = [
                 'id' => $user['id'],
                 'nombre' => $user['nombre'],

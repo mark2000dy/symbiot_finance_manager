@@ -1,6 +1,13 @@
 # Archivos temporales de Excel
 ~$*.xlsx
 
+# Credenciales Google OAuth
+api/config/google-credentials.json
+api/config/token.json
+
+# Archivos de datos locales
+localhost_ingresos_corregidos.tsv
+
 # Variables de entorno (credenciales)
 .env
 .env.local

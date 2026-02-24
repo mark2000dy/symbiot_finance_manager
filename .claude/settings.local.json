@@ -25,7 +25,19 @@
       "Bash(pip install:*)",
       "Bash(curl:*)",
       "Bash(del /f \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\forms\\\\nul\")",
-      "Bash(del /f \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\nul\")"
+      "Bash(del /f \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\nul\")",
+      "Bash(del \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\gen_hash.php\")",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(git status:*)",
+      "Bash(del \"c:\\\\AppServ\\\\www\\\\symbiot\\\\symbiot_finance_manager\\\\_test_balance.php\")",
+      "Bash(findstr:*)",
+      "Bash(head -20 mysql -u root -e \"DESCRIBE symbiot_finance.alumnos; DESCRIBE symbiot_finance.maestros; DESCRIBE symbiot_finance.transacciones;\")",
+      "Bash(\"C:\\\\AppServ\\\\MySQL\\\\bin\\\\mysql.exe\":*)",
+      "Bash(\"C:\\\\AppServ\\\\MySQL\\\\bin\\\\mysql.exe\" -u root -p1234 -e \"SHOW DATABASES;\")",
+      "Bash(\"C:\\\\AppServ\\\\MySQL\\\\bin\\\\mysql.exe\" -u gastos_user -pGastos2025! -e \"SHOW DATABASES;\")",
+      "Bash(\"C:\\\\AppServ\\\\MySQL\\\\bin\\\\mysql.exe\" -u gastos_user -pGastos2025! gastos_app_db --table -e \"SELECT m.id, m.nombre as maestro, a.nombre as alumno, a.estatus, a.maestro_id FROM alumnos a LEFT JOIN maestros m ON a.maestro_id = m.id WHERE a.empresa_id = 1 AND a.estatus = ''Activo'' AND a.nombre NOT LIKE ''[ELIMINADO]%'' ORDER BY m.nombre;\")",
+      "Bash(\"C:\\\\AppServ\\\\MySQL\\\\bin\\\\mysql.exe\" -u gastos_user -pGastos2025! gastos_app_db --table -e \":*)"
     ],
     "deny": [],
     "ask": []

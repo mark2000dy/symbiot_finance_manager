@@ -19,20 +19,20 @@ class Database {
     private $charset;
 
     private function __construct() {
-        // Cargar variables de entorno desde .env si existe
-        if (file_exists(__DIR__ . '/../../.env')) {
-            $env = @parse_ini_file(__DIR__ . '/../../.env');
-            if ($env === false) $env = [];
-            $this->host = $env['DB_HOST'] ?? 'localhost';
-            $this->database = $env['DB_DATABASE'] ?? 'gastos_app_db';
-            $this->username = $env['DB_USERNAME'] ?? 'gastos_user';
-            $this->password = $env['DB_PASSWORD'] ?? 'Gastos2025!';
-        } else {
-            $this->host = getenv('DB_HOST') ?: 'localhost';
-            $this->database = getenv('DB_DATABASE') ?: 'gastos_app_db';
-            $this->username = getenv('DB_USERNAME') ?: 'gastos_user';
-            $this->password = getenv('DB_PASSWORD') ?: 'Gastos2025!';
+        // Leer .env línea a línea (parse_ini_file falla con caracteres como ! sin comillas)
+        $env = [];
+        $envPath = __DIR__ . '/../../.env';
+        if (file_exists($envPath)) {
+            foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+                if ($line[0] === '#' || strpos($line, '=') === false) continue;
+                [$k, $v] = explode('=', $line, 2);
+                $env[trim($k)] = trim($v);
+            }
         }
+        $this->host     = $env['DB_HOST']     ?? getenv('DB_HOST')     ?: 'localhost';
+        $this->database = $env['DB_DATABASE'] ?? getenv('DB_DATABASE') ?: 'gastos_app_db';
+        $this->username = $env['DB_USERNAME'] ?? getenv('DB_USERNAME') ?: '';
+        $this->password = $env['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
 
         $this->port = 3306;
         $this->charset = 'utf8mb4';

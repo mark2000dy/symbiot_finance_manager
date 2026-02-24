@@ -11,7 +11,11 @@ session_start();
 
 // Headers CORS y JSON
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+$_corsOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$_corsAllowed = preg_match('/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/', $_corsOrigin)
+    ? $_corsOrigin : 'http://localhost';
+header('Access-Control-Allow-Origin: ' . $_corsAllowed);
+unset($_corsOrigin, $_corsAllowed);
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
@@ -43,11 +47,8 @@ if (strpos($requestUri, $basePath) === 0) {
     $requestUri = substr($requestUri, strlen($basePath));
 }
 
-// Remover /gastos/api o /api del path para normalizar
-$requestUri = preg_replace('#^/(gastos/)?api#', '', $requestUri);
-
-// 🔧 Remover /index.php si está presente (cuando se accede vía proxy gastos/api/index.php)
-$requestUri = preg_replace('#^/index\.php#', '', $requestUri);
+// Normalizar: remover prefijo /(gastos/)api e /index.php opcionales en un solo paso
+$requestUri = preg_replace('#^/(gastos/)?api(/index\.php)?#', '', $requestUri);
 
 // Asegurar que empiece con /
 if (empty($requestUri) || $requestUri[0] !== '/') {
@@ -287,11 +288,16 @@ try {
                 echo json_encode(['success' => false, 'message' => 'Falta maestro_nombre']);
                 exit;
             }
-            $cal    = new GoogleCalendarService();
-            $clases = $cal->isConnected() ? $cal->getClasesHoy($maestroNombre) : [];
+            $cal = new GoogleCalendarService();
+            if (!$cal->isConnected()) {
+                echo json_encode(['success' => false, 'data' => [], 'message' => 'Google Calendar no conectado']);
+                exit;
+            }
+            $clases = $cal->getClasesHoy($maestroNombre);
             echo json_encode(['success' => true, 'data' => $clases]);
         } catch (Exception $e) {
-            echo json_encode(['success' => true, 'data' => [], 'warning' => $e->getMessage()]);
+            error_log("⚠️ Google Calendar error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'data' => [], 'warning' => $e->getMessage()]);
         }
         exit;
     }

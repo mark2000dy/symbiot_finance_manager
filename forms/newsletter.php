@@ -39,8 +39,8 @@ function validate_email($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
-// Obtener email del formulario
-$email = isset($_POST['email']) ? clean_input($_POST['email']) : '';
+// Obtener email del formulario (strip \r\n para prevenir inyección de headers)
+$email = isset($_POST['email']) ? str_replace(["\r", "\n"], '', clean_input($_POST['email'])) : '';
 
 // Validaciones
 if (empty($email)) {
