@@ -258,37 +258,50 @@ async function loadClientesList() {
 // ============================================================
 
 async function openSensorModal(id) {
-    const modal     = new bootstrap.Modal(document.getElementById('sensorModal'));
-    const labelEl   = document.getElementById('sensorModalLabel');
+    const modal   = new bootstrap.Modal(document.getElementById('sensorModal'));
+    const labelEl = document.getElementById('sensorModalLabel');
 
-    // Resetear formulario
-    ['sensorId','sensorNombre','sensorTipo','sensorModelo','sensorCiudad','sensorFechaInstalacion','sensorNotas'].forEach(f => {
+    // Resetear todos los campos
+    ['sensorId','sensorNombre','sensorModelo','sensorCiudad','sensorFechaInstalacion','sensorNotas',
+     'sensorDeviceId','sensorDeviceCode','sensorToken','sensorApiUrl',
+     'sensorVersion','sensorLicencia','sensorFrecuencia','sensorIntervalo'].forEach(f => {
         const el = document.getElementById(f);
         if (el) el.value = '';
     });
-    document.getElementById('sensorEstado').value = 'Fabricacion';
-    document.getElementById('sensorPais').value   = '';
+    document.getElementById('sensorTipo').value          = '';
+    document.getElementById('sensorConexion').value      = 'WiFi';
+    document.getElementById('sensorEstado').value        = 'Fabricacion';
+    document.getElementById('sensorPais').value          = '';
+    document.getElementById('sensorModoOperacion').value = '';
 
-    // Poblar select de clientes
     await _populateClienteSelect('sensorClienteId');
 
     if (id) {
-        // Modo edición
         if (labelEl) labelEl.textContent = 'Editar Sensor';
         try {
             const result = await window.apiGet('sensores', { empresa_id: 2 });
-            const sensor = (result.data || []).find(s => s.id == id);
-            if (sensor) {
-                document.getElementById('sensorId').value               = sensor.id;
-                document.getElementById('sensorNombre').value           = sensor.nombre        || '';
-                document.getElementById('sensorTipo').value             = sensor.tipo_sensor   || '';
-                document.getElementById('sensorModelo').value           = sensor.modelo        || '';
-                document.getElementById('sensorEstado').value           = sensor.estado        || 'Fabricacion';
-                document.getElementById('sensorPais').value             = sensor.ubicacion_pais   || '';
-                document.getElementById('sensorCiudad').value           = sensor.ubicacion_ciudad || '';
-                document.getElementById('sensorClienteId').value        = sensor.cliente_id    || '';
-                document.getElementById('sensorFechaInstalacion').value = sensor.fecha_instalacion ? sensor.fecha_instalacion.split(' ')[0] : '';
-                document.getElementById('sensorNotas').value            = sensor.notas         || '';
+            const s = (result.data || []).find(x => x.id == id);
+            if (s) {
+                document.getElementById('sensorId').value               = s.id;
+                document.getElementById('sensorNombre').value           = s.nombre               || '';
+                document.getElementById('sensorTipo').value             = s.tipo_sensor          || '';
+                document.getElementById('sensorConexion').value         = s.conexion             || 'WiFi';
+                document.getElementById('sensorModelo').value           = s.modelo               || '';
+                document.getElementById('sensorEstado').value           = s.estado               || 'Fabricacion';
+                document.getElementById('sensorPais').value             = s.ubicacion_pais       || '';
+                document.getElementById('sensorCiudad').value           = s.ubicacion_ciudad     || '';
+                document.getElementById('sensorClienteId').value        = s.cliente_id           || '';
+                document.getElementById('sensorFechaInstalacion').value = s.fecha_instalacion    ? s.fecha_instalacion.split(' ')[0] : '';
+                document.getElementById('sensorNotas').value            = s.notas               || '';
+                document.getElementById('sensorDeviceId').value         = s.device_id           || '';
+                document.getElementById('sensorDeviceCode').value       = s.device_code         || '';
+                document.getElementById('sensorToken').value            = s.token               || '';
+                document.getElementById('sensorApiUrl').value           = s.api_url             || '';
+                document.getElementById('sensorVersion').value          = s.version             || '';
+                document.getElementById('sensorLicencia').value         = s.licencia            ?? '';
+                document.getElementById('sensorModoOperacion').value    = s.modo_operacion      || '';
+                document.getElementById('sensorFrecuencia').value       = s.frecuencia          ?? '';
+                document.getElementById('sensorIntervalo').value        = s.intervalo_min       ?? '';
             }
         } catch (err) {
             console.error('Error cargando sensor:', err);
@@ -308,17 +321,31 @@ async function saveSensor() {
         return;
     }
 
+    const lic  = document.getElementById('sensorLicencia').value;
+    const frec = document.getElementById('sensorFrecuencia').value;
+    const intv = document.getElementById('sensorIntervalo').value;
+
     const payload = {
         nombre,
-        empresa_id:          2,
-        tipo_sensor:         document.getElementById('sensorTipo').value.trim()  || null,
-        modelo:              document.getElementById('sensorModelo').value.trim() || null,
-        estado:              document.getElementById('sensorEstado').value,
-        ubicacion_pais:      document.getElementById('sensorPais').value          || null,
-        ubicacion_ciudad:    document.getElementById('sensorCiudad').value.trim() || null,
-        cliente_id:          document.getElementById('sensorClienteId').value     || null,
-        fecha_instalacion:   document.getElementById('sensorFechaInstalacion').value || null,
-        notas:               document.getElementById('sensorNotas').value.trim()  || null,
+        empresa_id:        2,
+        tipo_sensor:       document.getElementById('sensorTipo').value             || null,
+        conexion:          document.getElementById('sensorConexion').value         || 'WiFi',
+        modelo:            document.getElementById('sensorModelo').value.trim()    || null,
+        estado:            document.getElementById('sensorEstado').value,
+        ubicacion_pais:    document.getElementById('sensorPais').value             || null,
+        ubicacion_ciudad:  document.getElementById('sensorCiudad').value.trim()    || null,
+        cliente_id:        document.getElementById('sensorClienteId').value        || null,
+        fecha_instalacion: document.getElementById('sensorFechaInstalacion').value || null,
+        notas:             document.getElementById('sensorNotas').value.trim()     || null,
+        device_id:         document.getElementById('sensorDeviceId').value.trim()  || null,
+        device_code:       document.getElementById('sensorDeviceCode').value.trim()|| null,
+        token:             document.getElementById('sensorToken').value.trim()     || null,
+        api_url:           document.getElementById('sensorApiUrl').value.trim()    || null,
+        version:           document.getElementById('sensorVersion').value.trim()   || null,
+        licencia:          lic  !== '' ? parseInt(lic,  10) : null,
+        modo_operacion:    document.getElementById('sensorModoOperacion').value    || null,
+        frecuencia:        frec !== '' ? parseInt(frec, 10) : null,
+        intervalo_min:     intv !== '' ? parseInt(intv, 10) : null,
     };
 
     try {
@@ -500,14 +527,11 @@ async function viewSensorDetail(id) {
     const modalEl = document.getElementById('sensorDetailModal');
     if (!modalEl) return;
 
-    // Inyectar spinner mientras carga
-    modalEl.innerHTML = `
-        <div class="modal-dialog modal-lg">
+    const SPINNER_HTML = `
+        <div class="modal-dialog modal-xl">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="sensorDetailModalLabel">
-                        <i class="fas fa-microchip me-2"></i>Información del Sensor
-                    </h5>
+                    <h5 class="modal-title"><i class="fas fa-microchip me-2"></i>Información del Sensor</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
                 </div>
                 <div class="modal-body text-center py-5">
@@ -516,7 +540,7 @@ async function viewSensorDetail(id) {
                 </div>
             </div>
         </div>`;
-
+    modalEl.innerHTML = SPINNER_HTML;
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
 
@@ -525,51 +549,142 @@ async function viewSensorDetail(id) {
         const s = (result.data || []).find(x => x.id == id);
         if (!s) throw new Error('Sensor no encontrado');
 
-        const estadoBadge = _sensorEstadoBadge(s.estado);
-        const ultimoContacto = s.fecha_ultimo_contacto
-            ? new Date(s.fecha_ultimo_contacto).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })
-            : 'Sin registros';
+        const estadoBadge      = _sensorEstadoBadge(s.estado);
+        const ultimaConexion   = s.fecha_ultimo_contacto
+            ? new Date(s.fecha_ultimo_contacto).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'medium' })
+            : '—';
+        const ultimaActualizacion = s.updated_at
+            ? new Date(s.updated_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'medium' })
+            : '—';
+        const fechaCreacion    = s.created_at
+            ? new Date(s.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'medium' })
+            : '—';
         const fechaInstalacion = s.fecha_instalacion
             ? new Date(s.fecha_instalacion + 'T00:00:00').toLocaleDateString('es-MX', { dateStyle: 'medium' })
-            : 'No instalado';
+            : '—';
+
+        // — Sección "Datos del Sensor": solo para Acelerómetro y Temperatura —
+        const tienesDatos = ['Acelerómetro Inalámbrico','Temperatura Digital ESP01'].includes(s.tipo_sensor);
+        const esAcelerometro = s.tipo_sensor === 'Acelerómetro Inalámbrico';
+        const tieneTemperatura = s.temperatura !== null && s.temperatura !== undefined;
+
+        const datosSensorHtml = tienesDatos ? `
+            <hr class="border-secondary my-3">
+            <h6 class="text-info mb-3"><i class="fas fa-chart-bar me-2"></i>Datos del Sensor</h6>
+            <div class="row g-2">
+                ${esAcelerometro ? `
+                <div class="col-md-4">
+                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
+                        <div class="small text-muted mb-1">Eje X</div>
+                        <div class="fs-5 text-white fw-bold">${s.eje_x !== null ? s.eje_x : '—'}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
+                        <div class="small text-muted mb-1">Eje Y</div>
+                        <div class="fs-5 text-white fw-bold">${s.eje_y !== null ? s.eje_y : '—'}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
+                        <div class="small text-muted mb-1">Eje Z</div>
+                        <div class="fs-5 text-white fw-bold">${s.eje_z !== null ? s.eje_z : '—'}</div>
+                    </div>
+                </div>` : ''}
+                ${tieneTemperatura ? `
+                <div class="col-md-4">
+                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
+                        <div class="small text-muted mb-1">Temperatura</div>
+                        <div class="fs-5 text-warning fw-bold">${s.temperatura}°C</div>
+                    </div>
+                </div>` : ''}
+                ${esAcelerometro && s.factor_x !== null ? `
+                <div class="col-md-4">
+                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
+                        <div class="small text-muted mb-1">Factor X / Y / Z</div>
+                        <div class="small text-white font-monospace">${parseFloat(s.factor_x).toExponential(9)}</div>
+                    </div>
+                </div>` : ''}
+                ${s.bateria_mv !== null ? `
+                <div class="col-md-4">
+                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
+                        <div class="small text-muted mb-1">Batería (mV)</div>
+                        <div class="fs-5 text-success fw-bold">${s.bateria_mv}</div>
+                    </div>
+                </div>` : ''}
+                ${s.alimentacion_mv !== null ? `
+                <div class="col-md-4">
+                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
+                        <div class="small text-muted mb-1">Alimentación (mV)</div>
+                        <div class="fs-5 text-info fw-bold">${s.alimentacion_mv}</div>
+                    </div>
+                </div>` : ''}
+            </div>` : '';
 
         modalEl.innerHTML = `
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content bg-dark text-white">
                     <div class="modal-header">
                         <h5 class="modal-title" id="sensorDetailModalLabel">
                             <i class="fas fa-microchip me-2"></i>Información del Sensor
+                            <small class="text-muted ms-2 fs-6">${s.device_code || s.nombre}</small>
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row">
-                            <!-- Columna izquierda: datos del sensor -->
+
+                        <!-- SECCIÓN 1: Información General -->
+                        <h6 class="text-info mb-3"><i class="fas fa-info-circle me-2"></i>Información General</h6>
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <h6 class="text-info mb-3"><i class="fas fa-microchip me-2"></i>Datos del Sensor</h6>
-                                <table class="table table-dark table-sm">
-                                    <tr><td class="text-muted" style="width:45%">Nombre</td><td><strong>${s.nombre}</strong></td></tr>
-                                    <tr><td class="text-muted">Tipo</td><td>${s.tipo_sensor || '—'}</td></tr>
-                                    <tr><td class="text-muted">Modelo</td><td>${s.modelo || '—'}</td></tr>
-                                    <tr><td class="text-muted">Estado</td><td>${estadoBadge}</td></tr>
-                                    <tr><td class="text-muted">País</td><td>${s.ubicacion_pais || '—'}</td></tr>
-                                    <tr><td class="text-muted">Ciudad</td><td>${s.ubicacion_ciudad || '—'}</td></tr>
+                                <table class="table table-dark table-sm mb-0">
+                                    <tr><td class="text-muted" style="width:40%">Dispositivo</td><td class="font-monospace">${s.device_code || '—'}</td></tr>
+                                    <tr><td class="text-muted">ID</td><td class="font-monospace small">${s.device_id || '—'}</td></tr>
+                                    <tr><td class="text-muted">Token</td><td class="font-monospace small">${s.token || '—'}</td></tr>
                                 </table>
                             </div>
-                            <!-- Columna derecha: fechas y cliente -->
                             <div class="col-md-6">
-                                <h6 class="text-info mb-3"><i class="fas fa-calendar-alt me-2"></i>Historial y Asignación</h6>
-                                <table class="table table-dark table-sm">
-                                    <tr><td class="text-muted" style="width:50%">Instalación</td><td>${fechaInstalacion}</td></tr>
-                                    <tr><td class="text-muted">Último contacto</td><td>${ultimoContacto}</td></tr>
-                                    <tr><td class="text-muted">Cliente</td><td>${s.cliente_nombre ? `<strong>${s.cliente_nombre}</strong>` : '<span class="text-muted">Sin asignar</span>'}</td></tr>
-                                    <tr><td class="text-muted">Empresa cliente</td><td>${s.cliente_empresa || '—'}</td></tr>
+                                <table class="table table-dark table-sm mb-0">
+                                    <tr><td class="text-muted" style="width:45%">Tipo</td><td>${s.tipo_sensor || '—'}</td></tr>
+                                    <tr><td class="text-muted">Estado</td><td>${estadoBadge}</td></tr>
+                                    <tr><td class="text-muted">Ubicación</td><td>${s.ubicacion_pais || '—'}${s.ubicacion_ciudad ? ' / ' + s.ubicacion_ciudad : ''}</td></tr>
+                                    <tr><td class="text-muted">Cliente</td><td>${s.cliente_nombre ? '<strong>' + s.cliente_nombre + '</strong>' : '<span class="text-muted">Sin asignar</span>'}</td></tr>
                                 </table>
-                                ${s.notas ? `
-                                <h6 class="text-info mt-3 mb-2"><i class="fas fa-sticky-note me-2"></i>Notas</h6>
-                                <p class="text-muted small border border-secondary rounded p-2">${s.notas}</p>` : ''}
+                            </div>
+                            <div class="col-md-4"><div class="text-muted small">Fecha Creación</div><div class="small">${fechaCreacion}</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Última Actualización</div><div class="small">${ultimaActualizacion}</div></div>
+                            <div class="col-md-4"><div class="text-muted small">Última Conexión</div><div class="small">${ultimaConexion}</div></div>
+                        </div>
+
+                        <hr class="border-secondary my-3">
+
+                        <!-- SECCIÓN 2: Información del Dispositivo -->
+                        <h6 class="text-info mb-3"><i class="fas fa-cog me-2"></i>Información del Dispositivo</h6>
+                        <div class="row g-2 mb-1">
+                            <div class="col-md-6">
+                                <table class="table table-dark table-sm mb-0">
+                                    <tr><td class="text-muted" style="width:45%">Versión</td><td>${s.version || '—'}</td></tr>
+                                    <tr><td class="text-muted">Licencia</td><td>${s.licencia !== null ? s.licencia : '—'}</td></tr>
+                                    <tr><td class="text-muted">Modo de Operación</td><td>${s.modo_operacion || '—'}</td></tr>
+                                    <tr><td class="text-muted">Conexión</td><td>${s.conexion || '—'}</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-dark table-sm mb-0">
+                                    <tr><td class="text-muted" style="width:45%">URL de API</td><td class="small font-monospace text-break">${s.api_url || '—'}</td></tr>
+                                    <tr><td class="text-muted">Frecuencia (Hz)</td><td>${s.frecuencia !== null ? s.frecuencia : '—'}</td></tr>
+                                    <tr><td class="text-muted">Intervalo (min)</td><td>${s.intervalo_min !== null ? s.intervalo_min : '—'}</td></tr>
+                                    <tr><td class="text-muted">Instalación</td><td>${fechaInstalacion}</td></tr>
+                                </table>
                             </div>
                         </div>
+
+                        ${datosSensorHtml}
+
+                        ${s.notas ? `<hr class="border-secondary my-3">
+                        <h6 class="text-info mb-2"><i class="fas fa-sticky-note me-2"></i>Notas</h6>
+                        <p class="text-muted small border border-secondary rounded p-2 mb-0">${s.notas}</p>` : ''}
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" onclick="openSensorModal(${s.id}); bootstrap.Modal.getInstance(document.getElementById('sensorDetailModal')).hide();">

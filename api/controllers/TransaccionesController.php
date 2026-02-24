@@ -3020,26 +3020,31 @@ class TransaccionesController {
     public static function createSensor() {
         AuthController::requireAuth();
         try {
-            $db   = Database::getConnection();
+            $pdo  = getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-            $required = ['nombre'];
-            foreach ($required as $field) {
-                if (empty($data[$field])) {
-                    http_response_code(400);
-                    echo json_encode(['success' => false, 'message' => "Campo requerido: $field"]);
-                    return;
-                }
+            if (empty($data['nombre'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Campo requerido: nombre']);
+                return;
             }
 
             $stmt = $pdo->prepare(
-                "INSERT INTO sensores (nombre, tipo_sensor, modelo, ubicacion_pais, ubicacion_ciudad,
-                    cliente_id, estado, fecha_instalacion, fecha_ultimo_contacto, empresa_id, notas)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "INSERT INTO sensores (
+                    nombre, device_id, device_code, token,
+                    tipo_sensor, conexion, modelo,
+                    ubicacion_pais, ubicacion_ciudad, cliente_id,
+                    estado, fecha_instalacion, fecha_ultimo_contacto, empresa_id, notas,
+                    version, licencia, modo_operacion, api_url, frecuencia, intervalo_min
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
             $stmt->execute([
                 $data['nombre'],
+                $data['device_id']              ?? null,
+                $data['device_code']            ?? null,
+                $data['token']                  ?? null,
                 $data['tipo_sensor']            ?? null,
+                $data['conexion']               ?? 'WiFi',
                 $data['modelo']                 ?? null,
                 $data['ubicacion_pais']         ?? null,
                 $data['ubicacion_ciudad']       ?? null,
@@ -3049,6 +3054,12 @@ class TransaccionesController {
                 $data['fecha_ultimo_contacto']  ?? null,
                 intval($data['empresa_id']      ?? 2),
                 $data['notas']                  ?? null,
+                $data['version']                ?? null,
+                isset($data['licencia'])        ? intval($data['licencia'])      : null,
+                $data['modo_operacion']         ?? null,
+                $data['api_url']                ?? null,
+                isset($data['frecuencia'])      ? intval($data['frecuencia'])    : null,
+                isset($data['intervalo_min'])   ? intval($data['intervalo_min']) : null,
             ]);
 
             echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'message' => 'Sensor creado']);
@@ -3062,18 +3073,26 @@ class TransaccionesController {
     public static function updateSensor($id) {
         AuthController::requireAuth();
         try {
-            $db   = Database::getConnection();
+            $pdo  = getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
             $stmt = $pdo->prepare(
                 "UPDATE sensores SET
-                    nombre = ?, tipo_sensor = ?, modelo = ?, ubicacion_pais = ?, ubicacion_ciudad = ?,
-                    cliente_id = ?, estado = ?, fecha_instalacion = ?, fecha_ultimo_contacto = ?, notas = ?
+                    nombre = ?, device_id = ?, device_code = ?, token = ?,
+                    tipo_sensor = ?, conexion = ?, modelo = ?,
+                    ubicacion_pais = ?, ubicacion_ciudad = ?, cliente_id = ?,
+                    estado = ?, fecha_instalacion = ?, fecha_ultimo_contacto = ?, notas = ?,
+                    version = ?, licencia = ?, modo_operacion = ?, api_url = ?,
+                    frecuencia = ?, intervalo_min = ?
                  WHERE id = ? AND empresa_id = ?"
             );
             $stmt->execute([
                 $data['nombre']                 ?? '',
+                $data['device_id']              ?? null,
+                $data['device_code']            ?? null,
+                $data['token']                  ?? null,
                 $data['tipo_sensor']            ?? null,
+                $data['conexion']               ?? 'WiFi',
                 $data['modelo']                 ?? null,
                 $data['ubicacion_pais']         ?? null,
                 $data['ubicacion_ciudad']       ?? null,
@@ -3082,6 +3101,12 @@ class TransaccionesController {
                 $data['fecha_instalacion']      ?? null,
                 $data['fecha_ultimo_contacto']  ?? null,
                 $data['notas']                  ?? null,
+                $data['version']                ?? null,
+                isset($data['licencia'])        ? intval($data['licencia'])      : null,
+                $data['modo_operacion']         ?? null,
+                $data['api_url']                ?? null,
+                isset($data['frecuencia'])      ? intval($data['frecuencia'])    : null,
+                isset($data['intervalo_min'])   ? intval($data['intervalo_min']) : null,
                 intval($id),
                 intval($data['empresa_id']      ?? 2),
             ]);

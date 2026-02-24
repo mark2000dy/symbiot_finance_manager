@@ -850,7 +850,7 @@
 
             <!-- Modal: Nuevo/Editar Sensor -->
             <div class="modal fade" id="sensorModal" tabindex="-1" aria-labelledby="sensorModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
+                <div class="modal-dialog modal-xl">
                     <div class="modal-content bg-dark text-white">
                         <div class="modal-header">
                             <h5 class="modal-title" id="sensorModalLabel">Nuevo Sensor</h5>
@@ -858,20 +858,33 @@
                         </div>
                         <div class="modal-body">
                             <input type="hidden" id="sensorId">
-                            <div class="row g-3">
+
+                            <!-- Sección 1: Información básica -->
+                            <h6 class="text-info mb-3"><i class="fas fa-microchip me-2"></i>Información Básica</h6>
+                            <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Nombre <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="sensorNombre" placeholder="Sensor-MX-001">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Tipo de Sensor</label>
-                                    <input type="text" class="form-control" id="sensorTipo" placeholder="Temperatura/Humedad">
+                                    <select class="form-select" id="sensorTipo">
+                                        <option value="">— Seleccionar tipo —</option>
+                                        <option value="Acelerómetro Inalámbrico">Acelerómetro Inalámbrico</option>
+                                        <option value="Temperatura Digital ESP01">Temperatura Digital ESP01</option>
+                                        <option value="Control IR Aire Acondicionado Trane">Control IR Aire Acondicionado Trane</option>
+                                        <option value="Control IR HVAC">Control IR HVAC</option>
+                                    </select>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Modelo</label>
-                                    <input type="text" class="form-control" id="sensorModelo" placeholder="SYM-TH-100">
+                                <div class="col-md-4">
+                                    <label class="form-label">Conexión</label>
+                                    <select class="form-select" id="sensorConexion">
+                                        <option value="WiFi">WiFi</option>
+                                        <option value="Ethernet">Ethernet</option>
+                                        <option value="4G">4G</option>
+                                    </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Estado</label>
                                     <select class="form-select" id="sensorEstado">
                                         <option value="Fabricacion">En Fabricación</option>
@@ -879,7 +892,13 @@
                                         <option value="Inactivo">Inactivo</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
+                                    <label class="form-label">Cliente</label>
+                                    <select class="form-select" id="sensorClienteId">
+                                        <option value="">— Sin cliente —</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
                                     <label class="form-label">País</label>
                                     <select class="form-select" id="sensorPais">
                                         <option value="">— Sin asignar —</option>
@@ -887,21 +906,75 @@
                                         <option value="Chile">Chile</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Ciudad</label>
                                     <input type="text" class="form-control" id="sensorCiudad" placeholder="CDMX">
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Cliente</label>
-                                    <select class="form-select" id="sensorClienteId">
-                                        <option value="">— Sin cliente —</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Fecha de Instalación</label>
                                     <input type="date" class="form-control" id="sensorFechaInstalacion">
                                 </div>
-                                <div class="col-12">
+                            </div>
+
+                            <hr class="border-secondary">
+
+                            <!-- Sección 2: Identificación del dispositivo -->
+                            <h6 class="text-info mb-3"><i class="fas fa-id-card me-2"></i>Identificación del Dispositivo</h6>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">ID del Dispositivo</label>
+                                    <input type="text" class="form-control font-monospace" id="sensorDeviceId" placeholder="728a89ac-19f9-4aaf-b87f-ecdb533f9a13">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Código</label>
+                                    <input type="text" class="form-control font-monospace" id="sensorDeviceCode" placeholder="MXCDMX01.A">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Modelo HW</label>
+                                    <input type="text" class="form-control" id="sensorModelo" placeholder="SYM-TH-100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Token</label>
+                                    <input type="text" class="form-control font-monospace" id="sensorToken" placeholder="ef1b8735-9ec5-44bb-99bb-54bd5bbb2827">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">URL de API</label>
+                                    <input type="url" class="form-control" id="sensorApiUrl" placeholder="https://huellafunc.azurewebsites.net/api/">
+                                </div>
+                            </div>
+
+                            <hr class="border-secondary">
+
+                            <!-- Sección 3: Configuración del firmware -->
+                            <h6 class="text-info mb-3"><i class="fas fa-cog me-2"></i>Configuración del Firmware</h6>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Versión</label>
+                                    <input type="text" class="form-control" id="sensorVersion" placeholder="2.3.018">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Licencia</label>
+                                    <input type="number" class="form-control" id="sensorLicencia" placeholder="1" min="0">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Modo de Operación</label>
+                                    <select class="form-select" id="sensorModoOperacion">
+                                        <option value="">— Seleccionar —</option>
+                                        <option value="M1">M1</option>
+                                        <option value="M2">M2</option>
+                                        <option value="M3">M3</option>
+                                        <option value="M4">M4</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Frecuencia (Hz)</label>
+                                    <input type="number" class="form-control" id="sensorFrecuencia" placeholder="250">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Intervalo (min)</label>
+                                    <input type="number" class="form-control" id="sensorIntervalo" placeholder="1">
+                                </div>
+                                <div class="col-9">
                                     <label class="form-label">Notas</label>
                                     <textarea class="form-control" id="sensorNotas" rows="2"></textarea>
                                 </div>
