@@ -639,12 +639,12 @@ async function handleCompanyChange() {
         const selectedCompany = companySelect.value;
         window.currentCompanyFilter = selectedCompany;
 
-        // ✅ NUEVO: Guardar en localStorage para persistencia entre navegaciones
+        // ✅ Guardar en sessionStorage (persiste en la misma pestaña, no entre sesiones)
         try {
-            localStorage.setItem('dashboardCompanyFilter', selectedCompany);
-            console.log(`💾 Filtro guardado en localStorage: ${selectedCompany || 'Todas'}`);
+            sessionStorage.setItem('dashboardCompanyFilter', selectedCompany);
+            console.log(`💾 Filtro guardado en sessionStorage: ${selectedCompany || 'Todas'}`);
         } catch (e) {
-            console.warn('⚠️ No se pudo guardar en localStorage:', e);
+            console.warn('⚠️ No se pudo guardar en sessionStorage:', e);
         }
         
         console.log(`🏢 Empresa seleccionada: ${selectedCompany || 'Todas las empresas'}`);

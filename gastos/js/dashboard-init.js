@@ -22,25 +22,39 @@ async function initializeDashboard() {
         // ✅ NUEVO: Restaurar filtro desde localStorage
         function restoreCompanyFilter() {
             try {
-                const savedFilter = localStorage.getItem('dashboardCompanyFilter');
+                const savedFilter = sessionStorage.getItem('dashboardCompanyFilter');
                 if (savedFilter !== null) {
                     window.currentCompanyFilter = savedFilter;
                     
                     const companySelect = document.getElementById('companyFilter');
                     if (companySelect) {
                         companySelect.value = savedFilter;
-                        console.log(`📂 Filtro restaurado desde localStorage: ${savedFilter || 'Todas'}`);
+                        console.log(`📂 Filtro restaurado desde sessionStorage: ${savedFilter || 'Todas'}`);
                         return savedFilter;
                     }
                 }
             } catch (e) {
-                console.warn('⚠️ No se pudo leer localStorage:', e);
+                console.warn('⚠️ No se pudo leer sessionStorage:', e);
             }
             return '';
         }
 
         // Restaurar filtro guardado
         const restoredFilter = restoreCompanyFilter();
+
+        // Aplicar visibilidad de widgets inmediatamente si se restauró Symbiot
+        if (restoredFilter === '2') {
+            const symbiotWidgets = document.getElementById('symbiotWidgets');
+            const symbiotMetrics = document.getElementById('symbiotSpecificIndicators');
+            const rockstarWidgets = document.getElementById('rockstarSkullWidgets');
+            const rockstarMetrics = document.getElementById('rockstarSpecificIndicators');
+            if (symbiotWidgets) symbiotWidgets.style.display = 'block';
+            if (symbiotMetrics) symbiotMetrics.style.display = 'block';
+            if (rockstarWidgets) rockstarWidgets.style.display = 'none';
+            if (rockstarMetrics) rockstarMetrics.style.display = 'none';
+            const companyStudentsContainer = document.querySelector('#companyStudents')?.closest('.col-md-3');
+            if (companyStudentsContainer) companyStudentsContainer.style.display = 'none';
+        }
 
         // Logo inicial según empresa guardada
         if (typeof window.updateCompanyLogo === 'function') {
@@ -142,8 +156,15 @@ async function initializeDashboard() {
             }
 
             console.log('✅ Datos de RockstarSkull cargados');
+        } else if (window.currentCompanyFilter === '2') {
+            console.log('🌐 FASE 7: Cargando datos específicos de Symbiot Technologies...');
+            if (typeof loadSymbiotDataReal === 'function') await loadSymbiotDataReal();
+            if (typeof loadSensoresList === 'function') await loadSensoresList();
+            if (typeof loadClientesList === 'function') await loadClientesList();
+            if (typeof _populateClienteSelect === 'function') await _populateClienteSelect('symFilterCliente');
+            console.log('✅ Datos de Symbiot cargados');
         }
-        
+
         // FASE 8: Cargar transacciones recientes
         console.log('📋 FASE 8: Cargando transacciones recientes...');
         if (typeof loadRecentTransactions === 'function') {

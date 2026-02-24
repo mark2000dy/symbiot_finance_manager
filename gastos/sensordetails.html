@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Detalles del Sensor — Symbiot</title>
+
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#191C24">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+
+    <!-- CSS compartido con el dashboard -->
+    <link rel="stylesheet" href="css/dashboard-main.css?v=3.2.1">
+    <link rel="stylesheet" href="css/dashboard-widgets.css?v=3.2.1">
+    <link rel="stylesheet" href="css/theme-toggle.css?v=1.0.0">
+
+    <style>
+        /* Forzar colores con variables del proyecto (dark/light) */
+        body {
+            color: var(--text-primary);
+        }
+        .card {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary);
+        }
+        .card-header {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+        .card-header h5 {
+            color: var(--text-primary);
+        }
+        .card-body {
+            color: var(--text-primary);
+        }
+        dt {
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        dd {
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+        }
+        code.field-value {
+            font-size: 0.8rem;
+            word-break: break-all;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text-secondary);
+            padding: 0.15em 0.35em;
+            border-radius: 4px;
+        }
+        .copy-btn {
+            padding: 0 0.35rem;
+            font-size: 0.75rem;
+            color: var(--text-muted) !important;
+        }
+        .placeholder-note {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+        .btn-control { min-width: 140px; }
+        .sensor-header { padding: 2rem 0 1rem; }
+        /* Tema claro: ajustar card-header y code */
+        [data-theme="light"] .card-header {
+            background: rgba(0, 0, 0, 0.04) !important;
+        }
+        [data-theme="light"] code.field-value {
+            background: rgba(0, 0, 0, 0.06);
+            color: var(--text-secondary);
+        }
+        /* Alerta info homologada */
+        .alert-info {
+            background: rgba(13, 202, 240, 0.1) !important;
+            border-color: rgba(13, 202, 240, 0.3) !important;
+            color: var(--text-primary) !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== NAVBAR (idéntica al dashboard) ===== -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="dashboard.html">
+                <img class="logo-dark"  src="assets/images/Symbiot_logo_dark_horizon.png"  alt="SYMBIOT" style="height:30px;margin-right:8px;">
+                <img class="logo-light" src="assets/images/Symbiot_logo_clear_horizon.png" alt="SYMBIOT" style="height:30px;margin-right:8px;">
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Menú de navegación" title="Menú de navegación">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="gastos.html">
+                            <i class="fas fa-money-bill-wave me-1"></i>Gastos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="ingresos.html">
+                            <i class="fas fa-coins me-1"></i>Ingresos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="reportes.html">
+                            <i class="fas fa-chart-bar me-1"></i>Reportes
+                        </a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    <li class="nav-item d-flex align-items-center">
+                        <button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar tema">
+                            <i class="fas fa-sun"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span id="userName">Usuario</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="configuracion.html">
+                                <i class="fas fa-cog me-2"></i>Configuración
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- ===== FIN NAVBAR ===== -->
+
+    <div class="container-fluid mt-4 pt-2 pb-5">
+
+        <!-- LOADING STATE -->
+        <div id="pageLoading" class="text-center py-5">
+            <i class="fas fa-spinner fa-spin fa-3x text-info"></i>
+            <p class="mt-3 text-muted">Cargando información del sensor...</p>
+        </div>
+
+        <!-- ERROR STATE -->
+        <div id="pageError" style="display:none;">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span id="pageErrorMsg">No se encontró el sensor.</span>
+            </div>
+            <a href="dashboard.html" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver al Dashboard
+            </a>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div id="pageContent" style="display:none;">
+
+            <!-- ── 1. HEADER ─────────────────────────────────────── -->
+            <div class="row mb-4 sensor-header align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-1">
+                        <i class="fas fa-microchip me-2 text-info"></i>
+                        <span id="sdNombre">—</span>
+                        <span id="sdEstadoBadge" class="ms-2"></span>
+                    </h2>
+                    <div class="text-muted small">
+                        <span id="sdTipoSensor">—</span>
+                        <span class="mx-2">·</span>
+                        <span id="sdUbicacion">—</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <button type="button" class="btn btn-primary me-1" id="btnEditar" onclick="abrirEdicion()">
+                        <i class="fas fa-pencil-alt me-1"></i>Editar
+                    </button>
+                    <a href="dashboard.html" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Volver
+                    </a>
+                </div>
+            </div>
+
+            <!-- ── 2. CONTROL DEL DISPOSITIVO ─────────────────────── -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h5 class="mb-0 text-info">
+                                <i class="fas fa-terminal me-2"></i>Control del Dispositivo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info mb-3 py-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <small>Los comandos de control requieren integración directa con el dispositivo. Disponibles en próxima versión.</small>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 col-md-3 mb-2">
+                                    <button type="button" class="btn btn-info w-100 btn-control" disabled title="Próximamente">
+                                        <i class="fas fa-sliders-h me-1"></i>Modificar Config
+                                    </button>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <button type="button" class="btn btn-warning w-100 btn-control" disabled title="Próximamente">
+                                        <i class="fas fa-pause-circle me-1"></i>Modo StandBy
+                                    </button>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <button type="button" class="btn btn-success w-100 btn-control" disabled title="Próximamente">
+                                        <i class="fas fa-play-circle me-1"></i>Continuar
+                                    </button>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
+                                    <button type="button" class="btn btn-danger w-100 btn-control" disabled title="Próximamente">
+                                        <i class="fas fa-sync-alt me-1"></i>Reiniciar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mt-1">
+                                <div class="col-6 col-md-3 mb-2">
+                                    <button type="button" class="btn btn-secondary w-100 btn-control" disabled title="Próximamente">
+                                        <i class="fas fa-cog me-1"></i>Modo Setup
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Estado actual: <strong id="sdModoOperacion">—</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── 3. INFORMACIÓN GENERAL + DISPOSITIVO + DATOS ──── -->
+            <div class="row mb-4">
+
+                <!-- Col 1: Información General -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información General</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">ID:</dt>
+                                <dd class="col-sm-7">
+                                    <code class="field-value" id="sdDeviceId">—</code>
+                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdDeviceId')" title="Copiar">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </dd>
+
+                                <dt class="col-sm-5">Dispositivo:</dt>
+                                <dd class="col-sm-7">
+                                    <code class="field-value fw-bold" id="sdDeviceCode">—</code>
+                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdDeviceCode')" title="Copiar">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </dd>
+
+                                <dt class="col-sm-5">Token:</dt>
+                                <dd class="col-sm-7">
+                                    <code class="field-value" id="sdToken">—</code>
+                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdToken')" title="Copiar">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </dd>
+
+                                <dt class="col-sm-5">Tipo sensor:</dt>
+                                <dd class="col-sm-7" id="sdTipoSensorDl">—</dd>
+
+                                <dt class="col-sm-5">Estado:</dt>
+                                <dd class="col-sm-7" id="sdEstadoDl">—</dd>
+
+                                <dt class="col-sm-5">Ubicación:</dt>
+                                <dd class="col-sm-7" id="sdUbicacionDl">—</dd>
+
+                                <dt class="col-sm-5">Cliente:</dt>
+                                <dd class="col-sm-7" id="sdClienteDl">—</dd>
+
+                                <dt class="col-sm-5">Fecha Creación:</dt>
+                                <dd class="col-sm-7" id="sdFechaCreacion">—</dd>
+
+                                <dt class="col-sm-5">Última Actualización:</dt>
+                                <dd class="col-sm-7" id="sdUltimaActualizacion">—</dd>
+
+                                <dt class="col-sm-5">Última Conexión:</dt>
+                                <dd class="col-sm-7" id="sdUltimaConexion">—</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Col 2: Información del Dispositivo -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Información del Dispositivo</h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Versión:</dt>
+                                <dd class="col-sm-7" id="sdVersion">—</dd>
+
+                                <dt class="col-sm-5">Licencia:</dt>
+                                <dd class="col-sm-7" id="sdLicencia">—</dd>
+
+                                <dt class="col-sm-5">Modo de Operación:</dt>
+                                <dd class="col-sm-7" id="sdModoOperacionDl">—</dd>
+
+                                <dt class="col-sm-5">URL de API:</dt>
+                                <dd class="col-sm-7">
+                                    <span class="small text-break" id="sdApiUrl">—</span>
+                                </dd>
+
+                                <dt class="col-sm-5">Frecuencia (Hz):</dt>
+                                <dd class="col-sm-7" id="sdFrecuencia">—</dd>
+
+                                <dt class="col-sm-5">Intervalo (min):</dt>
+                                <dd class="col-sm-7" id="sdIntervalo">—</dd>
+
+                                <dt class="col-sm-5">Conexión:</dt>
+                                <dd class="col-sm-7" id="sdConexion">—</dd>
+
+                                <dt class="col-sm-5">Fecha Instalación:</dt>
+                                <dd class="col-sm-7" id="sdFechaInstalacion">—</dd>
+
+                                <dt class="col-sm-5">Hora del sistema:</dt>
+                                <dd class="col-sm-7 text-muted">
+                                    <span class="placeholder-note">No disponible</span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Col 3: Datos del Sensor -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Datos del Sensor</h5>
+                        </div>
+                        <div class="card-body" id="sdDatosSensorBody">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── 4. RED + ALMACENAMIENTO/GPS ─────────────────────── -->
+            <div class="row mb-4">
+
+                <!-- Información de Red -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-wifi me-2"></i>Información de Red</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="placeholder-note mb-2">
+                                <i class="fas fa-clock me-1"></i>Los datos de red se obtienen directamente del dispositivo. Integración pendiente.
+                            </p>
+                            <h6 class="mt-3">WiFi</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Red del dispositivo:</dt>
+                                <dd class="col-sm-7" id="sdRedDisp">—</dd>
+                                <dt class="col-sm-5">Nombre Red WiFi:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Estado WiFi:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">IP DHCP WiFi:</dt>
+                                <dd class="col-sm-7">—</dd>
+                            </dl>
+                            <h6 class="mt-3">Ethernet</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Estado Ethernet:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">IP DHCP Ethernet:</dt>
+                                <dd class="col-sm-7">—</dd>
+                            </dl>
+                            <h6 class="mt-3">SIM</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Operador SIM:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Red SIM:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Estado SIM:</dt>
+                                <dd class="col-sm-7">—</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Almacenamiento y GPS -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-hdd me-2"></i>Almacenamiento y GPS</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="placeholder-note mb-2">
+                                <i class="fas fa-clock me-1"></i>Los datos de almacenamiento y GPS se obtienen del dispositivo. Integración pendiente.
+                            </p>
+                            <h6 class="mt-3">Almacenamiento SD</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">SD Usado:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">SD Libre:</dt>
+                                <dd class="col-sm-7">—</dd>
+                            </dl>
+                            <h6 class="mt-3">Almacenamiento Flash</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Flash Usado:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Flash Libre:</dt>
+                                <dd class="col-sm-7">—</dd>
+                            </dl>
+                            <h6 class="mt-3">GPS</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-5">Latitud GPS:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Longitud GPS:</dt>
+                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Indicador GPS:</dt>
+                                <dd class="col-sm-7">—</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── 5. ACTUALIZACIÓN DE FIRMWARE ───────────────────── -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-cloud-download-alt me-2"></i>Actualización de Firmware</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-5">Versión Actual:</dt>
+                                        <dd class="col-sm-7">
+                                            <span class="badge bg-primary" id="sdFwVersion">—</span>
+                                        </dd>
+                                        <dt class="col-sm-5">Estado:</dt>
+                                        <dd class="col-sm-7 placeholder-note">No disponible</dd>
+                                        <dt class="col-sm-5">Última Actualización:</dt>
+                                        <dd class="col-sm-7 placeholder-note">No disponible</dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nueva Versión de Firmware:</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" placeholder="ej: 2.3.019" disabled>
+                                            <button type="button" class="btn btn-warning" disabled title="Integración pendiente">
+                                                <i class="fas fa-cloud-upload-alt me-1"></i>Programar
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>Integración de actualización de firmware pendiente
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── 6. NOTAS (condicional) ─────────────────────────── -->
+            <div class="row mb-4" id="sdNotasRow" style="display:none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>Notas</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0" id="sdNotasText"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /pageContent -->
+    </div><!-- /container-fluid -->
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Theme Toggle -->
+    <script src="js/theme-toggle.js?v=1.0.0"></script>
+
+    <!-- API Client (debe cargarse primero) -->
+    <script src="assets/js/api-client.js?v=3.1.3"></script>
+
+    <!-- Core + Auth -->
+    <script src="js/dashboard-core.js?v=3.4.0"></script>
+    <script src="js/dashboard-auth.js?v=3.1.3"></script>
+    <script src="js/dashboard-api.js?v=3.1.3"></script>
+
+    <script>
+    (function () {
+        'use strict';
+
+        // ── Helpers ──────────────────────────────────────────────────
+
+        function el(id) { return document.getElementById(id); }
+
+        function setText(id, value) {
+            var node = el(id);
+            if (node) node.textContent = (value !== null && value !== undefined && value !== '') ? value : '—';
+        }
+
+        function setHtml(id, html) {
+            var node = el(id);
+            if (node) node.innerHTML = html;
+        }
+
+        function fmtDate(str) {
+            if (!str) return '—';
+            try {
+                return new Date(str).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'medium' });
+            } catch (e) { return str; }
+        }
+
+        function fmtDateOnly(str) {
+            if (!str) return '—';
+            try {
+                return new Date(str + 'T12:00:00').toLocaleDateString('es-MX', { dateStyle: 'medium' });
+            } catch (e) { return str; }
+        }
+
+        function estadoBadge(estado) {
+            var map = {
+                'Activo':      '<span class="badge bg-success fs-6">Activo</span>',
+                'Inactivo':    '<span class="badge bg-danger fs-6">Fuera de línea</span>',
+                'Fabricacion': '<span class="badge bg-warning text-dark fs-6">Fabricación</span>'
+            };
+            return map[estado] || '<span class="badge bg-secondary fs-6">' + (estado || '—') + '</span>';
+        }
+
+        // ── Clipboard ────────────────────────────────────────────────
+
+        window.copyField = function (fieldId) {
+            var node = el(fieldId);
+            if (!node) return;
+            var text = node.textContent.trim();
+            if (!text || text === '—') return;
+            navigator.clipboard.writeText(text).then(function () {
+                var btn = node.parentElement.querySelector('.copy-btn');
+                if (btn) {
+                    var original = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check text-success"></i>';
+                    setTimeout(function () { btn.innerHTML = original; }, 1500);
+                }
+            }).catch(function () {
+                alert('No se pudo copiar al portapapeles');
+            });
+        };
+
+        // ── Sección "Datos del Sensor" ────────────────────────────────
+
+        function buildDatosSensor(s) {
+            var esAcelerometro = s.tipo_sensor === 'Acelerómetro Inalámbrico';
+            var esTemperatura  = s.tipo_sensor === 'Temperatura Digital ESP01';
+            var tienesDatos    = esAcelerometro || esTemperatura;
+
+            if (!tienesDatos) {
+                return '<p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i>No aplica para este tipo de sensor.</p>';
+            }
+
+            var rows = '';
+
+            if (esAcelerometro) {
+                rows += row('Eje X:', s.eje_x);
+                rows += row('Eje Y:', s.eje_y);
+                rows += row('Eje Z:', s.eje_z);
+            }
+
+            if (s.temperatura !== null && s.temperatura !== undefined) {
+                rows += row('Temperatura:', s.temperatura + ' °C');
+            } else {
+                rows += row('Temperatura:', null);
+            }
+
+            if (esAcelerometro) {
+                rows += row('Factor X:', s.factor_x !== null ? parseFloat(s.factor_x).toExponential(9) : null);
+                rows += row('Factor Y:', s.factor_y !== null ? parseFloat(s.factor_y).toExponential(9) : null);
+                rows += row('Factor Z:', s.factor_z !== null ? parseFloat(s.factor_z).toExponential(9) : null);
+                rows += row('Batería (mV):', s.bateria_mv);
+                rows += row('Alimentación (mV):', s.alimentacion_mv);
+            }
+
+            return '<dl class="row mb-0">' + rows + '</dl>';
+        }
+
+        function row(label, value) {
+            var display = (value !== null && value !== undefined && value !== '') ? value : '—';
+            return '<dt class="col-sm-5">' + label + '</dt><dd class="col-sm-7">' + display + '</dd>';
+        }
+
+        // ── Abrir modal de edición (pasando al dashboard) ─────────────
+
+        window.abrirEdicion = function () {
+            var params = new URLSearchParams(window.location.search);
+            var sensorId = params.get('id');
+            // Navegar al dashboard con un hash para que abra el modal de sensor
+            window.location.href = 'dashboard.html#edit-sensor-' + sensorId;
+        };
+
+        // ── Poblar página con datos del sensor ────────────────────────
+
+        function populatePage(s) {
+            document.title = 'Detalles — ' + (s.device_code || s.nombre) + ' — Symbiot';
+
+            // Header
+            setText('sdNombre', s.device_code || s.nombre);
+            setHtml('sdEstadoBadge', estadoBadge(s.estado));
+            setText('sdTipoSensor', s.tipo_sensor || '—');
+            var ub = [s.ubicacion_pais, s.ubicacion_ciudad].filter(Boolean).join(' / ');
+            setText('sdUbicacion', ub || '—');
+
+            // Control del dispositivo
+            setText('sdModoOperacion', s.modo_operacion || 'Normal');
+
+            // Información General
+            setText('sdDeviceId',        s.device_id   || '');
+            setText('sdDeviceCode',      s.device_code || '');
+            setText('sdToken',           s.token       || '');
+            setText('sdTipoSensorDl',    s.tipo_sensor || '—');
+            setHtml('sdEstadoDl',        estadoBadge(s.estado));
+            setText('sdUbicacionDl',     ub || '—');
+            setText('sdClienteDl',       s.cliente_nombre || 'Sin asignar');
+            setText('sdFechaCreacion',   fmtDate(s.created_at));
+            setText('sdUltimaActualizacion', fmtDate(s.updated_at));
+            setText('sdUltimaConexion',  fmtDate(s.fecha_ultimo_contacto));
+
+            // Información del Dispositivo
+            setText('sdVersion',         s.version || '—');
+            setText('sdLicencia',        s.licencia !== null && s.licencia !== undefined ? s.licencia : '—');
+            setText('sdModoOperacionDl', s.modo_operacion || '—');
+            setText('sdApiUrl',          s.api_url || '—');
+            setText('sdFrecuencia',      s.frecuencia !== null && s.frecuencia !== undefined ? s.frecuencia : '—');
+            setText('sdIntervalo',       s.intervalo_min !== null && s.intervalo_min !== undefined ? s.intervalo_min : '—');
+            setText('sdConexion',        s.conexion || '—');
+            setText('sdFechaInstalacion', fmtDateOnly(s.fecha_instalacion));
+
+            // Red: tipo de conexión del dispositivo
+            setText('sdRedDisp', s.conexion || '—');
+
+            // Datos del sensor (dinámico)
+            setHtml('sdDatosSensorBody', buildDatosSensor(s));
+
+            // Firmware versión
+            setText('sdFwVersion', s.version || '—');
+            var fwBadge = el('sdFwVersion');
+            if (fwBadge) fwBadge.textContent = s.version || '—';
+
+            // Notas
+            if (s.notas) {
+                setText('sdNotasText', s.notas);
+                var notasRow = el('sdNotasRow');
+                if (notasRow) notasRow.style.display = '';
+            }
+        }
+
+        // ── Inicialización ────────────────────────────────────────────
+
+        async function init() {
+            try {
+                await requireAuthentication();
+            } catch (e) {
+                // requireAuthentication redirige, no hay nada más que hacer
+                return;
+            }
+
+            // Mostrar nombre de usuario en navbar
+            var userData = null;
+            try {
+                var raw = localStorage.getItem('user_data');
+                if (raw) userData = JSON.parse(raw);
+            } catch (e) {}
+            var userNameEl = el('userName');
+            if (userNameEl && userData && userData.nombre) {
+                userNameEl.textContent = userData.nombre;
+            }
+
+            var params    = new URLSearchParams(window.location.search);
+            var sensorId  = params.get('id');
+
+            if (!sensorId) {
+                el('pageLoading').style.display = 'none';
+                el('pageErrorMsg').textContent  = 'No se especificó el ID del sensor en la URL.';
+                el('pageError').style.display   = '';
+                return;
+            }
+
+            try {
+                var result = await window.apiGet('sensores', { empresa_id: 2 });
+                var sensor = (result.data || []).find(function (x) { return String(x.id) === String(sensorId); });
+
+                if (!sensor) {
+                    el('pageLoading').style.display = 'none';
+                    el('pageErrorMsg').textContent  = 'No se encontró el sensor con ID ' + sensorId + '.';
+                    el('pageError').style.display   = '';
+                    return;
+                }
+
+                populatePage(sensor);
+
+                el('pageLoading').style.display = 'none';
+                el('pageContent').style.display = '';
+
+            } catch (err) {
+                console.error('Error cargando sensor:', err);
+                el('pageLoading').style.display = 'none';
+                el('pageErrorMsg').textContent  = 'Error al cargar los datos del sensor. Intenta nuevamente.';
+                el('pageError').style.display   = '';
+            }
+        }
+
+        // Esperar a que los scripts de auth estén cargados
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+    }());
+    </script>
+
+</body>
+</html>
