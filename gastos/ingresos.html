@@ -1345,10 +1345,14 @@
                 
                 if (result.success) {
                     showAlert('success', editingTransactionId ? 'Ingreso actualizado exitosamente' : 'Ingreso creado exitosamente');
-                    
+
+                    if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                        window.NotificationsModule.refresh();
+                    }
+
                     // Cerrar modal
                     bootstrap.Modal.getInstance(document.getElementById('transactionModal')).hide();
-                    
+
                     // Recargar datos
                     loadTransactions();
                     loadIngresosChart();
@@ -1381,11 +1385,15 @@
                 
                 if (result.success) {
                     showAlert('success', 'Ingreso eliminado exitosamente');
-                    
+
+                    if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                        window.NotificationsModule.refresh();
+                    }
+
                     // Cerrar modal si está abierto
                     const modalInstance = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
                     if (modalInstance) modalInstance.hide();
-                    
+
                     // Recargar datos
                     loadTransactions();
                     loadIngresosChart();

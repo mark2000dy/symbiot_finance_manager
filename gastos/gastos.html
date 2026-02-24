@@ -1380,10 +1380,14 @@
                 
                 if (result.success) {
                     showAlert('success', editingTransactionId ? 'Gasto actualizado exitosamente' : 'Gasto creado exitosamente');
-                    
+
+                    if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                        window.NotificationsModule.refresh();
+                    }
+
                     // Cerrar modal
                     bootstrap.Modal.getInstance(document.getElementById('transactionModal')).hide();
-                    
+
                     // Recargar datos
                     loadTransactions();
                     loadGastosChart();
@@ -1416,11 +1420,15 @@
                 
                 if (result.success) {
                     showAlert('success', 'Gasto eliminado exitosamente');
-                    
+
+                    if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                        window.NotificationsModule.refresh();
+                    }
+
                     // Cerrar modal si está abierto
                     const modalInstance = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
                     if (modalInstance) modalInstance.hide();
-                    
+
                     // Recargar datos
                     loadTransactions();
                     loadGastosChart();

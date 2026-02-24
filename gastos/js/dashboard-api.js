@@ -313,7 +313,12 @@ async function createTransaction(transactionData) {
         
         if (response.success) {
             console.log('✅ Transacción creada exitosamente');
-            
+
+            // Refrescar campana de notificaciones
+            if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                window.NotificationsModule.refresh();
+            }
+
             // 🔥 CRÍTICO: Si es un ingreso (pago), actualizar alertas
             if (transactionData.tipo === 'I') {
                 console.log('🔄 Refrescando alertas de pagos...');
@@ -365,6 +370,11 @@ async function updateTransaction(transactionId, transactionData) {
         if (response.success) {
             console.log('✅ Transacción actualizada exitosamente');
 
+            // Refrescar campana de notificaciones
+            if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                window.NotificationsModule.refresh();
+            }
+
             // Refrescar alertas de pagos si es un ingreso (igual que en createTransaction)
             if (transactionData.tipo === 'I') {
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -407,6 +417,11 @@ async function deleteTransaction(transactionId) {
         
         if (response.success) {
             console.log('✅ Transacción eliminada exitosamente');
+
+            // Refrescar campana de notificaciones
+            if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                window.NotificationsModule.refresh();
+            }
 
             // Esperar que la BD se actualice antes de refrescar
             await new Promise(resolve => setTimeout(resolve, 500));

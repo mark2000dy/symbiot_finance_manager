@@ -452,17 +452,18 @@ async function updatePaymentMetrics() {
         const result = await window.apiGet('alumnos', {
             empresa_id: 1,
             estatus: 'Activo',
-            limit: 1000
+            limit: 1000,
+            unificar: '0'   // Contar filas individuales (igual base que el stats card de alumnos activos)
         });
 
         if (result.success && result.data) {
             const alumnos = result.data;
             let alCorriente = 0;
             let pendientes = 0;
-            
+
             alumnos.forEach(alumno => {
                 const estadoPago = getPaymentStatusHomologado(alumno);
-                
+
                 switch (estadoPago) {
                     case 'current':
                         alCorriente++;

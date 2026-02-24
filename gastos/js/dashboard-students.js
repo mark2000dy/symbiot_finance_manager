@@ -456,14 +456,19 @@ async function saveNewStudent() {
         if (result.success) {
             console.log('✅ Alumno creado exitosamente');
             showAlert('success', `Alumno "${studentData.nombre}" registrado exitosamente`);
-            
+
+            // Refrescar campana de notificaciones
+            if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                window.NotificationsModule.refresh();
+            }
+
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('addStudentModal'));
             if (modal) modal.hide();
-            
+
             // Limpiar formulario
             form.reset();
-            
+
             // Recargar lista
             await loadStudentsList(1);
         } else {
@@ -558,6 +563,11 @@ async function saveSingleStudentChanges() {
 
     if (result.success) {
         showAlert('success', `Informacion de ${studentData.nombre} actualizada exitosamente`);
+
+        // Refrescar campana de notificaciones
+        if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+            window.NotificationsModule.refresh();
+        }
     } else {
         throw new Error(result.message || 'Error actualizando alumno');
     }
@@ -2093,6 +2103,12 @@ async function deleteStudent() {
             if (editModal) editModal.hide();
 
             showAlert('success', `Alumno "${studentName}" eliminado exitosamente`);
+
+            // Refrescar campana de notificaciones
+            if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {
+                window.NotificationsModule.refresh();
+            }
+
             await loadStudentsList(currentStudentsPage);
 
             console.log(`✅ Alumno eliminado: ${studentName}`);

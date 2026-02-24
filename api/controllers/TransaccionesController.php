@@ -328,6 +328,9 @@ class TransaccionesController {
 
             error_log("✅ Transacción $id actualizada por {$user['nombre']}");
 
+            $nombreUsuarioNot = $user['nombre'] ?? 'Sistema';
+            NotificacionesController::crearNotificacion('transaccion', "$nombreUsuarioNot modificó una transacción: $concepto", (int)$empresa_id);
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Transacción actualizada exitosamente'
@@ -378,6 +381,9 @@ class TransaccionesController {
             executeUpdate($deleteQuery, $deleteParams);
 
             error_log("✅ Transacción eliminada: {$txConcepto} ({$txTipo})");
+
+            $nombreUsuarioNot = $user['nombre'] ?? 'Sistema';
+            NotificacionesController::crearNotificacion('transaccion', "$nombreUsuarioNot eliminó una transacción: $txConcepto", (int)$txEmpresaId);
 
             // Recalcular fecha_ultimo_pago desde las transacciones restantes
             if ($txTipo === 'I' && $txConcepto && $txEmpresaId == 1) {
