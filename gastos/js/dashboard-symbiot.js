@@ -171,6 +171,9 @@ async function loadSensoresList() {
                     <td class="text-center">${estadoBadge}</td>
                     <td>${ultimoContacto}</td>
                     <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Ver detalle" onclick="viewSensorDetail(${s.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
                         <button type="button" class="btn btn-sm btn-outline-info me-1" title="Editar" onclick="openSensorModal(${s.id})">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -233,6 +236,9 @@ async function loadClientesList() {
                     <td>${c.fecha_vencimiento || '—'}</td>
                     <td class="text-center">${estatusBadge}</td>
                     <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-1" title="Ver detalle" onclick="viewClienteDetail(${c.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
                         <button type="button" class="btn btn-sm btn-outline-info me-1" title="Editar" onclick="openClienteModal(${c.id})">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -484,4 +490,258 @@ async function refreshSymbiotData() {
 
     // Actualizar select de clientes en el filtro de sensores
     await _populateClienteSelect('symFilterCliente');
+}
+
+// ============================================================
+// MODAL DETALLE — SENSOR (vista de solo lectura)
+// ============================================================
+
+async function viewSensorDetail(id) {
+    const modalEl = document.getElementById('sensorDetailModal');
+    if (!modalEl) return;
+
+    // Inyectar spinner mientras carga
+    modalEl.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sensorDetailModalLabel">
+                        <i class="fas fa-microchip me-2"></i>Información del Sensor
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-2x text-info"></i>
+                    <p class="mt-3 text-muted">Cargando información...</p>
+                </div>
+            </div>
+        </div>`;
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    try {
+        const result = await window.apiGet('sensores', { empresa_id: 2 });
+        const s = (result.data || []).find(x => x.id == id);
+        if (!s) throw new Error('Sensor no encontrado');
+
+        const estadoBadge = _sensorEstadoBadge(s.estado);
+        const ultimoContacto = s.fecha_ultimo_contacto
+            ? new Date(s.fecha_ultimo_contacto).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })
+            : 'Sin registros';
+        const fechaInstalacion = s.fecha_instalacion
+            ? new Date(s.fecha_instalacion + 'T00:00:00').toLocaleDateString('es-MX', { dateStyle: 'medium' })
+            : 'No instalado';
+
+        modalEl.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-dark text-white">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="sensorDetailModalLabel">
+                            <i class="fas fa-microchip me-2"></i>Información del Sensor
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Columna izquierda: datos del sensor -->
+                            <div class="col-md-6">
+                                <h6 class="text-info mb-3"><i class="fas fa-microchip me-2"></i>Datos del Sensor</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td class="text-muted" style="width:45%">Nombre</td><td><strong>${s.nombre}</strong></td></tr>
+                                    <tr><td class="text-muted">Tipo</td><td>${s.tipo_sensor || '—'}</td></tr>
+                                    <tr><td class="text-muted">Modelo</td><td>${s.modelo || '—'}</td></tr>
+                                    <tr><td class="text-muted">Estado</td><td>${estadoBadge}</td></tr>
+                                    <tr><td class="text-muted">País</td><td>${s.ubicacion_pais || '—'}</td></tr>
+                                    <tr><td class="text-muted">Ciudad</td><td>${s.ubicacion_ciudad || '—'}</td></tr>
+                                </table>
+                            </div>
+                            <!-- Columna derecha: fechas y cliente -->
+                            <div class="col-md-6">
+                                <h6 class="text-info mb-3"><i class="fas fa-calendar-alt me-2"></i>Historial y Asignación</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td class="text-muted" style="width:50%">Instalación</td><td>${fechaInstalacion}</td></tr>
+                                    <tr><td class="text-muted">Último contacto</td><td>${ultimoContacto}</td></tr>
+                                    <tr><td class="text-muted">Cliente</td><td>${s.cliente_nombre ? `<strong>${s.cliente_nombre}</strong>` : '<span class="text-muted">Sin asignar</span>'}</td></tr>
+                                    <tr><td class="text-muted">Empresa cliente</td><td>${s.cliente_empresa || '—'}</td></tr>
+                                </table>
+                                ${s.notas ? `
+                                <h6 class="text-info mt-3 mb-2"><i class="fas fa-sticky-note me-2"></i>Notas</h6>
+                                <p class="text-muted small border border-secondary rounded p-2">${s.notas}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="openSensorModal(${s.id}); bootstrap.Modal.getInstance(document.getElementById('sensorDetailModal')).hide();">
+                            <i class="fas fa-edit me-1"></i>Editar
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+    } catch (err) {
+        console.error('Error en viewSensorDetail:', err);
+        modalEl.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark text-white">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Error</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
+                    </div>
+                    <div class="modal-body text-danger">No se pudo cargar la información del sensor.</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+}
+
+// ============================================================
+// MODAL DETALLE — CLIENTE (vista de solo lectura)
+// ============================================================
+
+async function viewClienteDetail(id) {
+    const modalEl = document.getElementById('clienteSymbiotDetailModal');
+    if (!modalEl) return;
+
+    modalEl.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="clienteSymbiotDetailModalLabel">
+                        <i class="fas fa-handshake me-2"></i>Información del Cliente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-2x text-info"></i>
+                    <p class="mt-3 text-muted">Cargando información...</p>
+                </div>
+            </div>
+        </div>`;
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    try {
+        // Cargar cliente y sus sensores en paralelo
+        const [clientesResult, sensoresResult] = await Promise.all([
+            window.apiGet('clientes-symbiot', { empresa_id: 2 }),
+            window.apiGet('sensores', { empresa_id: 2, cliente_id: id }),
+        ]);
+
+        const c = (clientesResult.data || []).find(x => x.id == id);
+        if (!c) throw new Error('Cliente no encontrado');
+
+        const sensores = sensoresResult.data || [];
+
+        const estatusBadge = c.estatus === 'Activo'
+            ? '<span class="badge bg-success">Activo</span>'
+            : '<span class="badge bg-secondary">Baja</span>';
+        const suscBadge = c.tipo_suscripcion === 'Anual'
+            ? '<span class="badge bg-info">Anual</span>'
+            : '<span class="badge bg-primary">Mensual</span>';
+
+        const diasRestantes = c.fecha_vencimiento
+            ? Math.ceil((new Date(c.fecha_vencimiento) - new Date()) / 86400000)
+            : null;
+        let diasHtml = '—';
+        if (diasRestantes !== null) {
+            const cls  = diasRestantes < 0 ? 'text-danger' : (diasRestantes <= 7 ? 'text-warning' : 'text-success');
+            const txt  = diasRestantes < 0 ? `Vencido hace ${Math.abs(diasRestantes)} días` : `${diasRestantes} días restantes`;
+            diasHtml = `<span class="${cls}">${txt}</span>`;
+        }
+
+        const sensoresHtml = sensores.length
+            ? `<div class="table-responsive">
+                <table class="table table-dark table-sm mb-0">
+                    <thead><tr><th>Sensor</th><th>Tipo</th><th>Ubicación</th><th class="text-center">Estado</th></tr></thead>
+                    <tbody>
+                        ${sensores.map(s => `
+                        <tr>
+                            <td><strong>${s.nombre}</strong></td>
+                            <td>${s.tipo_sensor || '—'}</td>
+                            <td>${s.ubicacion_pais || '—'}${s.ubicacion_ciudad ? ' / ' + s.ubicacion_ciudad : ''}</td>
+                            <td class="text-center">${_sensorEstadoBadge(s.estado)}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+               </div>`
+            : '<p class="text-muted mb-0">Este cliente no tiene sensores asignados.</p>';
+
+        modalEl.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-dark text-white">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="clienteSymbiotDetailModalLabel">
+                            <i class="fas fa-handshake me-2"></i>Información del Cliente
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Columna izquierda: datos del cliente -->
+                            <div class="col-md-6">
+                                <h6 class="text-info mb-3"><i class="fas fa-user me-2"></i>Datos del Cliente</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td class="text-muted" style="width:45%">Nombre</td><td><strong>${c.nombre}</strong></td></tr>
+                                    <tr><td class="text-muted">Empresa</td><td>${c.empresa || '—'}</td></tr>
+                                    <tr><td class="text-muted">País</td><td>${c.pais || '—'}</td></tr>
+                                    <tr><td class="text-muted">Email</td><td>${c.email || '—'}</td></tr>
+                                    <tr><td class="text-muted">Teléfono</td><td>${c.telefono || '—'}</td></tr>
+                                    <tr><td class="text-muted">Estatus</td><td>${estatusBadge}</td></tr>
+                                </table>
+                            </div>
+                            <!-- Columna derecha: suscripción -->
+                            <div class="col-md-6">
+                                <h6 class="text-info mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Suscripción</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr><td class="text-muted" style="width:50%">Tipo</td><td>${suscBadge}</td></tr>
+                                    <tr><td class="text-muted">Precio</td><td><strong>$${parseFloat(c.precio_suscripcion || 0).toLocaleString('es-MX')}</strong></td></tr>
+                                    <tr><td class="text-muted">Inicio</td><td>${c.fecha_inicio || '—'}</td></tr>
+                                    <tr><td class="text-muted">Vencimiento</td><td>${c.fecha_vencimiento || '—'}</td></tr>
+                                    <tr><td class="text-muted">Vigencia</td><td>${diasHtml}</td></tr>
+                                </table>
+                                ${c.notas ? `
+                                <h6 class="text-info mt-3 mb-2"><i class="fas fa-sticky-note me-2"></i>Notas</h6>
+                                <p class="text-muted small border border-secondary rounded p-2">${c.notas}</p>` : ''}
+                            </div>
+                        </div>
+                        <!-- Sensores del cliente -->
+                        <hr class="border-secondary my-3">
+                        <h6 class="text-info mb-3">
+                            <i class="fas fa-microchip me-2"></i>Sensores Asignados
+                            <span class="badge bg-secondary ms-2">${sensores.length}</span>
+                        </h6>
+                        ${sensoresHtml}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="openClienteModal(${c.id}); bootstrap.Modal.getInstance(document.getElementById('clienteSymbiotDetailModal')).hide();">
+                            <i class="fas fa-edit me-1"></i>Editar
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+    } catch (err) {
+        console.error('Error en viewClienteDetail:', err);
+        modalEl.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark text-white">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Error</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
+                    </div>
+                    <div class="modal-body text-danger">No se pudo cargar la información del cliente.</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>`;
+    }
 }
