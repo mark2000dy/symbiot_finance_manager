@@ -228,9 +228,9 @@ async function updateCompanyStatsReal(resumen) {
             console.log(`📊 Transacciones mostradas: ${totalTx}`);
         }
         
-        // Alumnos activos (solo para RockstarSkull) - USAR DATOS CORRECTOS
+        // Alumnos activos (RockstarSkull): cargar si está seleccionada o si es la carga inicial (filtro vacío)
         const studentsElement = document.getElementById('companyStudents');
-        if (studentsElement && window.currentCompanyFilter === '1') {
+        if (studentsElement && (window.currentCompanyFilter === '1' || window.currentCompanyFilter === '')) {
             try {
                 // v3.1.3: Usar API Client en lugar de fetch directo
                 const alumnosData = await window.apiGet('dashboard/alumnos', { empresa_id: 1 });
