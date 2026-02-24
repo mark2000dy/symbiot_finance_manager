@@ -47,8 +47,10 @@ if (strpos($requestUri, $basePath) === 0) {
     $requestUri = substr($requestUri, strlen($basePath));
 }
 
-// Normalizar: remover prefijo /(gastos/)api e /index.php opcionales en un solo paso
-$requestUri = preg_replace('#^/(gastos/)?api(/index\.php)?#', '', $requestUri);
+// Remover /gastos/api o /api del path para normalizar
+$requestUri = preg_replace('#^/(gastos/)?api#', '', $requestUri);
+// Remover /index.php si está presente (cuando se accede vía proxy gastos/api/index.php)
+$requestUri = preg_replace('#^/index\.php#', '', $requestUri);
 
 // Asegurar que empiece con /
 if (empty($requestUri) || $requestUri[0] !== '/') {
