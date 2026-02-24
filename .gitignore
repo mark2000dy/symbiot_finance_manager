@@ -42,6 +42,10 @@ Thumbs.db
 # Dependencias (si se usan)
 node_modules/
 vendor/
+.venv/
+venv/
+__pycache__/
+*.pyc
 
 # Backups de BD
 *.sql
