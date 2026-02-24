@@ -451,10 +451,14 @@ async function finalizeDashboardSetup() {
             currentDateElement.textContent = now.toLocaleDateString('es-ES', dateOptions);
         }
 
-        // CORRECCIÓN: Ocultar campo "Alumnos Activos" por defecto
-        const companyStudentsContainer = document.querySelector('#companyStudents').closest('.col-md-3');
-        if (companyStudentsContainer) {
-            companyStudentsContainer.style.display = 'none';
+        // Ocultar "Alumnos Activos" solo si la empresa activa NO es Rockstar Skull
+        // ('' = Todas o '1' = Rockstar Skull → mantener visible; '2' u otra → ocultar)
+        const _csFilter = window.currentCompanyFilter || '';
+        if (_csFilter !== '' && _csFilter !== '1') {
+            const companyStudentsContainer = document.querySelector('#companyStudents').closest('.col-md-3');
+            if (companyStudentsContainer) {
+                companyStudentsContainer.style.display = 'none';
+            }
         }
 
         updateInitProgress('Finalizando configuración...', 90);
