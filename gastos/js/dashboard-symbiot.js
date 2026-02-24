@@ -687,8 +687,8 @@ async function viewSensorDetail(id) {
 
                     </div>
                     <div class="modal-footer">
-                        <a href="sensordetails.html?id=${s.id}" target="_blank" class="btn btn-outline-info me-auto">
-                            <i class="fas fa-external-link-alt me-1"></i>Ver todos los detalles
+                        <a href="sensordetails.html?id=${s.id}" class="btn btn-outline-info me-auto">
+                            <i class="fas fa-arrow-up-right-from-square me-1"></i>Ver todos los detalles
                         </a>
                         <button type="button" class="btn btn-primary" onclick="openSensorModal(${s.id}); bootstrap.Modal.getInstance(document.getElementById('sensorDetailModal')).hide();">
                             <i class="fas fa-edit me-1"></i>Editar
