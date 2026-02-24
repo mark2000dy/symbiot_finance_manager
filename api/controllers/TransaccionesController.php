@@ -2899,11 +2899,11 @@ class TransaccionesController {
     public static function getDashboardSensores() {
         AuthController::requireAuth();
         try {
-            $db = Database::getConnection();
+            $pdo = getConnection();
             $empresa_id = intval($_GET['empresa_id'] ?? 2);
 
             // — Estadísticas generales de sensores —
-            $stmtStats = $db->prepare(
+            $stmtStats = $pdo->prepare(
                 "SELECT
                     COUNT(*) AS total_sensores,
                     SUM(CASE WHEN estado = 'Activo'      THEN 1 ELSE 0 END) AS activos,
@@ -2915,7 +2915,7 @@ class TransaccionesController {
             $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
 
             // — Distribución geográfica —
-            $stmtGeo = $db->prepare(
+            $stmtGeo = $pdo->prepare(
                 "SELECT
                     ubicacion_pais AS pais,
                     SUM(CASE WHEN estado = 'Activo'   THEN 1 ELSE 0 END) AS activos,
@@ -2929,7 +2929,7 @@ class TransaccionesController {
             $distribucion_geo = $stmtGeo->fetchAll(PDO::FETCH_ASSOC);
 
             // — Clientes —
-            $stmtClientes = $db->prepare(
+            $stmtClientes = $pdo->prepare(
                 "SELECT
                     COUNT(*) AS total,
                     SUM(CASE WHEN estatus = 'Activo' THEN 1 ELSE 0 END) AS activos,
@@ -2941,7 +2941,7 @@ class TransaccionesController {
 
             // — Movimientos del mes: sensores instalados/desconectados este mes —
             $mesActual = date('Y-m');
-            $stmtMov = $db->prepare(
+            $stmtMov = $pdo->prepare(
                 "SELECT
                     SUM(CASE WHEN estado = 'Activo'   AND DATE_FORMAT(fecha_instalacion,'%Y-%m') = ? THEN 1 ELSE 0 END) AS encendidos,
                     SUM(CASE WHEN estado = 'Inactivo' AND DATE_FORMAT(updated_at,'%Y-%m') = ?         THEN 1 ELSE 0 END) AS desconectados,
@@ -2954,7 +2954,7 @@ class TransaccionesController {
             // — Alertas de suscripción: clientes con vencimiento en los próximos 10 días —
             $fechaLimite = date('Y-m-d', strtotime('+10 days'));
             $hoy = date('Y-m-d');
-            $stmtAlertas = $db->prepare(
+            $stmtAlertas = $pdo->prepare(
                 "SELECT id, nombre, empresa, pais, tipo_suscripcion, precio_suscripcion,
                         fecha_vencimiento, estatus,
                         DATEDIFF(fecha_vencimiento, CURDATE()) AS dias_restantes
@@ -2986,7 +2986,7 @@ class TransaccionesController {
     public static function getSensores() {
         AuthController::requireAuth();
         try {
-            $db = Database::getConnection();
+            $pdo = getConnection();
             $empresa_id = intval($_GET['empresa_id'] ?? 2);
             $estado     = $_GET['estado']     ?? null;
             $pais       = $_GET['pais']       ?? null;
@@ -3005,7 +3005,7 @@ class TransaccionesController {
                     WHERE " . implode(' AND ', $where) . "
                     ORDER BY s.estado ASC, s.nombre ASC";
 
-            $stmt = $db->prepare($sql);
+            $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $sensores = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -3032,7 +3032,7 @@ class TransaccionesController {
                 }
             }
 
-            $stmt = $db->prepare(
+            $stmt = $pdo->prepare(
                 "INSERT INTO sensores (nombre, tipo_sensor, modelo, ubicacion_pais, ubicacion_ciudad,
                     cliente_id, estado, fecha_instalacion, fecha_ultimo_contacto, empresa_id, notas)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -3051,7 +3051,7 @@ class TransaccionesController {
                 $data['notas']                  ?? null,
             ]);
 
-            echo json_encode(['success' => true, 'id' => $db->lastInsertId(), 'message' => 'Sensor creado']);
+            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'message' => 'Sensor creado']);
         } catch (Exception $e) {
             error_log("Error createSensor: " . $e->getMessage());
             http_response_code(500);
@@ -3065,7 +3065,7 @@ class TransaccionesController {
             $db   = Database::getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-            $stmt = $db->prepare(
+            $stmt = $pdo->prepare(
                 "UPDATE sensores SET
                     nombre = ?, tipo_sensor = ?, modelo = ?, ubicacion_pais = ?, ubicacion_ciudad = ?,
                     cliente_id = ?, estado = ?, fecha_instalacion = ?, fecha_ultimo_contacto = ?, notas = ?
@@ -3098,7 +3098,7 @@ class TransaccionesController {
         AuthController::requireAuth();
         try {
             $db   = Database::getConnection();
-            $stmt = $db->prepare("DELETE FROM sensores WHERE id = ?");
+            $stmt = $pdo->prepare("DELETE FROM sensores WHERE id = ?");
             $stmt->execute([intval($id)]);
             echo json_encode(['success' => true, 'message' => 'Sensor eliminado']);
         } catch (Exception $e) {
@@ -3111,7 +3111,7 @@ class TransaccionesController {
     public static function getClientesSymbiot() {
         AuthController::requireAuth();
         try {
-            $db = Database::getConnection();
+            $pdo = getConnection();
             $empresa_id = intval($_GET['empresa_id'] ?? 2);
             $estatus    = $_GET['estatus'] ?? null;
 
@@ -3121,7 +3121,7 @@ class TransaccionesController {
 
             $sql  = "SELECT * FROM clientes_symbiot WHERE " . implode(' AND ', $where)
                   . " ORDER BY estatus ASC, nombre ASC";
-            $stmt = $db->prepare($sql);
+            $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $clientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -3145,7 +3145,7 @@ class TransaccionesController {
                 return;
             }
 
-            $stmt = $db->prepare(
+            $stmt = $pdo->prepare(
                 "INSERT INTO clientes_symbiot
                     (nombre, empresa, pais, email, telefono, tipo_suscripcion, precio_suscripcion,
                      fecha_inicio, fecha_vencimiento, estatus, empresa_id, notas)
@@ -3166,7 +3166,7 @@ class TransaccionesController {
                 $data['notas']               ?? null,
             ]);
 
-            echo json_encode(['success' => true, 'id' => $db->lastInsertId(), 'message' => 'Cliente creado']);
+            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'message' => 'Cliente creado']);
         } catch (Exception $e) {
             error_log("Error createClienteSymbiot: " . $e->getMessage());
             http_response_code(500);
@@ -3180,7 +3180,7 @@ class TransaccionesController {
             $db   = Database::getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
-            $stmt = $db->prepare(
+            $stmt = $pdo->prepare(
                 "UPDATE clientes_symbiot SET
                     nombre = ?, empresa = ?, pais = ?, email = ?, telefono = ?,
                     tipo_suscripcion = ?, precio_suscripcion = ?,
@@ -3216,8 +3216,8 @@ class TransaccionesController {
         try {
             $db   = Database::getConnection();
             // Desasociar sensores antes de eliminar
-            $db->prepare("UPDATE sensores SET cliente_id = NULL WHERE cliente_id = ?")->execute([intval($id)]);
-            $db->prepare("DELETE FROM clientes_symbiot WHERE id = ?")->execute([intval($id)]);
+            $pdo->prepare("UPDATE sensores SET cliente_id = NULL WHERE cliente_id = ?")->execute([intval($id)]);
+            $pdo->prepare("DELETE FROM clientes_symbiot WHERE id = ?")->execute([intval($id)]);
             echo json_encode(['success' => true, 'message' => 'Cliente eliminado']);
         } catch (Exception $e) {
             error_log("Error deleteClienteSymbiot: " . $e->getMessage());
