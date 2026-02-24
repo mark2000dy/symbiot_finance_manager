@@ -310,11 +310,20 @@ class TransaccionesController {
                 ? [$fecha, $concepto, $socio, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id]
                 : [$fecha, $concepto, $socio, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id, $user['id']];
 
+            $oldConcepto   = $existeTransaccion[0]['concepto'];
+            $oldTipo       = $existeTransaccion[0]['tipo'];
+            $oldEmpresaId  = $existeTransaccion[0]['empresa_id'];
+
             executeUpdate($query, $queryParams);
 
-            // Actualizar fecha_ultimo_pago si es un pago de alumno
-            if ($tipo === 'I' && $concepto && $empresa_id == 1) {
-                self::actualizarFechaUltimoPago($concepto, $fecha);
+            // Recalcular fecha_ultimo_pago desde las transacciones restantes
+            // (cubre cambios de fecha en cualquier dirección, no solo hacia adelante)
+            if ($oldTipo === 'I' && $oldConcepto && $oldEmpresaId == 1) {
+                self::recalcularFechaUltimoPago($oldConcepto, $oldEmpresaId);
+            }
+            // Si el concepto cambió a otro alumno, recalcular también el nuevo
+            if ($tipo === 'I' && $concepto && $empresa_id == 1 && $concepto !== $oldConcepto) {
+                self::recalcularFechaUltimoPago($concepto, $empresa_id);
             }
 
             error_log("✅ Transacción $id actualizada por {$user['nombre']}");
@@ -342,8 +351,8 @@ class TransaccionesController {
             // Allow admin and viewer roles to bypass created_by check
             $bypassCreatedByCheck = in_array($user['rol'], ['admin', 'viewer']);
             $queryCheck = $bypassCreatedByCheck
-                ? 'SELECT concepto, tipo FROM transacciones WHERE id = ?'
-                : 'SELECT concepto, tipo FROM transacciones WHERE id = ? AND created_by = ?';
+                ? 'SELECT concepto, tipo, empresa_id FROM transacciones WHERE id = ?'
+                : 'SELECT concepto, tipo, empresa_id FROM transacciones WHERE id = ? AND created_by = ?';
             $paramsCheck = $bypassCreatedByCheck ? [$id] : [$id, $user['id']];
 
             $existeTransaccion = executeQuery($queryCheck, $paramsCheck);
@@ -357,6 +366,10 @@ class TransaccionesController {
                 return;
             }
 
+            $txConcepto   = $existeTransaccion[0]['concepto'];
+            $txTipo       = $existeTransaccion[0]['tipo'];
+            $txEmpresaId  = $existeTransaccion[0]['empresa_id'];
+
             $deleteQuery = $bypassCreatedByCheck
                 ? 'DELETE FROM transacciones WHERE id = ?'
                 : 'DELETE FROM transacciones WHERE id = ? AND created_by = ?';
@@ -364,7 +377,12 @@ class TransaccionesController {
 
             executeUpdate($deleteQuery, $deleteParams);
 
-            error_log("✅ Transacción eliminada: {$existeTransaccion[0]['concepto']} ({$existeTransaccion[0]['tipo']})");
+            error_log("✅ Transacción eliminada: {$txConcepto} ({$txTipo})");
+
+            // Recalcular fecha_ultimo_pago desde las transacciones restantes
+            if ($txTipo === 'I' && $txConcepto && $txEmpresaId == 1) {
+                self::recalcularFechaUltimoPago($txConcepto, $txEmpresaId);
+            }
 
             echo json_encode([
                 'success' => true,
@@ -1326,6 +1344,105 @@ class TransaccionesController {
             }
         } catch (Exception $e) {
             error_log("❌ Error actualizando fecha_ultimo_pago: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Recalcula fecha_ultimo_pago buscando el MAX(fecha) entre las transacciones
+     * de ingreso restantes para el alumno identificado en $concepto.
+     * Se usa tras DELETE o UPDATE para reflejar correctamente el estado de pago.
+     */
+    private static function recalcularFechaUltimoPago($concepto, $empresa_id) {
+        try {
+            error_log("🔄 Recalculando fecha_ultimo_pago para: $concepto");
+
+            $alumnoEncontrado = null;
+
+            // Estrategia 1: Extraer nombre con regex
+            $match = [];
+            if (preg_match('/(?:Mensualidad\s+clase\s+de\s+\w+\s+)?[GI]\s+(.+?)(?:\s*,|$)/i', $concepto, $match)) {
+                $nombreExtraido = trim($match[1]);
+
+                $alumnos = executeQuery("
+                    SELECT id, nombre
+                    FROM alumnos
+                    WHERE empresa_id = ?
+                        AND (
+                            nombre = ?
+                            OR REPLACE(nombre, '  ', ' ') = ?
+                        )
+                    LIMIT 1
+                ", [$empresa_id, $nombreExtraido, $nombreExtraido]);
+
+                if (empty($alumnos)) {
+                    $alumnos = executeQuery("
+                        SELECT id, nombre
+                        FROM alumnos
+                        WHERE empresa_id = ?
+                            AND nombre LIKE ?
+                        ORDER BY
+                            CASE
+                                WHEN nombre = ? THEN 1
+                                WHEN nombre LIKE CONCAT(?, '%') THEN 2
+                                ELSE 3
+                            END
+                        LIMIT 1
+                    ", [$empresa_id, "%$nombreExtraido%", $nombreExtraido, $nombreExtraido]);
+                }
+
+                if (!empty($alumnos)) {
+                    $alumnoEncontrado = $alumnos[0];
+                }
+            }
+
+            // Estrategia 2 (fallback): buscar nombre de alumno activo en el concepto
+            if (!$alumnoEncontrado) {
+                $todosAlumnos = executeQuery("
+                    SELECT id, nombre
+                    FROM alumnos
+                    WHERE empresa_id = ?
+                        AND nombre NOT LIKE '[ELIMINADO]%'
+                    ORDER BY CHAR_LENGTH(nombre) DESC
+                ", [$empresa_id]);
+
+                foreach ($todosAlumnos as $alumno) {
+                    if (mb_stripos($concepto, $alumno['nombre']) !== false) {
+                        $alumnoEncontrado = $alumno;
+                        break;
+                    }
+                }
+            }
+
+            if (!$alumnoEncontrado) {
+                error_log("⚠️ recalcularFechaUltimoPago: alumno no encontrado en concepto \"$concepto\"");
+                return;
+            }
+
+            $alumnoNombre = $alumnoEncontrado['nombre'];
+
+            // Buscar la transacción de ingreso más reciente restante para este alumno
+            $result = executeQuery("
+                SELECT MAX(fecha) AS ultima_fecha
+                FROM transacciones
+                WHERE tipo = 'I'
+                    AND empresa_id = ?
+                    AND concepto LIKE ?
+            ", [$empresa_id, "%$alumnoNombre%"]);
+
+            $nuevaFecha = (!empty($result) && $result[0]['ultima_fecha']) ? $result[0]['ultima_fecha'] : null;
+
+            // Actualizar TODAS las filas del alumno (1 fila por inscripción)
+            executeUpdate("
+                UPDATE alumnos
+                SET fecha_ultimo_pago = ?
+                WHERE empresa_id = ?
+                    AND nombre = ?
+            ", [$nuevaFecha, $empresa_id, $alumnoNombre]);
+
+            error_log("✅ fecha_ultimo_pago recalculada para $alumnoNombre -> " . ($nuevaFecha ?? 'NULL'));
+
+        } catch (Exception $e) {
+            error_log("❌ Error en recalcularFechaUltimoPago: " . $e->getMessage());
         }
     }
 

@@ -317,21 +317,31 @@ async function createTransaction(transactionData) {
             // 🔥 CRÍTICO: Si es un ingreso (pago), actualizar alertas
             if (transactionData.tipo === 'I') {
                 console.log('🔄 Refrescando alertas de pagos...');
-                
+
                 // Esperar 500ms para que la base de datos se actualice
                 await new Promise(resolve => setTimeout(resolve, 500));
-                
+
                 // Refrescar alertas de pagos
                 if (typeof window.refreshPaymentAlerts === 'function') {
                     await window.refreshPaymentAlerts();
                 }
-                
+
                 // Refrescar estadísticas del dashboard
                 if (typeof window.loadDashboardData === 'function') {
                     await window.loadDashboardData();
                 }
+
+                // Refrescar conteos Al Corriente / Pendientes
+                if (typeof window.updatePaymentMetrics === 'function') {
+                    await window.updatePaymentMetrics();
+                }
+
+                // Refrescar lista de alumnos (filtro Pagos, badges y modal Información)
+                if (typeof window.refreshStudentsList === 'function') {
+                    await window.refreshStudentsList();
+                }
             }
-            
+
             return response;
         } else {
             throw new Error(response.message || 'Error creando transacción');
@@ -349,16 +359,37 @@ async function createTransaction(transactionData) {
 async function updateTransaction(transactionId, transactionData) {
     try {
         console.log(`💰 Actualizando transacción ${transactionId}...`, transactionData);
-        
+
         const response = await apiPut(`transacciones/${transactionId}`, transactionData);
-        
+
         if (response.success) {
             console.log('✅ Transacción actualizada exitosamente');
+
+            // Refrescar alertas de pagos si es un ingreso (igual que en createTransaction)
+            if (transactionData.tipo === 'I') {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (typeof window.refreshPaymentAlerts === 'function') {
+                    await window.refreshPaymentAlerts();
+                }
+                if (typeof window.loadDashboardData === 'function') {
+                    await window.loadDashboardData();
+                }
+                // Refrescar conteos Al Corriente / Pendientes
+                if (typeof window.updatePaymentMetrics === 'function') {
+                    await window.updatePaymentMetrics();
+                }
+
+                // Refrescar lista de alumnos (filtro Pagos, badges y modal Información)
+                if (typeof window.refreshStudentsList === 'function') {
+                    await window.refreshStudentsList();
+                }
+            }
+
             return response;
         } else {
             throw new Error(response.message || 'Error actualizando transacción');
         }
-        
+
     } catch (error) {
         console.error('❌ Error actualizando transacción:', error);
         throw error;
@@ -376,18 +407,36 @@ async function deleteTransaction(transactionId) {
         
         if (response.success) {
             console.log('✅ Transacción eliminada exitosamente');
-            
-            // 🔥 CRÍTICO: Actualizar estadísticas PRIMERO
+
+            // Esperar que la BD se actualice antes de refrescar
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Refrescar alertas de pagos (el alumno puede quedar sin pago si era su única tx)
+            if (typeof window.refreshPaymentAlerts === 'function') {
+                await window.refreshPaymentAlerts();
+            }
+
+            // 🔥 CRÍTICO: Actualizar estadísticas
             if (typeof window.loadDashboardData === 'function') {
                 await window.loadDashboardData();
             }
-            
-            // 🔥 CRÍTICO: Luego actualizar lista de transacciones
+
+            // Refrescar conteos Al Corriente / Pendientes
+            if (typeof window.updatePaymentMetrics === 'function') {
+                await window.updatePaymentMetrics();
+            }
+
+            // Refrescar lista de alumnos (filtro Pagos, badges y modal Información)
+            if (typeof window.refreshStudentsList === 'function') {
+                await window.refreshStudentsList();
+            }
+
+            // 🔥 CRÍTICO: Actualizar lista de transacciones
             if (typeof window.loadRecentTransactions === 'function') {
                 const pageToLoad = window.currentPage || 1;
                 await window.loadRecentTransactions(pageToLoad);
             }
-            
+
             return response;
         } else {
             throw new Error(response.message || 'Error eliminando transacción');

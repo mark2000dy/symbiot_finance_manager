@@ -87,9 +87,36 @@ class GoogleCalendarService {
     }
 
     /**
+     * Resuelve el colorId de Google Calendar según instrumento + maestro.
+     * Devuelve null si la combinación no está mapeada (el evento usará el color por defecto).
+     *
+     * Colores Google Calendar: 1=Lavanda, 3=Uva, 4=Flamenco, 5=Banana,
+     *                          6=Mandarina, 7=Turquesa, 8=Índigo, 9=Albahaca
+     */
+    private function resolveColorId(string $instrument, string $teacherName): ?string {
+        $instr     = mb_strtolower(trim($instrument));
+        $firstName = mb_strtolower(explode(' ', trim($teacherName))[0]);
+
+        $map = [
+            'batería-julio'   => '7',   // Turquesa  (Peacock)
+            'bateria-julio'   => '7',
+            'guitarra-irwin'  => '6',   // Mandarina (Tangerine)
+            'canto-nahomy'    => '4',   // Flamenco  (Flamingo)
+            'bajo-luis'       => '9',   // Albahaca  (Basil)
+            'guitarra-hugo'   => '3',   // Uva       (Grape)
+            'teclado-harim'   => '8',   // Índigo    (Blueberry)
+            'teclado-manuel'  => '5',   // Banana    (Banana)
+            'batería-demian'  => '1',   // Lavanda   (Lavender)
+            'bateria-demian'  => '1',
+        ];
+
+        return $map["$instr-$firstName"] ?? null;
+    }
+
+    /**
      * Crear un evento en el calendario
      */
-    public function createEvent($summary, $description, $startDateTime, $endDateTime, $recurrence = null) {
+    public function createEvent($summary, $description, $startDateTime, $endDateTime, $recurrence = null, $colorId = null) {
         if (!$this->isConnected()) {
             return false;
         }
@@ -114,6 +141,10 @@ class GoogleCalendarService {
 
         if ($recurrence) {
             $eventData['recurrence'] = $recurrence;
+        }
+
+        if ($colorId !== null) {
+            $eventData['colorId'] = $colorId;
         }
 
         $event = new Calendar\Event($eventData);
@@ -199,7 +230,8 @@ class GoogleCalendarService {
                 if ($teacherName) {
                     $title .= " - " . mb_strtoupper($teacherName);
                 }
-                return $this->createEvent($title, "Clase de $instrument", $startDateTime, $endDateTime, $recurrence);
+                $colorId = $this->resolveColorId($instrument, $teacherName ?? '');
+                return $this->createEvent($title, "Clase de $instrument", $startDateTime, $endDateTime, $recurrence, $colorId);
             }
         } catch (Exception $e) {
             error_log("Error agendando clase: " . $e->getMessage());

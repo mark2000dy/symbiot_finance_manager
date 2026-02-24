@@ -272,6 +272,28 @@ async function initMaestroPage() {
         // 4. Cargar alumnos del maestro (los banners 2 y 3 dependen de esta data)
         await loadMaestroStudents(maestroInfo.id);
 
+        // Guardar el ID del maestro para el refresco automático y manual
+        window._currentMaestroId = maestroInfo.id;
+
+        // Auto-refresco cada 5 minutos para reflejar cambios de transacciones
+        setInterval(async function() {
+            console.log('🔄 Auto-refrescando lista de alumnos...');
+            await loadMaestroStudents(window._currentMaestroId);
+        }, 5 * 60 * 1000);
+
+        // Botón de refresco manual
+        var refreshBtn = document.getElementById('refreshStudentsBtn');
+        var refreshIcon = document.getElementById('refreshStudentsIcon');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async function() {
+                refreshIcon.classList.add('fa-spin');
+                refreshBtn.disabled = true;
+                await loadMaestroStudents(window._currentMaestroId);
+                refreshIcon.classList.remove('fa-spin');
+                refreshBtn.disabled = false;
+            });
+        }
+
         // 5. Cargar clases de hoy desde Google Calendar (independiente)
         loadClasesHoy(maestroInfo.nombre);
 

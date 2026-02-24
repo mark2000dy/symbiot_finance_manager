@@ -172,6 +172,25 @@ async function initPagosPage() {
         // 3. Cargar datos
         await loadPagosData();
 
+        // Auto-refresco cada 5 minutos para reflejar cambios de transacciones
+        setInterval(async function() {
+            console.log('🔄 Auto-refrescando datos de corte...');
+            await loadPagosData();
+        }, 5 * 60 * 1000);
+
+        // Botón de refresco manual
+        var refreshBtn  = document.getElementById('refreshPagosBtn');
+        var refreshIcon = document.getElementById('refreshPagosIcon');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async function() {
+                refreshIcon.classList.add('fa-spin');
+                refreshBtn.disabled = true;
+                await loadPagosData();
+                refreshIcon.classList.remove('fa-spin');
+                refreshBtn.disabled = false;
+            });
+        }
+
     } catch (error) {
         console.error('❌ Error inicializando pagos:', error);
         document.getElementById('pageLoading').innerHTML =
