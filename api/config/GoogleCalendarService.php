@@ -90,8 +90,23 @@ class GoogleCalendarService {
      * Resuelve el colorId de Google Calendar según instrumento + maestro.
      * Devuelve null si la combinación no está mapeada (el evento usará el color por defecto).
      *
-     * Colores Google Calendar: 1=Lavanda, 3=Uva, 4=Flamenco, 5=Banana,
-     *                          6=Mandarina, 7=Turquesa, 8=Índigo, 9=Albahaca
+     * Referencia completa de IDs de color para eventos de Google Calendar:
+     * ┌────┬──────────────────────────┬─────────────────┐
+     * │ ID │ Nombre                   │ Hex             │
+     * ├────┼──────────────────────────┼─────────────────┤
+     * │  1 │ Lavanda  (Lavender)      │ #a4bdfc  (azul pálido)    │
+     * │  2 │ Salvia   (Sage)          │ #7ae619  (verde claro)    │
+     * │  3 │ Uva      (Grape)         │ #dbadff  (púrpura)        │
+     * │  4 │ Flamenco (Flamingo)      │ #ff887c  (rosado/coral)   │
+     * │  5 │ Plátano  (Banana)        │ #fbd75b  (amarillo)       │
+     * │  6 │ Mandarina (Tangerine)    │ #ffb878  (naranja)        │
+     * │  7 │ Pavo Real (Peacock)      │ #46d6db  (turquesa)       │
+     * │  8 │ Grafito  (Graphite)      │ #e1e1e1  (gris)           │
+     * │  9 │ Arándano (Blueberry)     │ #5484ed  (azul)           │
+     * │ 10 │ Albahaca (Basil)         │ #51b749  (verde)          │
+     * │ 11 │ Tomate   (Tomato)        │ #dc2127  (rojo)           │
+     * └────┴──────────────────────────┴─────────────────┘
+     * Fuente: Google Calendar API — IDs de string "1"–"11" en campo colorId del Event.
      */
     private function resolveColorId(string $instrument, string $teacherName): ?string {
         $instr     = mb_strtolower(trim($instrument));
@@ -102,9 +117,9 @@ class GoogleCalendarService {
             'bateria-julio'   => '7',
             'guitarra-irwin'  => '6',   // Mandarina (Tangerine)
             'canto-nahomy'    => '4',   // Flamenco  (Flamingo)
-            'bajo-luis'       => '9',   // Albahaca  (Basil)
+            'bajo-luis'       => '10',   // Albahaca  (Basil)
             'guitarra-hugo'   => '3',   // Uva       (Grape)
-            'teclado-harim'   => '8',   // Índigo    (Blueberry)
+            'teclado-harim'   => '9',   // Índigo    (Blueberry)
             'teclado-manuel'  => '5',   // Banana    (Banana)
             'batería-demian'  => '1',   // Lavanda   (Lavender)
             'bateria-demian'  => '1',
@@ -143,11 +158,13 @@ class GoogleCalendarService {
             $eventData['recurrence'] = $recurrence;
         }
 
-        if ($colorId !== null) {
-            $eventData['colorId'] = $colorId;
-        }
-
         $event = new Calendar\Event($eventData);
+
+        // setColorId() explícito: el constructor de Calendar\Event no garantiza
+        // que las propiedades planas del array sean serializadas correctamente.
+        if ($colorId !== null) {
+            $event->setColorId($colorId);
+        }
 
         try {
             $createdEvent = $this->service->events->insert($this->calendarId, $event);

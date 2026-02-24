@@ -444,6 +444,7 @@ async function saveNewStudent() {
             forma_pago: document.getElementById('newStudentPaymentMethod')?.value || null,
             domiciliado: document.getElementById('newStudentDomiciled')?.value === 'Si',
             titular_domicilado: document.getElementById('newStudentDomiciliedName')?.value || null,
+            salon_id: document.getElementById('newStudentSalon')?.value ? parseInt(document.getElementById('newStudentSalon').value) : null,
             empresa_id: currentCompanyFilter || 1
         };
 
@@ -1125,7 +1126,30 @@ function createAddStudentModalHTML() {
                                 <input type="text" class="form-control" id="newStudentSchedule">
                             </div>
                         </div>
-                        
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentClassType" class="form-label">
+                                    <i class="fas fa-users me-1"></i>Tipo de Clase *
+                                </label>
+                                <select class="form-select" id="newStudentClassType" required>
+                                    <option value="Individual">👤 Individual</option>
+                                    <option value="Grupal">👥 Grupal</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newStudentSalon" class="form-label">
+                                    <i class="fas fa-door-open me-1"></i>Salón
+                                </label>
+                                <select class="form-select" id="newStudentSalon">
+                                    <option value="">Sin asignar</option>
+                                    <option value="1">🥁 Salón Batería (máx 2)</option>
+                                    <option value="2">🎸 Salón Guitarra (máx 5)</option>
+                                    <option value="3">🎹 Salón Múltiple (Bajo/Canto/Teclado)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="newStudentPromotion" class="form-label">
