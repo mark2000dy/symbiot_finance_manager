@@ -4,6 +4,13 @@
    ACTUALIZADO para corregir selector de empresa y widgets
    ==================================================== */
 
+/* Badge estadístico grande (usado en totales de widgets) */
+.badge-stat {
+    font-size: 1.1rem;
+    padding: 0.5rem 0.75rem;
+    cursor: default;
+}
+
 /* 🎯 MEJORAR CONTRASTE DE TEXTOS GRISES */
 .text-muted {
     color: #C8CCD0 !important; /* Más claro que el original Bootstrap */

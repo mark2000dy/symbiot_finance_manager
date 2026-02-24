@@ -50,3 +50,5 @@ __pycache__/
 # Backups de BD
 *.sql
 backups/
+# Excepciones: scripts de setup (no son backups con datos sensibles)
+!api/scripts/*.sql

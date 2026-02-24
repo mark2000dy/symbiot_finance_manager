@@ -2884,9 +2884,343 @@ class TransaccionesController {
                     'clase' => $clase
                 ]
             ]);
-            
+
         } catch (Throwable $e) {
             error_log("Error obteniendo horario de calendar: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // ================================================================
+    // SYMBIOT TECHNOLOGIES — SENSORES & CLIENTES
+    // ================================================================
+
+    public static function getDashboardSensores() {
+        AuthController::requireAuth();
+        try {
+            $db = Database::getConnection();
+            $empresa_id = intval($_GET['empresa_id'] ?? 2);
+
+            // — Estadísticas generales de sensores —
+            $stmtStats = $db->prepare(
+                "SELECT
+                    COUNT(*) AS total_sensores,
+                    SUM(CASE WHEN estado = 'Activo'      THEN 1 ELSE 0 END) AS activos,
+                    SUM(CASE WHEN estado = 'Inactivo'    THEN 1 ELSE 0 END) AS inactivos,
+                    SUM(CASE WHEN estado = 'Fabricacion' THEN 1 ELSE 0 END) AS fabricacion
+                 FROM sensores WHERE empresa_id = ?"
+            );
+            $stmtStats->execute([$empresa_id]);
+            $stats = $stmtStats->fetch(PDO::FETCH_ASSOC);
+
+            // — Distribución geográfica —
+            $stmtGeo = $db->prepare(
+                "SELECT
+                    ubicacion_pais AS pais,
+                    SUM(CASE WHEN estado = 'Activo'   THEN 1 ELSE 0 END) AS activos,
+                    SUM(CASE WHEN estado = 'Inactivo' THEN 1 ELSE 0 END) AS inactivos,
+                    COUNT(*) AS total
+                 FROM sensores
+                 WHERE empresa_id = ? AND ubicacion_pais IS NOT NULL
+                 GROUP BY ubicacion_pais ORDER BY total DESC"
+            );
+            $stmtGeo->execute([$empresa_id]);
+            $distribucion_geo = $stmtGeo->fetchAll(PDO::FETCH_ASSOC);
+
+            // — Clientes —
+            $stmtClientes = $db->prepare(
+                "SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN estatus = 'Activo' THEN 1 ELSE 0 END) AS activos,
+                    SUM(CASE WHEN estatus = 'Baja'   THEN 1 ELSE 0 END) AS bajas
+                 FROM clientes_symbiot WHERE empresa_id = ?"
+            );
+            $stmtClientes->execute([$empresa_id]);
+            $clientes = $stmtClientes->fetch(PDO::FETCH_ASSOC);
+
+            // — Movimientos del mes: sensores instalados/desconectados este mes —
+            $mesActual = date('Y-m');
+            $stmtMov = $db->prepare(
+                "SELECT
+                    SUM(CASE WHEN estado = 'Activo'   AND DATE_FORMAT(fecha_instalacion,'%Y-%m') = ? THEN 1 ELSE 0 END) AS encendidos,
+                    SUM(CASE WHEN estado = 'Inactivo' AND DATE_FORMAT(updated_at,'%Y-%m') = ?         THEN 1 ELSE 0 END) AS desconectados,
+                    SUM(CASE WHEN estado = 'Fabricacion'                                              THEN 1 ELSE 0 END) AS nuevos_pedidos
+                 FROM sensores WHERE empresa_id = ?"
+            );
+            $stmtMov->execute([$mesActual, $mesActual, $empresa_id]);
+            $movimientos = $stmtMov->fetch(PDO::FETCH_ASSOC);
+
+            // — Alertas de suscripción: clientes con vencimiento en los próximos 10 días —
+            $fechaLimite = date('Y-m-d', strtotime('+10 days'));
+            $hoy = date('Y-m-d');
+            $stmtAlertas = $db->prepare(
+                "SELECT id, nombre, empresa, pais, tipo_suscripcion, precio_suscripcion,
+                        fecha_vencimiento, estatus,
+                        DATEDIFF(fecha_vencimiento, CURDATE()) AS dias_restantes
+                 FROM clientes_symbiot
+                 WHERE empresa_id = ? AND estatus = 'Activo'
+                   AND fecha_vencimiento BETWEEN ? AND ?
+                 ORDER BY fecha_vencimiento ASC"
+            );
+            $stmtAlertas->execute([$empresa_id, $hoy, $fechaLimite]);
+            $alertas = $stmtAlertas->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'stats'            => $stats,
+                    'distribucion_geo' => $distribucion_geo,
+                    'clientes'         => $clientes,
+                    'movimientos_mes'  => $movimientos,
+                    'alertas_suscripcion' => $alertas,
+                ]
+            ]);
+        } catch (Exception $e) {
+            error_log("Error getDashboardSensores: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public static function getSensores() {
+        AuthController::requireAuth();
+        try {
+            $db = Database::getConnection();
+            $empresa_id = intval($_GET['empresa_id'] ?? 2);
+            $estado     = $_GET['estado']     ?? null;
+            $pais       = $_GET['pais']       ?? null;
+            $cliente_id = isset($_GET['cliente_id']) ? intval($_GET['cliente_id']) : null;
+
+            $where = ['s.empresa_id = ?'];
+            $params = [$empresa_id];
+
+            if ($estado) { $where[] = 's.estado = ?'; $params[] = $estado; }
+            if ($pais)   { $where[] = 's.ubicacion_pais = ?'; $params[] = $pais; }
+            if ($cliente_id) { $where[] = 's.cliente_id = ?'; $params[] = $cliente_id; }
+
+            $sql = "SELECT s.*, c.nombre AS cliente_nombre, c.empresa AS cliente_empresa
+                    FROM sensores s
+                    LEFT JOIN clientes_symbiot c ON s.cliente_id = c.id
+                    WHERE " . implode(' AND ', $where) . "
+                    ORDER BY s.estado ASC, s.nombre ASC";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $sensores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode(['success' => true, 'data' => $sensores, 'total' => count($sensores)]);
+        } catch (Exception $e) {
+            error_log("Error getSensores: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public static function createSensor() {
+        AuthController::requireAuth();
+        try {
+            $db   = Database::getConnection();
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+            $required = ['nombre'];
+            foreach ($required as $field) {
+                if (empty($data[$field])) {
+                    http_response_code(400);
+                    echo json_encode(['success' => false, 'message' => "Campo requerido: $field"]);
+                    return;
+                }
+            }
+
+            $stmt = $db->prepare(
+                "INSERT INTO sensores (nombre, tipo_sensor, modelo, ubicacion_pais, ubicacion_ciudad,
+                    cliente_id, estado, fecha_instalacion, fecha_ultimo_contacto, empresa_id, notas)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([
+                $data['nombre'],
+                $data['tipo_sensor']            ?? null,
+                $data['modelo']                 ?? null,
+                $data['ubicacion_pais']         ?? null,
+                $data['ubicacion_ciudad']       ?? null,
+                !empty($data['cliente_id'])     ? intval($data['cliente_id']) : null,
+                $data['estado']                 ?? 'Fabricacion',
+                $data['fecha_instalacion']      ?? null,
+                $data['fecha_ultimo_contacto']  ?? null,
+                intval($data['empresa_id']      ?? 2),
+                $data['notas']                  ?? null,
+            ]);
+
+            echo json_encode(['success' => true, 'id' => $db->lastInsertId(), 'message' => 'Sensor creado']);
+        } catch (Exception $e) {
+            error_log("Error createSensor: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public static function updateSensor($id) {
+        AuthController::requireAuth();
+        try {
+            $db   = Database::getConnection();
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+            $stmt = $db->prepare(
+                "UPDATE sensores SET
+                    nombre = ?, tipo_sensor = ?, modelo = ?, ubicacion_pais = ?, ubicacion_ciudad = ?,
+                    cliente_id = ?, estado = ?, fecha_instalacion = ?, fecha_ultimo_contacto = ?, notas = ?
+                 WHERE id = ? AND empresa_id = ?"
+            );
+            $stmt->execute([
+                $data['nombre']                 ?? '',
+                $data['tipo_sensor']            ?? null,
+                $data['modelo']                 ?? null,
+                $data['ubicacion_pais']         ?? null,
+                $data['ubicacion_ciudad']       ?? null,
+                !empty($data['cliente_id'])     ? intval($data['cliente_id']) : null,
+                $data['estado']                 ?? 'Fabricacion',
+                $data['fecha_instalacion']      ?? null,
+                $data['fecha_ultimo_contacto']  ?? null,
+                $data['notas']                  ?? null,
+                intval($id),
+                intval($data['empresa_id']      ?? 2),
+            ]);
+
+            echo json_encode(['success' => true, 'message' => 'Sensor actualizado']);
+        } catch (Exception $e) {
+            error_log("Error updateSensor: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public static function deleteSensor($id) {
+        AuthController::requireAuth();
+        try {
+            $db   = Database::getConnection();
+            $stmt = $db->prepare("DELETE FROM sensores WHERE id = ?");
+            $stmt->execute([intval($id)]);
+            echo json_encode(['success' => true, 'message' => 'Sensor eliminado']);
+        } catch (Exception $e) {
+            error_log("Error deleteSensor: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public static function getClientesSymbiot() {
+        AuthController::requireAuth();
+        try {
+            $db = Database::getConnection();
+            $empresa_id = intval($_GET['empresa_id'] ?? 2);
+            $estatus    = $_GET['estatus'] ?? null;
+
+            $where  = ['empresa_id = ?'];
+            $params = [$empresa_id];
+            if ($estatus) { $where[] = 'estatus = ?'; $params[] = $estatus; }
+
+            $sql  = "SELECT * FROM clientes_symbiot WHERE " . implode(' AND ', $where)
+                  . " ORDER BY estatus ASC, nombre ASC";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $clientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode(['success' => true, 'data' => $clientes, 'total' => count($clientes)]);
+        } catch (Exception $e) {
+            error_log("Error getClientesSymbiot: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public static function createClienteSymbiot() {
+        AuthController::requireAuth();
+        try {
+            $db   = Database::getConnection();
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+            if (empty($data['nombre'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Campo requerido: nombre']);
+                return;
+            }
+
+            $stmt = $db->prepare(
+                "INSERT INTO clientes_symbiot
+                    (nombre, empresa, pais, email, telefono, tipo_suscripcion, precio_suscripcion,
+                     fecha_inicio, fecha_vencimiento, estatus, empresa_id, notas)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([
+                $data['nombre'],
+                $data['empresa']             ?? null,
+                $data['pais']                ?? null,
+                $data['email']               ?? null,
+                $data['telefono']            ?? null,
+                $data['tipo_suscripcion']    ?? 'Mensual',
+                floatval($data['precio_suscripcion'] ?? 0),
+                $data['fecha_inicio']        ?? null,
+                $data['fecha_vencimiento']   ?? null,
+                $data['estatus']             ?? 'Activo',
+                intval($data['empresa_id']   ?? 2),
+                $data['notas']               ?? null,
+            ]);
+
+            echo json_encode(['success' => true, 'id' => $db->lastInsertId(), 'message' => 'Cliente creado']);
+        } catch (Exception $e) {
+            error_log("Error createClienteSymbiot: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public static function updateClienteSymbiot($id) {
+        AuthController::requireAuth();
+        try {
+            $db   = Database::getConnection();
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+            $stmt = $db->prepare(
+                "UPDATE clientes_symbiot SET
+                    nombre = ?, empresa = ?, pais = ?, email = ?, telefono = ?,
+                    tipo_suscripcion = ?, precio_suscripcion = ?,
+                    fecha_inicio = ?, fecha_vencimiento = ?, estatus = ?, notas = ?
+                 WHERE id = ? AND empresa_id = ?"
+            );
+            $stmt->execute([
+                $data['nombre']              ?? '',
+                $data['empresa']             ?? null,
+                $data['pais']                ?? null,
+                $data['email']               ?? null,
+                $data['telefono']            ?? null,
+                $data['tipo_suscripcion']    ?? 'Mensual',
+                floatval($data['precio_suscripcion'] ?? 0),
+                $data['fecha_inicio']        ?? null,
+                $data['fecha_vencimiento']   ?? null,
+                $data['estatus']             ?? 'Activo',
+                $data['notas']               ?? null,
+                intval($id),
+                intval($data['empresa_id']   ?? 2),
+            ]);
+
+            echo json_encode(['success' => true, 'message' => 'Cliente actualizado']);
+        } catch (Exception $e) {
+            error_log("Error updateClienteSymbiot: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public static function deleteClienteSymbiot($id) {
+        AuthController::requireAuth();
+        try {
+            $db   = Database::getConnection();
+            // Desasociar sensores antes de eliminar
+            $db->prepare("UPDATE sensores SET cliente_id = NULL WHERE cliente_id = ?")->execute([intval($id)]);
+            $db->prepare("DELETE FROM clientes_symbiot WHERE id = ?")->execute([intval($id)]);
+            echo json_encode(['success' => true, 'message' => 'Cliente eliminado']);
+        } catch (Exception $e) {
+            error_log("Error deleteClienteSymbiot: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }

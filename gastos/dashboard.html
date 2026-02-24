@@ -281,6 +281,49 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Symbiot Technologies Specific Indicators (Hidden by default) -->
+                            <div id="symbiotSpecificIndicators" style="display: none;">
+                                <hr class="my-3">
+                                <div class="row text-center">
+                                    <div class="col-md-2">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-success" id="symSensoresActivos">0</div>
+                                            <div class="stat-label">Sensores Activos</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-info" id="symPaisMX">0</div>
+                                            <div class="stat-label">México</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-info" id="symPaisCL">0</div>
+                                            <div class="stat-label">Chile</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-success" id="symEncendidos">0</div>
+                                            <div class="stat-label">Encendidos / Mes</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-danger" id="symFueraLinea">0</div>
+                                            <div class="stat-label">Fuera de Línea</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-item">
+                                            <div class="stat-number text-warning" id="symFabricacion">0</div>
+                                            <div class="stat-label">En Fabricación</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -564,6 +607,389 @@
                 </div>
             </div>
 
+            <!-- ===================================================== -->
+            <!-- Symbiot Technologies Specific Widgets (Hidden by default) -->
+            <!-- ===================================================== -->
+            <div id="symbiotWidgets" style="display: none;">
+
+                <!-- Widget 1: Sensores Instalados -->
+                <div class="row mb-4">
+                    <div class="col-xl-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="text-white mb-0">
+                                    <i class="fas fa-microchip me-2"></i>Sensores Instalados
+                                </h6>
+                                <span class="badge bg-primary badge-stat" id="symTotalSensores">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center mb-3">
+                                    <div class="col-4">
+                                        <div class="stat-number text-success" id="symActivosCard">0</div>
+                                        <div class="stat-label">Activos</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-number text-danger" id="symInactivosCard">0</div>
+                                        <div class="stat-label">Fuera de línea</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-number text-warning" id="symFabricacionCard">0</div>
+                                        <div class="stat-label">En fabricación</div>
+                                    </div>
+                                </div>
+                                <hr class="my-2">
+                                <div class="row text-center">
+                                    <div class="col-12 mb-1">
+                                        <small class="text-muted">Distribución Geográfica</small>
+                                    </div>
+                                    <div id="symGeoDistribution" class="col-12 d-flex flex-wrap justify-content-center gap-2">
+                                        <!-- Se llena dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h6 class="text-white mb-0">
+                                    <i class="fas fa-calendar-alt me-2"></i>Movimientos del Mes
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="stat-number text-success" id="symEncendidosMes">0</div>
+                                        <div class="stat-label">Encendidos</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-number text-danger" id="symDesconectadosMes">0</div>
+                                        <div class="stat-label">Desconectados</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-number text-warning" id="symNuevosPedidosMes">0</div>
+                                        <div class="stat-label">En Fabricación</div>
+                                    </div>
+                                </div>
+                                <hr class="my-3">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="stat-number text-info" id="symClientesActivos">0</div>
+                                        <div class="stat-label">Clientes Activos</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-number text-secondary" id="symClientesTotal">0</div>
+                                        <div class="stat-label">Clientes Total</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Widget 2: Alertas de Suscripción -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="text-white mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Alertas de Suscripción
+                                    <span class="badge bg-warning ms-2" id="symAlertasCount">0</span>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="symAlertasEmpty" class="text-center py-3" style="display: none;">
+                                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                                    <p class="text-muted mb-0">Todas las suscripciones están al corriente</p>
+                                </div>
+                                <div class="table-responsive" id="symAlertasTable" style="display: none;">
+                                    <table class="table table-dark table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Cliente</th>
+                                                <th>Empresa</th>
+                                                <th>País</th>
+                                                <th>Suscripción</th>
+                                                <th>Vence</th>
+                                                <th class="text-center">Días</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="symAlertasBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Widget 3: Gestión de Sensores -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="text-white mb-0">
+                                    <i class="fas fa-cogs me-2"></i>Gestión de Sensores y Clientes
+                                </h6>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="refreshSymbiotData()">
+                                        <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Tabs -->
+                                <ul class="nav nav-tabs mb-3" id="symbiotTabs">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" data-bs-toggle="tab" href="#symTabSensores">
+                                            <i class="fas fa-microchip me-1"></i>Sensores
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" data-bs-toggle="tab" href="#symTabClientes">
+                                            <i class="fas fa-handshake me-1"></i>Clientes
+                                        </a>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content">
+                                    <!-- Tab: Lista de Sensores -->
+                                    <div class="tab-pane fade show active" id="symTabSensores">
+                                        <!-- Filtros -->
+                                        <div class="row mb-3 g-2">
+                                            <div class="col-md-3">
+                                                <select class="form-select form-select-sm" id="symFilterEstado" onchange="loadSensoresList()">
+                                                    <option value="">Todos los estados</option>
+                                                    <option value="Activo">Activo</option>
+                                                    <option value="Inactivo">Inactivo</option>
+                                                    <option value="Fabricacion">En Fabricación</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <select class="form-select form-select-sm" id="symFilterPais" onchange="loadSensoresList()">
+                                                    <option value="">Todos los países</option>
+                                                    <option value="México">México</option>
+                                                    <option value="Chile">Chile</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <select class="form-select form-select-sm" id="symFilterCliente" onchange="loadSensoresList()">
+                                                    <option value="">Todos los clientes</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 text-end">
+                                                <button type="button" class="btn btn-sm btn-success" onclick="openSensorModal()">
+                                                    <i class="fas fa-plus me-1"></i>Nuevo Sensor
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <!-- Tabla -->
+                                        <div class="table-responsive">
+                                            <table class="table table-dark table-hover mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Tipo</th>
+                                                        <th>País / Ciudad</th>
+                                                        <th>Cliente</th>
+                                                        <th class="text-center">Estado</th>
+                                                        <th>Último contacto</th>
+                                                        <th class="text-center">Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="symSensoresBody">
+                                                    <tr><td colspan="7" class="text-center text-muted py-3">Cargando...</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tab: Lista de Clientes -->
+                                    <div class="tab-pane fade" id="symTabClientes">
+                                        <div class="row mb-3 g-2">
+                                            <div class="col-md-3">
+                                                <select class="form-select form-select-sm" id="symFilterClienteEstatus" onchange="loadClientesList()">
+                                                    <option value="">Todos</option>
+                                                    <option value="Activo">Activos</option>
+                                                    <option value="Baja">Bajas</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6"></div>
+                                            <div class="col-md-3 text-end">
+                                                <button type="button" class="btn btn-sm btn-success" onclick="openClienteModal()">
+                                                    <i class="fas fa-plus me-1"></i>Nuevo Cliente
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-dark table-hover mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Empresa</th>
+                                                        <th>País</th>
+                                                        <th class="text-center">Suscripción</th>
+                                                        <th class="text-center">Precio</th>
+                                                        <th>Vencimiento</th>
+                                                        <th class="text-center">Estatus</th>
+                                                        <th class="text-center">Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="symClientesBody">
+                                                    <tr><td colspan="8" class="text-center text-muted py-3">Cargando...</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /symbiotWidgets -->
+
+            <!-- Modal: Nuevo/Editar Sensor -->
+            <div class="modal fade" id="sensorModal" tabindex="-1" aria-labelledby="sensorModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content bg-dark text-white">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="sensorModalLabel">Nuevo Sensor</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="sensorId">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="sensorNombre" placeholder="Sensor-MX-001">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo de Sensor</label>
+                                    <input type="text" class="form-control" id="sensorTipo" placeholder="Temperatura/Humedad">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Modelo</label>
+                                    <input type="text" class="form-control" id="sensorModelo" placeholder="SYM-TH-100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Estado</label>
+                                    <select class="form-select" id="sensorEstado">
+                                        <option value="Fabricacion">En Fabricación</option>
+                                        <option value="Activo">Activo</option>
+                                        <option value="Inactivo">Inactivo</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">País</label>
+                                    <select class="form-select" id="sensorPais">
+                                        <option value="">— Sin asignar —</option>
+                                        <option value="México">México</option>
+                                        <option value="Chile">Chile</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Ciudad</label>
+                                    <input type="text" class="form-control" id="sensorCiudad" placeholder="CDMX">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Cliente</label>
+                                    <select class="form-select" id="sensorClienteId">
+                                        <option value="">— Sin cliente —</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Fecha de Instalación</label>
+                                    <input type="date" class="form-control" id="sensorFechaInstalacion">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Notas</label>
+                                    <textarea class="form-control" id="sensorNotas" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" onclick="saveSensor()">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Nuevo/Editar Cliente -->
+            <div class="modal fade" id="clienteSymbiotModal" tabindex="-1" aria-labelledby="clienteSymbiotModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content bg-dark text-white">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="clienteSymbiotModalLabel">Nuevo Cliente</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="clienteSymbiotId">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="clienteNombre" placeholder="Carlos Mendoza">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Empresa</label>
+                                    <input type="text" class="form-control" id="clienteEmpresa" placeholder="Agro-MX S.A.">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">País</label>
+                                    <select class="form-select" id="clientePais">
+                                        <option value="">— Seleccionar —</option>
+                                        <option value="México">México</option>
+                                        <option value="Chile">Chile</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="clienteEmail">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" id="clienteTelefono">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo de Suscripción</label>
+                                    <select class="form-select" id="clienteTipoSuscripcion">
+                                        <option value="Mensual">Mensual</option>
+                                        <option value="Anual">Anual</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Precio Suscripción ($)</label>
+                                    <input type="number" class="form-control" id="clientePrecio" step="0.01" placeholder="1200.00">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Estatus</label>
+                                    <select class="form-select" id="clienteEstatus">
+                                        <option value="Activo">Activo</option>
+                                        <option value="Baja">Baja</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Fecha de Inicio</label>
+                                    <input type="date" class="form-control" id="clienteFechaInicio">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Fecha de Vencimiento</label>
+                                    <input type="date" class="form-control" id="clienteFechaVencimiento">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Notas</label>
+                                    <textarea class="form-control" id="clienteNotas" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" onclick="saveClienteSymbiot()">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Transactions Widget -->
             <div class="row mb-4">
                 <div class="col-12">
@@ -811,6 +1237,7 @@
     <script src="js/dashboard-modals.js?v=3.4.0"></script>         <!-- v3.4.0: Homologar formas de pago + scroll preserve -->
     <script src="js/dashboard-students.js?v=3.4.0"></script>       <!-- v3.4.0: Fix UTC desfase en pagos y fecha inscripción -->
     <script src="js/dashboard-horarios.js?v=1.0.0"></script>       <!-- v1.0.0: Pestaña Horarios Disponibles por salón -->
+    <script src="js/dashboard-symbiot.js?v=1.0.0"></script>        <!-- v1.0.0: Widgets Symbiot Technologies IoT -->
     <script src="js/user-permissions.js?v=1.2.0"></script>        <!-- v1.1.0: Permisos por página y navegación -->
     <script>if (typeof window.checkPageAccess === 'function') window.checkPageAccess();</script>
     <script src="js/dashboard-init.js?v=3.4.0"></script>           <!-- v3.4.0: Scroll preserve en visibility change -->

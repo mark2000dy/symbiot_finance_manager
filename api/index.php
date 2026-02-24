@@ -259,6 +259,45 @@ try {
     }
 
     // ============================================================
+    // RUTAS DE SYMBIOT TECHNOLOGIES — SENSORES Y CLIENTES
+    // ============================================================
+
+    if ($requestUri === '/dashboard/sensores' && $requestMethod === 'GET') {
+        TransaccionesController::getDashboardSensores();
+        exit;
+    }
+
+    if ($requestUri === '/sensores' && $requestMethod === 'GET') {
+        TransaccionesController::getSensores();
+        exit;
+    }
+
+    if ($requestUri === '/sensores' && $requestMethod === 'POST') {
+        TransaccionesController::createSensor();
+        exit;
+    }
+
+    if (preg_match('#^/sensores/(\d+)$#', $requestUri, $m)) {
+        if ($requestMethod === 'PUT') { TransaccionesController::updateSensor($m[1]); exit; }
+        if ($requestMethod === 'DELETE') { TransaccionesController::deleteSensor($m[1]); exit; }
+    }
+
+    if ($requestUri === '/clientes-symbiot' && $requestMethod === 'GET') {
+        TransaccionesController::getClientesSymbiot();
+        exit;
+    }
+
+    if ($requestUri === '/clientes-symbiot' && $requestMethod === 'POST') {
+        TransaccionesController::createClienteSymbiot();
+        exit;
+    }
+
+    if (preg_match('#^/clientes-symbiot/(\d+)$#', $requestUri, $m)) {
+        if ($requestMethod === 'PUT') { TransaccionesController::updateClienteSymbiot($m[1]); exit; }
+        if ($requestMethod === 'DELETE') { TransaccionesController::deleteClienteSymbiot($m[1]); exit; }
+    }
+
+    // ============================================================
     // RUTAS DE ALUMNOS - HISTORIAL
     // ============================================================
     if (preg_match('#^/alumnos/(.+)/historial-pagos$#', $requestUri, $matches)) {

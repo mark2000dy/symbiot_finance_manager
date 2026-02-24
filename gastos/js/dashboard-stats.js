@@ -653,39 +653,46 @@ async function handleCompanyChange() {
         const rockstarWidgets = document.getElementById('rockstarSkullWidgets');
         const rockstarMetrics = document.getElementById('rockstarSpecificIndicators');
         
+        const symbiotWidgets  = document.getElementById('symbiotWidgets');
+        const symbiotMetrics  = document.getElementById('symbiotSpecificIndicators');
+
         if (selectedCompany === '1') {
             // ROCKSTAR SKULL seleccionada
             console.log('🎸 Mostrando widgets de RockstarSkull');
 
-            // Mostrar campo "Alumnos Activos"
             const companyStudentsContainer = document.querySelector('#companyStudents').closest('.col-md-3');
-            if (companyStudentsContainer) {
-                companyStudentsContainer.style.display = 'block';
-            }
-            
-            if (rockstarWidgets) {
-                rockstarWidgets.style.display = 'block';
-            }
-            if (rockstarMetrics) {
-                rockstarMetrics.style.display = 'block';
-            }
-        } else {
-            // OTRAS EMPRESAS O TODAS
-            console.log('🏢 Ocultando widgets específicos de RockstarSkull');
+            if (companyStudentsContainer) companyStudentsContainer.style.display = 'block';
+
+            if (rockstarWidgets) rockstarWidgets.style.display = 'block';
+            if (rockstarMetrics) rockstarMetrics.style.display = 'block';
+            if (symbiotWidgets)  symbiotWidgets.style.display  = 'none';
+            if (symbiotMetrics)  symbiotMetrics.style.display  = 'none';
+
+        } else if (selectedCompany === '2') {
+            // SYMBIOT TECHNOLOGIES seleccionada
+            console.log('🌐 Mostrando widgets de Symbiot Technologies');
 
             const companyStudentsContainer = document.querySelector('#companyStudents').closest('.col-md-3');
-            if (companyStudentsContainer) {
-                companyStudentsContainer.style.display = 'none';
-            }
-            
-            if (rockstarWidgets) {
-                rockstarWidgets.style.display = 'none';
-            }
-            if (rockstarMetrics) {
-                rockstarMetrics.style.display = 'none';
-            }
-            
-            // RESETEAR métricas específicas a 0
+            if (companyStudentsContainer) companyStudentsContainer.style.display = 'none';
+
+            if (rockstarWidgets) rockstarWidgets.style.display = 'none';
+            if (rockstarMetrics) rockstarMetrics.style.display = 'none';
+            if (symbiotWidgets)  symbiotWidgets.style.display  = 'block';
+            if (symbiotMetrics)  symbiotMetrics.style.display  = 'block';
+
+        } else {
+            // TODAS LAS EMPRESAS
+            console.log('🏢 Vista general — ocultando widgets específicos');
+
+            const companyStudentsContainer = document.querySelector('#companyStudents').closest('.col-md-3');
+            if (companyStudentsContainer) companyStudentsContainer.style.display = 'none';
+
+            if (rockstarWidgets) rockstarWidgets.style.display = 'none';
+            if (rockstarMetrics) rockstarMetrics.style.display = 'none';
+            if (symbiotWidgets)  symbiotWidgets.style.display  = 'none';
+            if (symbiotMetrics)  symbiotMetrics.style.display  = 'none';
+
+            // Resetear métricas Rockstar
             ['groupClasses', 'individualClasses', 'currentStudents', 'pendingStudents', 'companyStudents', 'inversionMKT', 'nuevosAlumnosMes'].forEach(id => {
                 const element = document.getElementById(id);
                 if (element) element.textContent = '0';
@@ -701,21 +708,34 @@ async function handleCompanyChange() {
             console.log('✅ Transacciones recientes recargadas con filtro de empresa');
         }
 
-        // CRÍTICO: Cargar datos específicos si es RockstarSkull (SIN verificaciones como el original)
+        // Cargar datos específicos según empresa seleccionada
         if (selectedCompany === '1') {
             await loadRockstarSkullDataReal();
-            
+
             if (typeof loadStudentsList === 'function') {
                 await loadStudentsList(1);
                 console.log('✅ Lista de alumnos cargada después de cambio de empresa');
             }
-            
-            // Refrescar alertas de pagos (COMO EN EL ORIGINAL - SIN typeof)
+
             if (window.refreshPaymentAlerts) {
                 refreshPaymentAlerts();
             }
 
             await updatePaymentMetrics();
+
+        } else if (selectedCompany === '2') {
+            if (typeof loadSymbiotDataReal === 'function') {
+                await loadSymbiotDataReal();
+            }
+            if (typeof loadSensoresList === 'function') {
+                await loadSensoresList();
+            }
+            if (typeof loadClientesList === 'function') {
+                await loadClientesList();
+            }
+            if (typeof _populateClienteSelect === 'function') {
+                await _populateClienteSelect('symFilterCliente');
+            }
         }
         
         console.log('✅ Cambio de empresa completado');
