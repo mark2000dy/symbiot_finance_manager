@@ -113,12 +113,12 @@
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.3; }
         }
-        /* ── ALTURAS DE GRÁFICAS ───────────────────────────────── */
-        .chart-accel     { height: 300px; }
-        .chart-secondary { height: 200px; }
+        /* ── ALTURAS DE GRÁFICAS (wrapper, patrón Chart.js recomendado) ── */
+        .chart-wrap-accel     { position: relative; height: 220px; }
+        .chart-wrap-secondary { position: relative; height: 180px; }
         @media (max-width: 767.98px) {
-            .chart-accel     { height: 300px; }
-            .chart-secondary { height: 160px; }
+            .chart-wrap-accel     { height: 300px; }
+            .chart-wrap-secondary { height: 160px; }
         }
     </style>
 </head>
@@ -400,7 +400,9 @@
                 <div class="col-12 mb-3">
                     <div class="card">
                         <div class="card-body">
-                            <canvas id="accelChart" class="chart-accel"></canvas>
+                            <div class="chart-wrap-accel">
+                                <canvas id="accelChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -471,7 +473,9 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <canvas id="tempChart" class="chart-secondary"></canvas>
+                            <div class="chart-wrap-secondary">
+                                <canvas id="tempChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -485,7 +489,9 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <canvas id="voltChart" class="chart-secondary"></canvas>
+                            <div class="chart-wrap-secondary">
+                                <canvas id="voltChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
