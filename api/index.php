@@ -259,6 +259,67 @@ try {
     }
 
     // ============================================================
+    // RUTAS DE COMPATIBILIDAD FIRMWARE — URLs estilo Azure
+    // El firmware construye: API_BASE_URL + "Listen?id=XXXX01&code=..."
+    // Estas rutas mapean ese formato a los métodos internos.
+    // ============================================================
+
+    if ($requestUri === '/Echo' && $requestMethod === 'GET') {
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'ok', 'server' => 'Symbiot API']);
+        exit;
+    }
+
+    if ($requestUri === '/Listen' && $requestMethod === 'POST') {
+        $deviceId = $_GET['id'] ?? '';
+        if ($deviceId === '') { http_response_code(400); echo json_encode(['Command' => 'ERROR', 'Message' => 'Missing id']); exit; }
+        TransaccionesController::sensorHeartbeat($deviceId);
+        exit;
+    }
+
+    if ($requestUri === '/GetConfiguration' && $requestMethod === 'GET') {
+        $deviceId = $_GET['id'] ?? '';
+        if ($deviceId === '') { http_response_code(400); echo json_encode(['configPending' => false]); exit; }
+        TransaccionesController::getSensorConfig($deviceId);
+        exit;
+    }
+
+    if ($requestUri === '/GetFirmwareUpdate' && $requestMethod === 'GET') {
+        $deviceId = $_GET['id'] ?? '';
+        if ($deviceId === '') { http_response_code(400); echo json_encode(['updateAvailable' => false]); exit; }
+        TransaccionesController::getSensorFirmware($deviceId);
+        exit;
+    }
+
+    if ($requestUri === '/ReportFirmwareStatus' && $requestMethod === 'POST') {
+        // Acuse de recibo — el device reporta resultado de OTA
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
+    if ($requestUri === '/ValidateByName' && $requestMethod === 'POST') {
+        // Usado en modo setup BLE — valida device_code + token y devuelve id numérico
+        if (!TransaccionesController::verifyCentralKey()) exit;
+        $data     = json_decode(file_get_contents('php://input'), true) ?? [];
+        $name     = trim($data['Name'] ?? '');
+        $token    = trim($_SERVER['HTTP_TOKEN'] ?? '');
+        if ($name === '') { http_response_code(400); echo json_encode(['error' => 'Missing Name']); exit; }
+        $pdo  = getConnection();
+        $stmt = $pdo->prepare(
+            "SELECT id, nombre, device_code FROM sensores
+              WHERE (device_code = ? OR device_code LIKE ?) AND token = ?
+              LIMIT 1"
+        );
+        $stmt->execute([$name, $name . '.%', $token]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) { http_response_code(401); echo json_encode(['error' => 'Invalid device']); exit; }
+        header('Content-Type: application/json');
+        echo json_encode(['id' => (string)$row['id'], 'Name' => $row['device_code']]);
+        exit;
+    }
+
+    // ============================================================
     // RUTAS DE SYMBIOT TECHNOLOGIES — SENSORES Y CLIENTES
     // ============================================================
 

@@ -333,18 +333,98 @@
             </div>
 
             <!-- ── 3.5 TELEMETRÍA — GRÁFICA ACELERÓMETRO ──────────── -->
-            <div class="row mb-4 d-none" id="chartRow">
-                <div class="col-12">
+            <div class="row mb-3 d-none" id="chartRow">
+                <!-- controles -->
+                <div class="col-12 mb-2">
                     <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-wave-square me-2 text-info"></i>Telemetría — Acelerómetro (últimas muestras)
-                            </h5>
-                            <span class="badge bg-secondary" id="chartStatus">Cargando…</span>
+                        <div class="card-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-wave-square me-2 text-info"></i>Acelerómetro
+                                        <span class="badge bg-secondary ms-2" id="chartStatus">Cargando…</span>
+                                    </h5>
+                                    <small class="text-muted">Últimas <span id="readingCount">0</span> muestras — haz clic en la leyenda para ocultar ejes</small>
+                                </div>
+                                <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-info active" id="btnRawValues">
+                                            <i class="fas fa-hashtag me-1"></i>Valores Raw
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info" id="btnGValues">
+                                            <i class="fas fa-chart-line me-1"></i>Valores en G
+                                        </button>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-success ms-2" onclick="loadChart()">
+                                        <i class="fas fa-sync-alt me-1"></i>Actualizar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+                <!-- gráfica -->
+                <div class="col-12 mb-3">
+                    <div class="card">
                         <div class="card-body">
                             <canvas id="accelChart" height="80"></canvas>
                         </div>
+                    </div>
+                </div>
+                <!-- stats por eje -->
+                <div class="col-md-4 mb-2">
+                    <div class="card border-danger h-100">
+                        <div class="card-header bg-danger text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-arrow-right me-1"></i>Eje X</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <h4 class="text-danger mb-0"><span id="currentX">--</span> <small class="unit-label fs-6">bits</small></h4>
+                            <small class="text-muted">
+                                Min: <span id="minX">--</span> &nbsp;|&nbsp;
+                                Max: <span id="maxX">--</span> &nbsp;|&nbsp;
+                                Avg: <span id="avgX">--</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="card border-success h-100">
+                        <div class="card-header bg-success text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-arrow-up me-1"></i>Eje Y</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <h4 class="text-success mb-0"><span id="currentY">--</span> <small class="unit-label fs-6">bits</small></h4>
+                            <small class="text-muted">
+                                Min: <span id="minY">--</span> &nbsp;|&nbsp;
+                                Max: <span id="maxY">--</span> &nbsp;|&nbsp;
+                                Avg: <span id="avgY">--</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <div class="card border-info h-100">
+                        <div class="card-header bg-info text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-arrows-alt-v me-1"></i>Eje Z</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <h4 class="text-info mb-0"><span id="currentZ">--</span> <small class="unit-label fs-6">bits</small></h4>
+                            <small class="text-muted">
+                                Min: <span id="minZ">--</span> &nbsp;|&nbsp;
+                                Max: <span id="maxZ">--</span> &nbsp;|&nbsp;
+                                Avg: <span id="avgZ">--</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <!-- factores de calibración -->
+                <div class="col-12">
+                    <div class="alert alert-info py-2 mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Factores de calibración:</strong>
+                        X: <span id="calLabelX">--</span> &nbsp;|&nbsp;
+                        Y: <span id="calLabelY">--</span> &nbsp;|&nbsp;
+                        Z: <span id="calLabelZ">--</span>
                     </div>
                 </div>
             </div>
@@ -988,8 +1068,68 @@
         };
 
         // ── Gráfica de acelerómetro ───────────────────────────────
+        var chartDisplayMode = 'raw'; // 'raw' | 'g'
+        var chartRawData     = [];
+        var chartCalX = 3.814697266e-6;
+        var chartCalY = 3.814697266e-6;
+        var chartCalZ = 3.814697266e-6;
+
+        function chartApplyMode() {
+            if (!accelChart || chartRawData.length === 0) return;
+            var isG   = chartDisplayMode === 'g';
+            var unit  = isG ? 'g' : 'bits';
+            var fmt   = isG
+                ? function (v) { return v !== null ? (v).toFixed(6) : null; }
+                : function (v) { return v !== null ? Math.round(v).toLocaleString() : null; };
+
+            var rX = chartRawData.map(function (r) { return r.eje_x !== null ? parseFloat(r.eje_x) : null; });
+            var rY = chartRawData.map(function (r) { return r.eje_y !== null ? parseFloat(r.eje_y) : null; });
+            var rZ = chartRawData.map(function (r) { return r.eje_z !== null ? parseFloat(r.eje_z) : null; });
+
+            var dX = isG ? rX.map(function (v) { return v !== null ? v * chartCalX : null; }) : rX;
+            var dY = isG ? rY.map(function (v) { return v !== null ? v * chartCalY : null; }) : rY;
+            var dZ = isG ? rZ.map(function (v) { return v !== null ? v * chartCalZ : null; }) : rZ;
+
+            accelChart.data.datasets[0].data = dX;
+            accelChart.data.datasets[1].data = dY;
+            accelChart.data.datasets[2].data = dZ;
+            accelChart.options.scales.y.title.text = 'Aceleración (' + unit + ')';
+            accelChart.update();
+
+            // Stats
+            document.querySelectorAll('.unit-label').forEach(function (el) { el.textContent = unit; });
+            function stats(arr, ids) {
+                var valid = arr.filter(function (v) { return v !== null; });
+                if (!valid.length) return;
+                var cur = valid[valid.length - 1];
+                var mn  = Math.min.apply(null, valid);
+                var mx  = Math.max.apply(null, valid);
+                var avg = valid.reduce(function (a, b) { return a + b; }, 0) / valid.length;
+                el(ids[0]).textContent = fmt(cur);
+                el(ids[1]).textContent = fmt(mn);
+                el(ids[2]).textContent = fmt(mx);
+                el(ids[3]).textContent = fmt(avg);
+            }
+            stats(dX, ['currentX','minX','maxX','avgX']);
+            stats(dY, ['currentY','minY','maxY','avgY']);
+            stats(dZ, ['currentZ','minZ','maxZ','avgZ']);
+        }
+
+        document.getElementById('btnRawValues').addEventListener('click', function () {
+            chartDisplayMode = 'raw';
+            this.classList.add('active');
+            el('btnGValues').classList.remove('active');
+            chartApplyMode();
+        });
+        document.getElementById('btnGValues').addEventListener('click', function () {
+            chartDisplayMode = 'g';
+            this.classList.add('active');
+            el('btnRawValues').classList.remove('active');
+            chartApplyMode();
+        });
+
         async function loadChart() {
-            var chartRow = el('chartRow');
+            var chartRow    = el('chartRow');
             var statusBadge = el('chartStatus');
 
             try {
@@ -999,27 +1139,36 @@
                     return;
                 }
 
-                var rows = result.data;
-                var labels = rows.map(function (r) {
+                chartRawData = result.data;
+                var rows     = chartRawData;
+                var labels   = rows.map(function (r) {
                     return new Date(r.recorded_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 });
-                var dX = rows.map(function (r) { return r.eje_x !== null ? parseFloat(r.eje_x) : null; });
-                var dY = rows.map(function (r) { return r.eje_y !== null ? parseFloat(r.eje_y) : null; });
-                var dZ = rows.map(function (r) { return r.eje_z !== null ? parseFloat(r.eje_z) : null; });
 
-                // Colores según tema
+                // Factores de calibración desde populatePage (sensor ya cargado)
+                if (sensorData && sensorData.factor_x) { chartCalX = parseFloat(sensorData.factor_x); }
+                if (sensorData && sensorData.factor_y) { chartCalY = parseFloat(sensorData.factor_y); }
+                if (sensorData && sensorData.factor_z) { chartCalZ = parseFloat(sensorData.factor_z); }
+
+                var calFmt = function (v) { return v.toExponential(9); };
+                if (el('calLabelX')) el('calLabelX').textContent = calFmt(chartCalX);
+                if (el('calLabelY')) el('calLabelY').textContent = calFmt(chartCalY);
+                if (el('calLabelZ')) el('calLabelZ').textContent = calFmt(chartCalZ);
+                if (el('readingCount')) el('readingCount').textContent = rows.length;
+
                 var textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#aaa';
                 var gridColor = 'rgba(255,255,255,0.05)';
 
+                if (accelChart) { accelChart.destroy(); accelChart = null; }
                 var ctx = el('accelChart').getContext('2d');
                 accelChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
                         datasets: [
-                            { label: 'Eje X', data: dX, borderColor: 'rgba(220,53,69,0.9)',   backgroundColor: 'rgba(220,53,69,0.1)',  borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true },
-                            { label: 'Eje Y', data: dY, borderColor: 'rgba(25,135,84,0.9)',   backgroundColor: 'rgba(25,135,84,0.1)',  borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true },
-                            { label: 'Eje Z', data: dZ, borderColor: 'rgba(13,202,240,0.9)',  backgroundColor: 'rgba(13,202,240,0.1)', borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true }
+                            { label: 'Eje X', data: [], borderColor: 'rgba(220,53,69,0.9)',  backgroundColor: 'rgba(220,53,69,0.1)',  borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true },
+                            { label: 'Eje Y', data: [], borderColor: 'rgba(25,135,84,0.9)',  backgroundColor: 'rgba(25,135,84,0.1)',  borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true },
+                            { label: 'Eje Z', data: [], borderColor: 'rgba(13,202,240,0.9)', backgroundColor: 'rgba(13,202,240,0.1)', borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true }
                         ]
                     },
                     options: {
@@ -1031,11 +1180,15 @@
                         },
                         scales: {
                             x: { ticks: { maxTicksLimit: 10, color: textColor }, grid: { color: gridColor } },
-                            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+                            y: {
+                                title: { display: true, text: 'Aceleración (bits)', color: textColor },
+                                ticks: { color: textColor }, grid: { color: gridColor }
+                            }
                         }
                     }
                 });
 
+                chartApplyMode();
                 if (chartRow) chartRow.classList.remove('d-none');
                 if (statusBadge) { statusBadge.className = 'badge bg-success'; statusBadge.textContent = rows.length + ' muestras'; }
 

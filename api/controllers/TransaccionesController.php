@@ -3336,12 +3336,14 @@ class TransaccionesController {
             $stmt = $pdo->prepare("SELECT $cols FROM sensores WHERE id = ?");
             $stmt->execute([intval($id)]);
         } else {
+            // Busca por device_id (UUID del SD card de configuraciones previas),
+            // device_code exacto o prefijo (ej. "XXXX01" → "XXXX01.A")
             $stmt = $pdo->prepare(
                 "SELECT $cols FROM sensores
-                  WHERE device_code = ? OR device_code LIKE ?
+                  WHERE device_id = ? OR device_code = ? OR device_code LIKE ?
                   ORDER BY id ASC LIMIT 1"
             );
-            $stmt->execute([$id, $id . '.%']);
+            $stmt->execute([$id, $id, $id . '.%']);
         }
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
@@ -3351,7 +3353,7 @@ class TransaccionesController {
      * Si DEVICE_CENTRAL_KEY no está definido en .env, el check se omite (dev sin config).
      * Retorna true si es válido; envía 401 y retorna false si no.
      */
-    private static function verifyCentralKey() {
+    public static function verifyCentralKey() {
         $expected = getEnvValue('DEVICE_CENTRAL_KEY');
         if ($expected === '') return true; // sin restricción si no está configurado
 
