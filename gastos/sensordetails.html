@@ -23,106 +23,97 @@
     <script>(function(){var t=localStorage.getItem('symbiot-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}());</script>
 
     <style>
-        /* Forzar colores con variables del proyecto (dark/light) */
-        body {
-            color: var(--text-primary);
-        }
+        body { color: var(--text-primary); }
         .card {
             background: var(--bg-card) !important;
             border: 1px solid var(--border-color) !important;
             color: var(--text-primary);
         }
         .card-header {
-            background: rgba(255, 255, 255, 0.05) !important;
+            background: rgba(255,255,255,0.05) !important;
             border-bottom: 1px solid var(--border-color) !important;
         }
-        .card-header h5 {
-            color: var(--text-primary);
-        }
-        .card-body {
-            color: var(--text-primary);
-        }
-        dt {
-            font-weight: 500;
-            color: var(--text-muted);
-        }
-        dd {
-            color: var(--text-primary);
-            margin-bottom: 0.4rem;
-        }
+        .card-header h5 { color: var(--text-primary); }
+        .card-body      { color: var(--text-primary); }
+        dt { font-weight: 500; color: var(--text-muted); }
+        dd { color: var(--text-primary); margin-bottom: 0.4rem; }
         code.field-value {
-            font-size: 0.8rem;
-            word-break: break-all;
-            background: rgba(255, 255, 255, 0.07);
+            font-size: 0.8rem; word-break: break-all;
+            background: rgba(255,255,255,0.07);
             color: var(--text-secondary);
-            padding: 0.15em 0.35em;
-            border-radius: 4px;
+            padding: 0.15em 0.35em; border-radius: 4px;
         }
-        .copy-btn {
-            padding: 0 0.35rem;
-            font-size: 0.75rem;
-            color: var(--text-muted) !important;
-        }
-        .placeholder-note {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-        }
+        .copy-btn  { padding: 0 0.35rem; font-size: 0.75rem; color: var(--text-muted) !important; }
+        .placeholder-note { font-size: 0.78rem; color: var(--text-muted); }
         .btn-control { min-width: 140px; }
         .sensor-header { padding: 2rem 0 1rem; }
-        /* Tema claro: ajustar card-header y code */
-        [data-theme="light"] .card-header {
-            background: rgba(0, 0, 0, 0.04) !important;
-        }
-        [data-theme="light"] code.field-value {
-            background: rgba(0, 0, 0, 0.06);
-            color: var(--text-secondary);
-        }
-        /* Alerta info homologada */
+        [data-theme="light"] .card-header { background: rgba(0,0,0,0.04) !important; }
+        [data-theme="light"] code.field-value { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
         .alert-info {
-            background: rgba(13, 202, 240, 0.1) !important;
-            border-color: rgba(13, 202, 240, 0.3) !important;
+            background: rgba(13,202,240,0.1) !important;
+            border-color: rgba(13,202,240,0.3) !important;
             color: var(--text-primary) !important;
+        }
+        /* Modal en tema oscuro */
+        .modal-content {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color);
+        }
+        .modal-header, .modal-footer {
+            border-color: var(--border-color) !important;
+        }
+        .form-control, .form-select {
+            background: rgba(255,255,255,0.07);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            border-color: rgba(13,202,240,0.5);
+            box-shadow: 0 0 0 0.2rem rgba(13,202,240,0.15);
+        }
+        [data-theme="light"] .form-control,
+        [data-theme="light"] .form-select {
+            background: #fff;
+            color: #212529;
+            border-color: #ced4da;
+        }
+        /* Indicador de conexión en tiempo real */
+        .live-dot {
+            display: inline-block; width: 8px; height: 8px;
+            border-radius: 50%; margin-right: 4px;
+            animation: pulse 2s infinite;
+        }
+        .live-dot.online  { background: #198754; }
+        .live-dot.offline { background: #dc3545; animation: none; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== NAVBAR (idéntica al dashboard) ===== -->
+    <!-- ===== NAVBAR ===== -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="dashboard.html">
                 <img class="logo-dark"  src="assets/images/Symbiot_logo_dark_horizon.png"  alt="SYMBIOT">
                 <img class="logo-light" src="assets/images/Symbiot_logo_clear_horizon.png" alt="SYMBIOT">
             </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Menú de navegación" title="Menú de navegación">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-label="Menú de navegación" title="Menú de navegación">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="dashboard.html">
-                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="gastos.html">
-                            <i class="fas fa-money-bill-wave me-1"></i>Gastos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="ingresos.html">
-                            <i class="fas fa-coins me-1"></i>Ingresos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="reportes.html">
-                            <i class="fas fa-chart-bar me-1"></i>Reportes
-                        </a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="gastos.html"><i class="fas fa-money-bill-wave me-1"></i>Gastos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="ingresos.html"><i class="fas fa-coins me-1"></i>Ingresos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="reportes.html"><i class="fas fa-chart-bar me-1"></i>Reportes</a></li>
                 </ul>
-
                 <ul class="navbar-nav">
                     <li class="nav-item d-flex align-items-center">
                         <button type="button" id="themeToggleBtn" class="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar tema">
@@ -135,13 +126,9 @@
                             <span id="userName">Usuario</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="configuracion.html">
-                                <i class="fas fa-cog me-2"></i>Configuración
-                            </a></li>
+                            <li><a class="dropdown-item" href="configuracion.html"><i class="fas fa-cog me-2"></i>Configuración</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="logout()">
-                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -159,7 +146,7 @@
         </div>
 
         <!-- ERROR STATE -->
-        <div id="pageError" style="display:none;">
+        <div id="pageError" class="d-none">
             <div class="alert alert-danger">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 <span id="pageErrorMsg">No se encontró el sensor.</span>
@@ -170,7 +157,7 @@
         </div>
 
         <!-- MAIN CONTENT -->
-        <div id="pageContent" style="display:none;">
+        <div id="pageContent" class="d-none">
 
             <!-- ── 1. HEADER ─────────────────────────────────────── -->
             <div class="row mb-4 sensor-header align-items-center">
@@ -184,13 +171,16 @@
                         <span id="sdTipoSensor">—</span>
                         <span class="mx-2">·</span>
                         <span id="sdUbicacion">—</span>
+                        <span class="mx-2">·</span>
+                        <span id="sdOnlineStatus"></span>
                     </div>
                 </div>
                 <div class="col-md-4 text-md-end mt-3 mt-md-0">
                     <button type="button" class="btn btn-primary me-1" id="btnEditar" onclick="abrirEdicion()">
                         <i class="fas fa-pencil-alt me-1"></i>Editar
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="window.history.length > 1 ? window.history.back() : window.location.href='dashboard.html'">
+                    <button type="button" class="btn btn-secondary"
+                            onclick="window.history.length > 1 ? window.history.back() : window.location.href='dashboard.html'">
                         <i class="fas fa-arrow-left me-1"></i>Volver
                     </button>
                 </div>
@@ -206,43 +196,46 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            <div class="alert alert-info mb-3 py-2">
-                                <i class="fas fa-info-circle me-1"></i>
-                                <small>Los comandos de control requieren integración directa con el dispositivo. Disponibles en próxima versión.</small>
-                            </div>
                             <div class="row">
                                 <div class="col-6 col-md-3 mb-2">
-                                    <button type="button" class="btn btn-info w-100 btn-control" disabled title="Próximamente">
+                                    <button type="button" class="btn btn-info w-100 btn-control"
+                                            id="btnModConfig" onclick="abrirConfig()">
                                         <i class="fas fa-sliders-h me-1"></i>Modificar Config
                                     </button>
                                 </div>
                                 <div class="col-6 col-md-3 mb-2">
-                                    <button type="button" class="btn btn-warning w-100 btn-control" disabled title="Próximamente">
+                                    <button type="button" class="btn btn-warning w-100 btn-control"
+                                            id="btnStandby" onclick="enviarComando('STANDBY')">
                                         <i class="fas fa-pause-circle me-1"></i>Modo StandBy
                                     </button>
                                 </div>
                                 <div class="col-6 col-md-3 mb-2">
-                                    <button type="button" class="btn btn-success w-100 btn-control" disabled title="Próximamente">
+                                    <button type="button" class="btn btn-success w-100 btn-control"
+                                            id="btnContinuar" onclick="enviarComando('CONTINUE')">
                                         <i class="fas fa-play-circle me-1"></i>Continuar
                                     </button>
                                 </div>
                                 <div class="col-6 col-md-3 mb-2">
-                                    <button type="button" class="btn btn-danger w-100 btn-control" disabled title="Próximamente">
+                                    <button type="button" class="btn btn-danger w-100 btn-control"
+                                            id="btnReiniciar" onclick="enviarComando('RESTART')">
                                         <i class="fas fa-sync-alt me-1"></i>Reiniciar
                                     </button>
                                 </div>
                             </div>
                             <div class="row mt-1">
                                 <div class="col-6 col-md-3 mb-2">
-                                    <button type="button" class="btn btn-secondary w-100 btn-control" disabled title="Próximamente">
+                                    <button type="button" class="btn btn-secondary w-100 btn-control"
+                                            id="btnSetup" onclick="enviarComando('SETUPMODE')">
                                         <i class="fas fa-cog me-1"></i>Modo Setup
                                     </button>
                                 </div>
                             </div>
+                            <div id="cmdAlert" class="mt-2 d-none"></div>
                             <div class="mt-2">
                                 <small class="text-muted">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    Estado actual: <strong id="sdModoOperacion">—</strong>
+                                    Modo actual: <strong id="sdModoOperacion">—</strong>
+                                    &nbsp;·&nbsp; Actualización automática cada 30 s
                                 </small>
                             </div>
                         </div>
@@ -264,46 +257,31 @@
                                 <dt class="col-sm-5">ID:</dt>
                                 <dd class="col-sm-7">
                                     <code class="field-value" id="sdDeviceId">—</code>
-                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdDeviceId')" title="Copiar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
+                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdDeviceId')" title="Copiar"><i class="fas fa-copy"></i></button>
                                 </dd>
-
                                 <dt class="col-sm-5">Dispositivo:</dt>
                                 <dd class="col-sm-7">
                                     <code class="field-value fw-bold" id="sdDeviceCode">—</code>
-                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdDeviceCode')" title="Copiar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
+                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdDeviceCode')" title="Copiar"><i class="fas fa-copy"></i></button>
                                 </dd>
-
                                 <dt class="col-sm-5">Token:</dt>
                                 <dd class="col-sm-7">
                                     <code class="field-value" id="sdToken">—</code>
-                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdToken')" title="Copiar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
+                                    <button type="button" class="btn btn-sm btn-link copy-btn" onclick="copyField('sdToken')" title="Copiar"><i class="fas fa-copy"></i></button>
                                 </dd>
-
                                 <dt class="col-sm-5">Tipo sensor:</dt>
                                 <dd class="col-sm-7" id="sdTipoSensorDl">—</dd>
-
                                 <dt class="col-sm-5">Estado:</dt>
                                 <dd class="col-sm-7" id="sdEstadoDl">—</dd>
-
                                 <dt class="col-sm-5">Ubicación:</dt>
                                 <dd class="col-sm-7" id="sdUbicacionDl">—</dd>
-
                                 <dt class="col-sm-5">Cliente:</dt>
                                 <dd class="col-sm-7" id="sdClienteDl">—</dd>
-
                                 <dt class="col-sm-5">Fecha Creación:</dt>
                                 <dd class="col-sm-7" id="sdFechaCreacion">—</dd>
-
                                 <dt class="col-sm-5">Última Actualización:</dt>
                                 <dd class="col-sm-7" id="sdUltimaActualizacion">—</dd>
-
-                                <dt class="col-sm-5">Última Conexión:</dt>
+                                <dt class="col-sm-5">Último Contacto:</dt>
                                 <dd class="col-sm-7" id="sdUltimaConexion">—</dd>
                             </dl>
                         </div>
@@ -318,36 +296,24 @@
                         </div>
                         <div class="card-body">
                             <dl class="row mb-0">
-                                <dt class="col-sm-5">Versión:</dt>
+                                <dt class="col-sm-5">Versión FW:</dt>
                                 <dd class="col-sm-7" id="sdVersion">—</dd>
-
                                 <dt class="col-sm-5">Licencia:</dt>
                                 <dd class="col-sm-7" id="sdLicencia">—</dd>
-
-                                <dt class="col-sm-5">Modo de Operación:</dt>
+                                <dt class="col-sm-5">Modo Operación:</dt>
                                 <dd class="col-sm-7" id="sdModoOperacionDl">—</dd>
-
                                 <dt class="col-sm-5">URL de API:</dt>
-                                <dd class="col-sm-7">
-                                    <span class="small text-break" id="sdApiUrl">—</span>
-                                </dd>
-
-                                <dt class="col-sm-5">Frecuencia (Hz):</dt>
+                                <dd class="col-sm-7"><span class="small text-break" id="sdApiUrl">—</span></dd>
+                                <dt class="col-sm-5">Frecuencia:</dt>
                                 <dd class="col-sm-7" id="sdFrecuencia">—</dd>
-
-                                <dt class="col-sm-5">Intervalo (min):</dt>
+                                <dt class="col-sm-5">Intervalo HB:</dt>
                                 <dd class="col-sm-7" id="sdIntervalo">—</dd>
-
                                 <dt class="col-sm-5">Conexión:</dt>
                                 <dd class="col-sm-7" id="sdConexion">—</dd>
-
                                 <dt class="col-sm-5">Fecha Instalación:</dt>
                                 <dd class="col-sm-7" id="sdFechaInstalacion">—</dd>
-
                                 <dt class="col-sm-5">Hora del sistema:</dt>
-                                <dd class="col-sm-7 text-muted">
-                                    <span class="placeholder-note">No disponible</span>
-                                </dd>
+                                <dd class="col-sm-7 text-muted"><span class="placeholder-note">Del device</span></dd>
                             </dl>
                         </div>
                     </div>
@@ -366,6 +332,23 @@
                 </div>
             </div>
 
+            <!-- ── 3.5 TELEMETRÍA — GRÁFICA ACELERÓMETRO ──────────── -->
+            <div class="row mb-4 d-none" id="chartRow">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-wave-square me-2 text-info"></i>Telemetría — Acelerómetro (últimas muestras)
+                            </h5>
+                            <span class="badge bg-secondary" id="chartStatus">Cargando…</span>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="accelChart" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ── 4. RED + ALMACENAMIENTO/GPS ─────────────────────── -->
             <div class="row mb-4">
 
@@ -376,35 +359,30 @@
                             <h5 class="mb-0"><i class="fas fa-wifi me-2"></i>Información de Red</h5>
                         </div>
                         <div class="card-body">
-                            <p class="placeholder-note mb-2">
-                                <i class="fas fa-clock me-1"></i>Los datos de red se obtienen directamente del dispositivo. Integración pendiente.
-                            </p>
-                            <h6 class="mt-3">WiFi</h6>
+                            <h6>WiFi</h6>
                             <dl class="row mb-0">
-                                <dt class="col-sm-5">Red del dispositivo:</dt>
+                                <dt class="col-sm-5">Tipo de conexión:</dt>
                                 <dd class="col-sm-7" id="sdRedDisp">—</dd>
-                                <dt class="col-sm-5">Nombre Red WiFi:</dt>
-                                <dd class="col-sm-7">—</dd>
-                                <dt class="col-sm-5">Estado WiFi:</dt>
-                                <dd class="col-sm-7">—</dd>
-                                <dt class="col-sm-5">IP DHCP WiFi:</dt>
-                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">SSID:</dt>
+                                <dd class="col-sm-7" id="sdWifiSSID">—</dd>
+                                <dt class="col-sm-5">Estado:</dt>
+                                <dd class="col-sm-7" id="sdWifiStatus">—</dd>
+                                <dt class="col-sm-5">IP del dispositivo:</dt>
+                                <dd class="col-sm-7" id="sdWifiIP">—</dd>
                             </dl>
                             <h6 class="mt-3">Ethernet</h6>
                             <dl class="row mb-0">
-                                <dt class="col-sm-5">Estado Ethernet:</dt>
-                                <dd class="col-sm-7">—</dd>
-                                <dt class="col-sm-5">IP DHCP Ethernet:</dt>
-                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Estado:</dt>
+                                <dd class="col-sm-7 placeholder-note">No disponible</dd>
+                                <dt class="col-sm-5">IP DHCP:</dt>
+                                <dd class="col-sm-7 placeholder-note">No disponible</dd>
                             </dl>
                             <h6 class="mt-3">SIM</h6>
                             <dl class="row mb-0">
-                                <dt class="col-sm-5">Operador SIM:</dt>
-                                <dd class="col-sm-7">—</dd>
-                                <dt class="col-sm-5">Red SIM:</dt>
-                                <dd class="col-sm-7">—</dd>
-                                <dt class="col-sm-5">Estado SIM:</dt>
-                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Operador:</dt>
+                                <dd class="col-sm-7 placeholder-note">No disponible</dd>
+                                <dt class="col-sm-5">Estado:</dt>
+                                <dd class="col-sm-7 placeholder-note">No disponible</dd>
                             </dl>
                         </div>
                     </div>
@@ -417,31 +395,26 @@
                             <h5 class="mb-0"><i class="fas fa-hdd me-2"></i>Almacenamiento y GPS</h5>
                         </div>
                         <div class="card-body">
-                            <p class="placeholder-note mb-2">
-                                <i class="fas fa-clock me-1"></i>Los datos de almacenamiento y GPS se obtienen del dispositivo. Integración pendiente.
-                            </p>
-                            <h6 class="mt-3">Almacenamiento SD</h6>
+                            <h6>Almacenamiento SD</h6>
                             <dl class="row mb-0">
                                 <dt class="col-sm-5">SD Usado:</dt>
-                                <dd class="col-sm-7">—</dd>
+                                <dd class="col-sm-7" id="sdStorageUsed">—</dd>
                                 <dt class="col-sm-5">SD Libre:</dt>
-                                <dd class="col-sm-7">—</dd>
+                                <dd class="col-sm-7" id="sdStorageFree">—</dd>
                             </dl>
                             <h6 class="mt-3">Almacenamiento Flash</h6>
                             <dl class="row mb-0">
                                 <dt class="col-sm-5">Flash Usado:</dt>
-                                <dd class="col-sm-7">—</dd>
+                                <dd class="col-sm-7 placeholder-note">No disponible</dd>
                                 <dt class="col-sm-5">Flash Libre:</dt>
-                                <dd class="col-sm-7">—</dd>
+                                <dd class="col-sm-7 placeholder-note">No disponible</dd>
                             </dl>
                             <h6 class="mt-3">GPS</h6>
                             <dl class="row mb-0">
-                                <dt class="col-sm-5">Latitud GPS:</dt>
-                                <dd class="col-sm-7">—</dd>
-                                <dt class="col-sm-5">Longitud GPS:</dt>
-                                <dd class="col-sm-7">—</dd>
-                                <dt class="col-sm-5">Indicador GPS:</dt>
-                                <dd class="col-sm-7">—</dd>
+                                <dt class="col-sm-5">Latitud:</dt>
+                                <dd class="col-sm-7 placeholder-note">No disponible</dd>
+                                <dt class="col-sm-5">Longitud:</dt>
+                                <dd class="col-sm-7 placeholder-note">No disponible</dd>
                             </dl>
                         </div>
                     </div>
@@ -453,7 +426,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0"><i class="fas fa-cloud-download-alt me-2"></i>Actualización de Firmware</h5>
+                            <h5 class="mb-0"><i class="fas fa-cloud-download-alt me-2"></i>Actualización de Firmware (OTA)</h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -463,25 +436,27 @@
                                         <dd class="col-sm-7">
                                             <span class="badge bg-primary" id="sdFwVersion">—</span>
                                         </dd>
-                                        <dt class="col-sm-5">Estado:</dt>
-                                        <dd class="col-sm-7 placeholder-note">No disponible</dd>
-                                        <dt class="col-sm-5">Última Actualización:</dt>
-                                        <dd class="col-sm-7 placeholder-note">No disponible</dd>
+                                        <dt class="col-sm-5">Estado OTA:</dt>
+                                        <dd class="col-sm-7" id="sdOtaStatus">Sin actualización pendiente</dd>
                                     </dl>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Nueva Versión de Firmware:</label>
+                                    <div class="mb-2">
+                                        <label class="form-label">Versión objetivo</label>
+                                        <input type="text" class="form-control" id="otaTargetVersion"
+                                               placeholder="ej: 2.4.004">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">URL del firmware (.bin)</label>
                                         <div class="input-group">
-                                            <input type="text" class="form-control" placeholder="ej: 2.3.019" disabled>
-                                            <button type="button" class="btn btn-warning" disabled title="Integración pendiente">
-                                                <i class="fas fa-cloud-upload-alt me-1"></i>Programar
+                                            <input type="url" class="form-control" id="otaFirmwareUrl"
+                                                   placeholder="https://...">
+                                            <button type="button" class="btn btn-warning" onclick="programarOTA()">
+                                                <i class="fas fa-cloud-upload-alt me-1"></i>Programar OTA
                                             </button>
                                         </div>
-                                        <small class="text-muted">
-                                            <i class="fas fa-info-circle me-1"></i>Integración de actualización de firmware pendiente
-                                        </small>
                                     </div>
+                                    <div id="otaAlert"></div>
                                 </div>
                             </div>
                         </div>
@@ -490,7 +465,7 @@
             </div>
 
             <!-- ── 6. NOTAS (condicional) ─────────────────────────── -->
-            <div class="row mb-4" id="sdNotasRow" style="display:none;">
+            <div class="row mb-4 d-none" id="sdNotasRow">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
@@ -506,15 +481,123 @@
         </div><!-- /pageContent -->
     </div><!-- /container-fluid -->
 
+    <!-- ===== MODAL: Configuración del Dispositivo ===== -->
+    <div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="configModalLabel">
+                        <i class="fas fa-sliders-h me-2 text-info"></i>Configuración del Dispositivo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Columna izquierda -->
+                        <div class="col-md-6">
+                            <h6 class="text-info mb-3"><i class="fas fa-microchip me-1"></i>Parámetros de Captura</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Frecuencia de muestreo (Hz)</label>
+                                <select class="form-select" id="cfgOpFreq">
+                                    <option value="10">10 Hz</option>
+                                    <option value="25">25 Hz</option>
+                                    <option value="50">50 Hz</option>
+                                    <option value="100">100 Hz</option>
+                                    <option value="250" selected>250 Hz</option>
+                                    <option value="500">500 Hz</option>
+                                    <option value="1000">1000 Hz</option>
+                                    <option value="2000">2000 Hz</option>
+                                    <option value="4000">4000 Hz</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Intervalo de archivo (min)</label>
+                                <input type="number" class="form-control" id="cfgFileInterval"
+                                       min="1" max="60" value="1">
+                                <div class="form-text">Cada cuántos minutos se cierra y sube un archivo de datos.</div>
+                            </div>
+                            <h6 class="text-info mb-3 mt-4"><i class="fas fa-ruler me-1"></i>Factores de Calibración</h6>
+                            <div class="mb-2">
+                                <label class="form-label">Factor X</label>
+                                <input type="text" class="form-control font-monospace" id="cfgFactorX"
+                                       placeholder="3.814697266E-06">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Factor Y</label>
+                                <input type="text" class="form-control font-monospace" id="cfgFactorY"
+                                       placeholder="3.814697266E-06">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Factor Z</label>
+                                <input type="text" class="form-control font-monospace" id="cfgFactorZ"
+                                       placeholder="3.814697266E-06">
+                            </div>
+                        </div>
+                        <!-- Columna derecha -->
+                        <div class="col-md-6">
+                            <h6 class="text-info mb-3"><i class="fas fa-wifi me-1"></i>Red</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de red</label>
+                                <select class="form-select" id="cfgNetworkType">
+                                    <option value="1">1 — WiFi</option>
+                                    <option value="2">2 — Ethernet</option>
+                                    <option value="3">3 — SIMCOM (4G)</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">SSID (WiFi)</label>
+                                <input type="text" class="form-control" id="cfgSSID"
+                                       placeholder="Nombre de la red">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Contraseña (WiFi)</label>
+                                <input type="password" class="form-control" id="cfgPassword"
+                                       placeholder="Dejar vacío para no cambiar">
+                            </div>
+                            <h6 class="text-info mb-3 mt-4"><i class="fas fa-network-wired me-1"></i>IP Estática (opcional)</h6>
+                            <div class="mb-2">
+                                <label class="form-label">IP</label>
+                                <input type="text" class="form-control font-monospace" id="cfgStaticIP"
+                                       placeholder="0.0.0.0">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Gateway</label>
+                                <input type="text" class="form-control font-monospace" id="cfgGateway"
+                                       placeholder="0.0.0.0">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">DNS 1</label>
+                                <input type="text" class="form-control font-monospace" id="cfgDNS1"
+                                       placeholder="8.8.8.8">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0 py-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <small>Solo se envían al dispositivo los campos que modifiques. La configuración se entregará
+                        en el próximo heartbeat (≤ 1 min).</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div id="cfgAlertMsg" class="me-auto small"></div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnGuardarConfig" onclick="guardarConfig()">
+                        <i class="fas fa-satellite-dish me-1"></i>Enviar al dispositivo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ===== FIN MODAL ===== -->
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Theme Toggle -->
     <script src="js/theme-toggle.js?v=1.0.1"></script>
-
-    <!-- API Client (debe cargarse primero) -->
+    <!-- API Client -->
     <script src="assets/js/api-client.js?v=3.1.3"></script>
-
     <!-- Core + Auth -->
     <script src="js/dashboard-core.js?v=3.4.0"></script>
     <script src="js/dashboard-auth.js?v=3.1.3"></script>
@@ -524,9 +607,14 @@
     (function () {
         'use strict';
 
-        // ── Helpers ──────────────────────────────────────────────────
+        // ── Estado global ────────────────────────────────────────
+        var sensorId   = null;
+        var sensorData = null;
+        var pollTimer  = null;
+        var accelChart = null;
 
-        function el(id) { return document.getElementById(id); }
+        // ── Helpers ──────────────────────────────────────────────
+        function el(id)  { return document.getElementById(id); }
 
         function setText(id, value) {
             var node = el(id);
@@ -540,29 +628,43 @@
 
         function fmtDate(str) {
             if (!str) return '—';
-            try {
-                return new Date(str).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'medium' });
-            } catch (e) { return str; }
+            try { return new Date(str).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'medium' }); }
+            catch (e) { return str; }
         }
 
         function fmtDateOnly(str) {
             if (!str) return '—';
-            try {
-                return new Date(str + 'T12:00:00').toLocaleDateString('es-MX', { dateStyle: 'medium' });
-            } catch (e) { return str; }
+            try { return new Date(str + 'T12:00:00').toLocaleDateString('es-MX', { dateStyle: 'medium' }); }
+            catch (e) { return str; }
+        }
+
+        function fmtKB(kb) {
+            if (kb === null || kb === undefined || kb === '') return '—';
+            var v = parseInt(kb);
+            if (isNaN(v)) return '—';
+            if (v >= 1048576) return (v / 1048576).toFixed(1) + ' GB';
+            if (v >= 1024)    return (v / 1024).toFixed(1) + ' MB';
+            return v + ' KB';
         }
 
         function estadoBadge(estado) {
             var map = {
-                'Activo':      '<span class="badge bg-success fs-6">Activo</span>',
-                'Inactivo':    '<span class="badge bg-danger fs-6">Fuera de línea</span>',
-                'Fabricacion': '<span class="badge bg-warning text-dark fs-6">Fabricación</span>'
+                'Activo':      '<span class="badge bg-success">Activo</span>',
+                'Inactivo':    '<span class="badge bg-danger">Fuera de línea</span>',
+                'Fabricacion': '<span class="badge bg-warning text-dark">Fabricación</span>'
             };
-            return map[estado] || '<span class="badge bg-secondary fs-6">' + (estado || '—') + '</span>';
+            return map[estado] || '<span class="badge bg-secondary">' + (estado || '—') + '</span>';
         }
 
-        // ── Clipboard ────────────────────────────────────────────────
+        function onlineHtml(fechaUltimoContacto) {
+            if (!fechaUltimoContacto) return '<span class="badge bg-secondary">Sin contacto</span>';
+            var diffSec = (Date.now() - new Date(fechaUltimoContacto).getTime()) / 1000;
+            if (diffSec < 120)  return '<span class="live-dot online"></span><span class="badge bg-success">En línea</span>';
+            if (diffSec < 600)  return '<span class="live-dot offline"></span><span class="badge bg-warning text-dark">Inactivo</span>';
+            return '<span class="live-dot offline"></span><span class="badge bg-danger">Fuera de línea</span>';
+        }
 
+        // ── Clipboard ────────────────────────────────────────────
         window.copyField = function (fieldId) {
             var node = el(fieldId);
             if (!node) return;
@@ -571,67 +673,43 @@
             navigator.clipboard.writeText(text).then(function () {
                 var btn = node.parentElement.querySelector('.copy-btn');
                 if (btn) {
-                    var original = btn.innerHTML;
+                    var orig = btn.innerHTML;
                     btn.innerHTML = '<i class="fas fa-check text-success"></i>';
-                    setTimeout(function () { btn.innerHTML = original; }, 1500);
+                    setTimeout(function () { btn.innerHTML = orig; }, 1500);
                 }
-            }).catch(function () {
-                alert('No se pudo copiar al portapapeles');
-            });
+            }).catch(function () { alert('No se pudo copiar al portapapeles'); });
         };
 
-        // ── Sección "Datos del Sensor" ────────────────────────────────
-
+        // ── Bloque "Datos del Sensor" ─────────────────────────────
         function buildDatosSensor(s) {
-            var esAcelerometro = s.tipo_sensor === 'Acelerómetro Inalámbrico';
-            var esTemperatura  = s.tipo_sensor === 'Temperatura Digital ESP01';
-            var tienesDatos    = esAcelerometro || esTemperatura;
-
-            if (!tienesDatos) {
+            var esAcel = (s.tipo_sensor === 'Acelerómetro Inalámbrico');
+            var esTemp = (s.tipo_sensor === 'Temperatura Digital ESP01');
+            if (!esAcel && !esTemp) {
                 return '<p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i>No aplica para este tipo de sensor.</p>';
             }
-
             var rows = '';
-
-            if (esAcelerometro) {
-                rows += row('Eje X:', s.eje_x);
-                rows += row('Eje Y:', s.eje_y);
-                rows += row('Eje Z:', s.eje_z);
+            if (esAcel) {
+                rows += drow('Eje X (raw):', s.eje_x);
+                rows += drow('Eje Y (raw):', s.eje_y);
+                rows += drow('Eje Z (raw):', s.eje_z);
             }
-
-            if (s.temperatura !== null && s.temperatura !== undefined) {
-                rows += row('Temperatura:', s.temperatura + ' °C');
-            } else {
-                rows += row('Temperatura:', null);
+            rows += drow('Temperatura:', s.temperatura !== null && s.temperatura !== undefined ? s.temperatura + ' °C' : null);
+            if (esAcel) {
+                rows += drow('Factor X:', s.factor_x !== null ? parseFloat(s.factor_x).toExponential(9) : null);
+                rows += drow('Factor Y:', s.factor_y !== null ? parseFloat(s.factor_y).toExponential(9) : null);
+                rows += drow('Factor Z:', s.factor_z !== null ? parseFloat(s.factor_z).toExponential(9) : null);
+                rows += drow('Batería (mV):', s.bateria_mv);
+                rows += drow('IP Dispositivo:', s.ip_wifi);
             }
-
-            if (esAcelerometro) {
-                rows += row('Factor X:', s.factor_x !== null ? parseFloat(s.factor_x).toExponential(9) : null);
-                rows += row('Factor Y:', s.factor_y !== null ? parseFloat(s.factor_y).toExponential(9) : null);
-                rows += row('Factor Z:', s.factor_z !== null ? parseFloat(s.factor_z).toExponential(9) : null);
-                rows += row('Batería (mV):', s.bateria_mv);
-                rows += row('Alimentación (mV):', s.alimentacion_mv);
-            }
-
             return '<dl class="row mb-0">' + rows + '</dl>';
         }
 
-        function row(label, value) {
-            var display = (value !== null && value !== undefined && value !== '') ? value : '—';
-            return '<dt class="col-sm-5">' + label + '</dt><dd class="col-sm-7">' + display + '</dd>';
+        function drow(label, value) {
+            var d = (value !== null && value !== undefined && value !== '') ? value : '—';
+            return '<dt class="col-sm-5">' + label + '</dt><dd class="col-sm-7">' + d + '</dd>';
         }
 
-        // ── Abrir modal de edición (pasando al dashboard) ─────────────
-
-        window.abrirEdicion = function () {
-            var params = new URLSearchParams(window.location.search);
-            var sensorId = params.get('id');
-            // Navegar al dashboard con un hash para que abra el modal de sensor
-            window.location.href = 'dashboard.html#edit-sensor-' + sensorId;
-        };
-
-        // ── Poblar página con datos del sensor ────────────────────────
-
+        // ── Poblar toda la página ─────────────────────────────────
         function populatePage(s) {
             document.title = 'Detalles — ' + (s.device_code || s.nombre) + ' — Symbiot';
 
@@ -641,107 +719,386 @@
             setText('sdTipoSensor', s.tipo_sensor || '—');
             var ub = [s.ubicacion_pais, s.ubicacion_ciudad].filter(Boolean).join(' / ');
             setText('sdUbicacion', ub || '—');
+            setHtml('sdOnlineStatus', onlineHtml(s.fecha_ultimo_contacto));
 
-            // Control del dispositivo
+            // Control
             setText('sdModoOperacion', s.modo_operacion || 'Normal');
 
             // Información General
-            setText('sdDeviceId',        s.device_id   || '');
-            setText('sdDeviceCode',      s.device_code || '');
-            setText('sdToken',           s.token       || '');
-            setText('sdTipoSensorDl',    s.tipo_sensor || '—');
-            setHtml('sdEstadoDl',        estadoBadge(s.estado));
-            setText('sdUbicacionDl',     ub || '—');
-            setText('sdClienteDl',       s.cliente_nombre || 'Sin asignar');
-            setText('sdFechaCreacion',   fmtDate(s.created_at));
-            setText('sdUltimaActualizacion', fmtDate(s.updated_at));
-            setText('sdUltimaConexion',  fmtDate(s.fecha_ultimo_contacto));
+            setText('sdDeviceId',           s.device_id   || '');
+            setText('sdDeviceCode',         s.device_code || '');
+            setText('sdToken',              s.token       || '');
+            setText('sdTipoSensorDl',       s.tipo_sensor || '—');
+            setHtml('sdEstadoDl',           estadoBadge(s.estado));
+            setText('sdUbicacionDl',        ub || '—');
+            setText('sdClienteDl',          s.cliente_nombre || 'Sin asignar');
+            setText('sdFechaCreacion',      fmtDate(s.created_at));
+            setText('sdUltimaActualizacion',fmtDate(s.updated_at));
+            setText('sdUltimaConexion',     fmtDate(s.fecha_ultimo_contacto));
 
-            // Información del Dispositivo
+            // Dispositivo
             setText('sdVersion',         s.version || '—');
             setText('sdLicencia',        s.licencia !== null && s.licencia !== undefined ? s.licencia : '—');
             setText('sdModoOperacionDl', s.modo_operacion || '—');
             setText('sdApiUrl',          s.api_url || '—');
-            setText('sdFrecuencia',      s.frecuencia !== null && s.frecuencia !== undefined ? s.frecuencia : '—');
-            setText('sdIntervalo',       s.intervalo_min !== null && s.intervalo_min !== undefined ? s.intervalo_min : '—');
+            setText('sdFrecuencia',      s.frecuencia ? s.frecuencia + ' Hz' : '—');
+            setText('sdIntervalo',       s.intervalo_min ? s.intervalo_min + ' min' : '—');
             setText('sdConexion',        s.conexion || '—');
-            setText('sdFechaInstalacion', fmtDateOnly(s.fecha_instalacion));
+            setText('sdFechaInstalacion',fmtDateOnly(s.fecha_instalacion));
 
-            // Red: tipo de conexión del dispositivo
-            setText('sdRedDisp', s.conexion || '—');
+            // Red
+            setText('sdRedDisp',   s.conexion  || '—');
+            setText('sdWifiSSID',  s.wifi_ssid || '—');
+            setHtml('sdWifiStatus', onlineHtml(s.fecha_ultimo_contacto));
+            setText('sdWifiIP',    s.ip_wifi   || '—');
 
-            // Datos del sensor (dinámico)
+            // Almacenamiento
+            setText('sdStorageUsed',  fmtKB(s.sd_usado_kb));
+            setText('sdStorageFree',  fmtKB(s.sd_libre_kb));
+
+            // Datos del sensor
             setHtml('sdDatosSensorBody', buildDatosSensor(s));
 
-            // Firmware versión
-            setText('sdFwVersion', s.version || '—');
+            // Firmware
             var fwBadge = el('sdFwVersion');
             if (fwBadge) fwBadge.textContent = s.version || '—';
+
+            // OTA pendiente
+            if (s.firmware_pendiente) {
+                setText('sdOtaStatus', 'Actualización programada — pendiente de entrega al device');
+            }
 
             // Notas
             if (s.notas) {
                 setText('sdNotasText', s.notas);
-                var notasRow = el('sdNotasRow');
-                if (notasRow) notasRow.style.display = '';
+                var nr = el('sdNotasRow');
+                if (nr) nr.classList.remove('d-none');
+            }
+
+            // Habilitar/deshabilitar botones según modo
+            syncButtonStates(s);
+        }
+
+        function syncButtonStates(s) {
+            var enStandBy = (s.modo_operacion === 'StandBy');
+            var bSB = el('btnStandby');
+            var bCO = el('btnContinuar');
+            if (bSB) bSB.disabled = enStandBy;
+            if (bCO) bCO.disabled = !enStandBy;
+        }
+
+        // ── Actualización en tiempo real (campos live) ────────────
+        function updateLiveFields(s) {
+            setHtml('sdEstadoBadge', estadoBadge(s.estado));
+            setHtml('sdOnlineStatus', onlineHtml(s.fecha_ultimo_contacto));
+            setText('sdUltimaConexion', fmtDate(s.fecha_ultimo_contacto));
+            setText('sdModoOperacion', s.modo_operacion || 'Normal');
+            setText('sdModoOperacionDl', s.modo_operacion || '—');
+            setText('sdVersion', s.version || '—');
+            var fwBadge = el('sdFwVersion');
+            if (fwBadge) fwBadge.textContent = s.version || '—';
+            setText('sdWifiIP', s.ip_wifi || '—');
+            setHtml('sdWifiStatus', onlineHtml(s.fecha_ultimo_contacto));
+            setText('sdStorageUsed',  fmtKB(s.sd_usado_kb));
+            setText('sdStorageFree',  fmtKB(s.sd_libre_kb));
+            setHtml('sdDatosSensorBody', buildDatosSensor(s));
+            syncButtonStates(s);
+        }
+
+        // ── Polling ───────────────────────────────────────────────
+        function startPolling() {
+            pollTimer = setInterval(function () { pollSensor(); }, 30000);
+        }
+
+        async function pollSensor() {
+            try {
+                var result = await window.apiGet('sensores/' + sensorId);
+                if (result.success && result.data) {
+                    sensorData = result.data;
+                    updateLiveFields(sensorData);
+                }
+            } catch (e) {
+                console.warn('Poll error:', e);
             }
         }
 
-        // ── Inicialización ────────────────────────────────────────────
+        // ── Comandos ─────────────────────────────────────────────
+        window.enviarComando = async function (comando) {
+            var alertEl = el('cmdAlert');
 
-        async function init() {
+            if (comando === 'RESTART' && !confirm('¿Reiniciar el dispositivo ahora? La captura se interrumpirá brevemente.')) return;
+            if (comando === 'SETUPMODE' && !confirm('¿Entrar en Modo Setup? El dispositivo dejará de capturar datos hasta que se reconfigure.')) return;
+
+            var btns = document.querySelectorAll('.btn-control');
+            btns.forEach(function (b) { b.disabled = true; });
+
             try {
-                await requireAuthentication();
+                var result = await window.apiPost('sensores/' + sensorId + '/comando', { comando: comando });
+                if (result.success) {
+                    alertEl.innerHTML = '<div class="alert alert-success py-2 mb-0"><i class="fas fa-check me-1"></i>' + result.message + '</div>';
+                } else {
+                    alertEl.innerHTML = '<div class="alert alert-danger py-2 mb-0"><i class="fas fa-exclamation-triangle me-1"></i>' + (result.message || 'Error al enviar comando') + '</div>';
+                }
             } catch (e) {
-                // requireAuthentication redirige, no hay nada más que hacer
-                return;
+                alertEl.innerHTML = '<div class="alert alert-danger py-2 mb-0">Error de red al enviar comando.</div>';
+            } finally {
+                alertEl.classList.remove('d-none');
+                setTimeout(function () { alertEl.classList.add('d-none'); }, 6000);
+                if (sensorData) syncButtonStates(sensorData);
+                var bSB = el('btnStandby');
+                var bCO = el('btnContinuar');
+                var bRE = el('btnReiniciar');
+                var bSE = el('btnSetup');
+                var bMC = el('btnModConfig');
+                if (bSB) bSB.disabled = false;
+                if (bCO) bCO.disabled = false;
+                if (bRE) bRE.disabled = false;
+                if (bSE) bSE.disabled = false;
+                if (bMC) bMC.disabled = false;
+                if (sensorData) syncButtonStates(sensorData);
             }
+        };
 
-            // Mostrar nombre de usuario en navbar
-            var userData = null;
+        // ── Modal de configuración ────────────────────────────────
+        window.abrirConfig = function () {
+            if (!sensorData) return;
+            var s = sensorData;
+
+            // Pre-llenar con valores actuales del sensor
+            var sel = el('cfgOpFreq');
+            if (sel && s.frecuencia) sel.value = String(s.frecuencia);
+
+            var fi = el('cfgFileInterval');
+            if (fi && s.intervalo_min) fi.value = s.intervalo_min;
+
+            var fx = el('cfgFactorX');
+            if (fx && s.factor_x) fx.value = parseFloat(s.factor_x).toExponential(9);
+
+            var fy = el('cfgFactorY');
+            if (fy && s.factor_y) fy.value = parseFloat(s.factor_y).toExponential(9);
+
+            var fz = el('cfgFactorZ');
+            if (fz && s.factor_z) fz.value = parseFloat(s.factor_z).toExponential(9);
+
+            var ssid = el('cfgSSID');
+            if (ssid && s.wifi_ssid) ssid.value = s.wifi_ssid;
+
+            var alertEl = el('cfgAlertMsg');
+            if (alertEl) alertEl.innerHTML = '';
+
+            var modalEl = el('configModal');
+            if (modalEl) (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)).show();
+        };
+
+        window.guardarConfig = async function () {
+            var alertEl = el('cfgAlertMsg');
+            var saveBtn = el('btnGuardarConfig');
+            if (saveBtn) saveBtn.disabled = true;
+
             try {
-                var raw = localStorage.getItem('user_data');
-                if (raw) userData = JSON.parse(raw);
-            } catch (e) {}
-            var userNameEl = el('userName');
-            if (userNameEl && userData && userData.nombre) {
-                userNameEl.textContent = userData.nombre;
-            }
+                var config = {};
 
-            var params    = new URLSearchParams(window.location.search);
-            var sensorId  = params.get('id');
+                var freq = el('cfgOpFreq') ? el('cfgOpFreq').value : null;
+                if (freq) config.opFreq = parseInt(freq);
 
-            if (!sensorId) {
-                el('pageLoading').style.display = 'none';
-                el('pageErrorMsg').textContent  = 'No se especificó el ID del sensor en la URL.';
-                el('pageError').style.display   = '';
-                return;
-            }
+                var fi = el('cfgFileInterval') ? el('cfgFileInterval').value.trim() : null;
+                if (fi) config.opFileIntervalMinutes = parseInt(fi);
 
-            try {
-                var result = await window.apiGet('sensores', { empresa_id: 2 });
-                var sensor = (result.data || []).find(function (x) { return String(x.id) === String(sensorId); });
+                var fx = el('cfgFactorX') ? el('cfgFactorX').value.trim() : null;
+                if (fx) config.calFactX = fx;
 
-                if (!sensor) {
-                    el('pageLoading').style.display = 'none';
-                    el('pageErrorMsg').textContent  = 'No se encontró el sensor con ID ' + sensorId + '.';
-                    el('pageError').style.display   = '';
+                var fy = el('cfgFactorY') ? el('cfgFactorY').value.trim() : null;
+                if (fy) config.calFactY = fy;
+
+                var fz = el('cfgFactorZ') ? el('cfgFactorZ').value.trim() : null;
+                if (fz) config.calFactZ = fz;
+
+                var nt = el('cfgNetworkType') ? el('cfgNetworkType').value : null;
+                if (nt) config.networkType = parseInt(nt);
+
+                var ssid = el('cfgSSID') ? el('cfgSSID').value.trim() : null;
+                if (ssid) config.nameSSID = ssid;
+
+                var pw = el('cfgPassword') ? el('cfgPassword').value : null;
+                if (pw) config.pwdSSID = pw;
+
+                var ip = el('cfgStaticIP') ? el('cfgStaticIP').value.trim() : null;
+                if (ip && ip !== '0.0.0.0') config.wStaticIP = ip;
+
+                var gw = el('cfgGateway') ? el('cfgGateway').value.trim() : null;
+                if (gw && gw !== '0.0.0.0') config.wStaticGw = gw;
+
+                var dns1 = el('cfgDNS1') ? el('cfgDNS1').value.trim() : null;
+                if (dns1 && dns1 !== '0.0.0.0') config.wStaticDNS1 = dns1;
+
+                if (Object.keys(config).length === 0) {
+                    alertEl.innerHTML = '<span class="text-warning">Sin cambios para enviar.</span>';
                     return;
                 }
 
-                populatePage(sensor);
+                var result = await window.apiPut('sensores/' + sensorId + '/config', config);
 
-                el('pageLoading').style.display = 'none';
-                el('pageContent').style.display = '';
+                if (result.success) {
+                    alertEl.innerHTML = '<span class="text-success"><i class="fas fa-check me-1"></i>' + result.message + '</span>';
+                    setTimeout(function () {
+                        var m = el('configModal');
+                        if (m) { var mi = bootstrap.Modal.getInstance(m); if (mi) mi.hide(); }
+                    }, 2000);
+                } else {
+                    alertEl.innerHTML = '<span class="text-danger">' + (result.message || 'Error al guardar') + '</span>';
+                }
+            } catch (e) {
+                alertEl.innerHTML = '<span class="text-danger">Error de red</span>';
+            } finally {
+                if (saveBtn) saveBtn.disabled = false;
+            }
+        };
 
-            } catch (err) {
-                console.error('Error cargando sensor:', err);
-                el('pageLoading').style.display = 'none';
-                el('pageErrorMsg').textContent  = 'Error al cargar los datos del sensor. Intenta nuevamente.';
-                el('pageError').style.display   = '';
+        // ── OTA Firmware ──────────────────────────────────────────
+        window.programarOTA = async function () {
+            var urlInput = el('otaFirmwareUrl');
+            var verInput = el('otaTargetVersion');
+            var alertEl  = el('otaAlert');
+
+            if (!urlInput || !urlInput.value.trim()) {
+                alertEl.innerHTML = '<div class="alert alert-warning py-1 mt-2">Ingresa la URL del firmware (.bin).</div>';
+                return;
+            }
+            if (!confirm('¿Programar actualización OTA? El dispositivo iniciará la descarga en el próximo heartbeat.')) return;
+
+            try {
+                var result = await window.apiPut('sensores/' + sensorId + '/firmware', {
+                    firmwareUrl:   urlInput.value.trim(),
+                    targetVersion: verInput ? verInput.value.trim() : ''
+                });
+                if (result.success) {
+                    alertEl.innerHTML = '<div class="alert alert-success py-1 mt-2"><i class="fas fa-check me-1"></i>' + result.message + '</div>';
+                    setText('sdOtaStatus', 'OTA programado — pendiente de entrega al device');
+                } else {
+                    alertEl.innerHTML = '<div class="alert alert-danger py-1 mt-2">' + (result.message || 'Error') + '</div>';
+                }
+            } catch (e) {
+                alertEl.innerHTML = '<div class="alert alert-danger py-1 mt-2">Error de red</div>';
+            }
+        };
+
+        // ── Edición (redirige al dashboard) ───────────────────────
+        window.abrirEdicion = function () {
+            window.location.href = 'dashboard.html#edit-sensor-' + sensorId;
+        };
+
+        // ── Gráfica de acelerómetro ───────────────────────────────
+        async function loadChart() {
+            var chartRow = el('chartRow');
+            var statusBadge = el('chartStatus');
+
+            try {
+                var result = await window.apiGet('sensores/' + sensorId + '/historial', { limit: 60 });
+                if (!result.success || !result.data || result.data.length === 0) {
+                    if (statusBadge) { statusBadge.className = 'badge bg-secondary'; statusBadge.textContent = 'Sin datos'; }
+                    return;
+                }
+
+                var rows = result.data;
+                var labels = rows.map(function (r) {
+                    return new Date(r.recorded_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                });
+                var dX = rows.map(function (r) { return r.eje_x !== null ? parseFloat(r.eje_x) : null; });
+                var dY = rows.map(function (r) { return r.eje_y !== null ? parseFloat(r.eje_y) : null; });
+                var dZ = rows.map(function (r) { return r.eje_z !== null ? parseFloat(r.eje_z) : null; });
+
+                // Colores según tema
+                var textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#aaa';
+                var gridColor = 'rgba(255,255,255,0.05)';
+
+                var ctx = el('accelChart').getContext('2d');
+                accelChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: 'Eje X', data: dX, borderColor: 'rgba(220,53,69,0.9)',   backgroundColor: 'rgba(220,53,69,0.1)',  borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true },
+                            { label: 'Eje Y', data: dY, borderColor: 'rgba(25,135,84,0.9)',   backgroundColor: 'rgba(25,135,84,0.1)',  borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true },
+                            { label: 'Eje Z', data: dZ, borderColor: 'rgba(13,202,240,0.9)',  backgroundColor: 'rgba(13,202,240,0.1)', borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: textColor } },
+                            tooltip: { mode: 'index' }
+                        },
+                        scales: {
+                            x: { ticks: { maxTicksLimit: 10, color: textColor }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+
+                if (chartRow) chartRow.classList.remove('d-none');
+                if (statusBadge) { statusBadge.className = 'badge bg-success'; statusBadge.textContent = rows.length + ' muestras'; }
+
+            } catch (e) {
+                console.error('Error cargando gráfica:', e);
+                if (statusBadge) { statusBadge.className = 'badge bg-danger'; statusBadge.textContent = 'Error'; }
             }
         }
 
-        // Esperar a que los scripts de auth estén cargados
+        // ── Inicialización ────────────────────────────────────────
+        async function init() {
+            try { await requireAuthentication(); }
+            catch (e) { return; }
+
+            // Nombre de usuario en navbar
+            try {
+                var raw = localStorage.getItem('user_data');
+                var ud = raw ? JSON.parse(raw) : null;
+                var unEl = el('userName');
+                if (unEl && ud && ud.nombre) unEl.textContent = ud.nombre;
+            } catch (e) {}
+
+            var params = new URLSearchParams(window.location.search);
+            sensorId = params.get('id');
+
+            if (!sensorId) {
+                el('pageLoading').classList.add('d-none');
+                el('pageErrorMsg').textContent = 'No se especificó el ID del sensor en la URL.';
+                el('pageError').classList.remove('d-none');
+                return;
+            }
+
+            try {
+                // Llamada directa al endpoint individual (más eficiente)
+                var result = await window.apiGet('sensores/' + sensorId);
+
+                if (!result.success || !result.data) {
+                    el('pageLoading').classList.add('d-none');
+                    el('pageErrorMsg').textContent = 'No se encontró el sensor con ID ' + sensorId + '.';
+                    el('pageError').classList.remove('d-none');
+                    return;
+                }
+
+                sensorData = result.data;
+                populatePage(sensorData);
+
+                el('pageLoading').classList.add('d-none');
+                el('pageContent').classList.remove('d-none');
+
+                // Cargar gráfica en paralelo (no bloqueante)
+                loadChart();
+
+                // Polling de telemetría cada 30 s
+                startPolling();
+
+            } catch (err) {
+                console.error('Error cargando sensor:', err);
+                el('pageLoading').classList.add('d-none');
+                el('pageErrorMsg').textContent = 'Error al cargar los datos del sensor. Intenta nuevamente.';
+                el('pageError').classList.remove('d-none');
+            }
+        }
+
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
         } else {

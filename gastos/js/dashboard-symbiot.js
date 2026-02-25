@@ -477,6 +477,25 @@ async function openSensorModal(id) {
     modal.show();
 }
 
+async function generarCredencialesSensor() {
+    const btn = document.querySelector('#sensorModal button[onclick="generarCredencialesSensor()"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generando…'; }
+    try {
+        const data = await apiGet('sensores/generar-credenciales');
+        if (data.success) {
+            document.getElementById('sensorDeviceId').value = data.device_id;
+            document.getElementById('sensorToken').value    = data.token;
+        } else {
+            alert('No se pudieron generar credenciales: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (err) {
+        console.error('Error generando credenciales:', err);
+        alert('Error de conexión al generar credenciales');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-dice me-1"></i>Generar ID y Token'; }
+    }
+}
+
 async function saveSensor() {
     const id     = document.getElementById('sensorId').value;
     const nombre = document.getElementById('sensorNombre').value.trim();

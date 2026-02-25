@@ -2902,6 +2902,9 @@ class TransaccionesController {
             $pdo = getConnection();
             $empresa_id = intval($_GET['empresa_id'] ?? 2);
 
+            // Marcar inactivos antes de leer estadísticas
+            self::markInactiveSensors($pdo, $empresa_id);
+
             // — Estadísticas generales de sensores —
             $stmtStats = $pdo->prepare(
                 "SELECT
@@ -3013,6 +3016,10 @@ class TransaccionesController {
         try {
             $pdo = getConnection();
             $empresa_id = intval($_GET['empresa_id'] ?? 2);
+
+            // Marcar inactivos antes de leer la lista
+            self::markInactiveSensors($pdo, $empresa_id);
+
             $estado     = $_GET['estado']     ?? null;
             $pais       = $_GET['pais']       ?? null;
             $cliente_id = isset($_GET['cliente_id']) ? intval($_GET['cliente_id']) : null;
@@ -3147,7 +3154,7 @@ class TransaccionesController {
     public static function deleteSensor($id) {
         AuthController::requireAuth();
         try {
-            $db   = Database::getConnection();
+            $pdo  = getConnection();
             $stmt = $pdo->prepare("DELETE FROM sensores WHERE id = ?");
             $stmt->execute([intval($id)]);
             echo json_encode(['success' => true, 'message' => 'Sensor eliminado']);
@@ -3186,7 +3193,7 @@ class TransaccionesController {
     public static function createClienteSymbiot() {
         AuthController::requireAuth();
         try {
-            $db   = Database::getConnection();
+            $pdo  = getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
             if (empty($data['nombre'])) {
@@ -3216,7 +3223,8 @@ class TransaccionesController {
                 $data['notas']               ?? null,
             ]);
 
-            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'message' => 'Cliente creado']);
+            $newId = $pdo->lastInsertId();
+            echo json_encode(['success' => true, 'id' => $newId, 'message' => 'Cliente creado']);
         } catch (Exception $e) {
             error_log("Error createClienteSymbiot: " . $e->getMessage());
             http_response_code(500);
@@ -3227,7 +3235,7 @@ class TransaccionesController {
     public static function updateClienteSymbiot($id) {
         AuthController::requireAuth();
         try {
-            $db   = Database::getConnection();
+            $pdo  = getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
             $stmt = $pdo->prepare(
@@ -3264,7 +3272,7 @@ class TransaccionesController {
     public static function deleteClienteSymbiot($id) {
         AuthController::requireAuth();
         try {
-            $db   = Database::getConnection();
+            $pdo = getConnection();
             // Desasociar sensores antes de eliminar
             $pdo->prepare("UPDATE sensores SET cliente_id = NULL WHERE cliente_id = ?")->execute([intval($id)]);
             $pdo->prepare("DELETE FROM clientes_symbiot WHERE id = ?")->execute([intval($id)]);
@@ -3274,5 +3282,461 @@ class TransaccionesController {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
+    }
+
+    // =========================================================================
+    // SENSORES — Path A (servidor propio, independiente de Azure)
+    // =========================================================================
+
+    /**
+     * Extrae el token del dispositivo desde headers o $_SERVER.
+     * El firmware envía: Token: <value>  o  Authorization: Bearer <value>
+     */
+    /**
+     * Marca como 'Inactivo' cualquier sensor Activo que lleve más de
+     * SENSOR_TIMEOUT_MINUTES minutos sin enviar un heartbeat.
+     * Solo afecta sensores que ya tuvieron contacto (fecha_ultimo_contacto IS NOT NULL).
+     */
+    private static function markInactiveSensors(PDO $pdo, int $empresa_id): void {
+        $timeoutMinutes = 3; // 3x el intervalo de heartbeat del firmware (1 min)
+        $pdo->prepare(
+            "UPDATE sensores
+                SET estado = 'Inactivo'
+              WHERE empresa_id = ?
+                AND estado = 'Activo'
+                AND fecha_ultimo_contacto IS NOT NULL
+                AND fecha_ultimo_contacto < NOW() - INTERVAL ? MINUTE"
+        )->execute([$empresa_id, $timeoutMinutes]);
+    }
+
+    private static function getDeviceToken() {
+        if (function_exists('getallheaders')) {
+            foreach (getallheaders() as $name => $value) {
+                if (strtolower($name) === 'token') return trim($value);
+            }
+        }
+        if (!empty($_SERVER['HTTP_TOKEN']))         return trim($_SERVER['HTTP_TOKEN']);
+        if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+            $v = trim($_SERVER['HTTP_AUTHORIZATION']);
+            return (strpos($v, 'Bearer ') === 0) ? substr($v, 7) : $v;
+        }
+        return null;
+    }
+
+    /**
+     * Resuelve el sensor a partir de un identificador que puede ser:
+     *   - Numérico: busca por id
+     *   - Alfanumérico (ej. "XXXX01"): busca por device_code exacto
+     *     o por device_code que empiece con ese prefijo (ej. "XXXX01.A")
+     * Retorna el array de la fila o null si no existe.
+     */
+    private static function resolveSensor(PDO $pdo, string $id, string $extraCols = '') {
+        $cols = 'id, token' . ($extraCols !== '' ? ", $extraCols" : '');
+        if (ctype_digit($id)) {
+            $stmt = $pdo->prepare("SELECT $cols FROM sensores WHERE id = ?");
+            $stmt->execute([intval($id)]);
+        } else {
+            $stmt = $pdo->prepare(
+                "SELECT $cols FROM sensores
+                  WHERE device_code = ? OR device_code LIKE ?
+                  ORDER BY id ASC LIMIT 1"
+            );
+            $stmt->execute([$id, $id . '.%']);
+        }
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    /**
+     * Valida el header CentralKey del dispositivo.
+     * Si DEVICE_CENTRAL_KEY no está definido en .env, el check se omite (dev sin config).
+     * Retorna true si es válido; envía 401 y retorna false si no.
+     */
+    private static function verifyCentralKey() {
+        $expected = getEnvValue('DEVICE_CENTRAL_KEY');
+        if ($expected === '') return true; // sin restricción si no está configurado
+
+        $sent = '';
+        if (function_exists('getallheaders')) {
+            foreach (getallheaders() as $name => $value) {
+                if (strtolower($name) === 'centralkey') { $sent = trim($value); break; }
+            }
+        }
+        if ($sent === '' && !empty($_SERVER['HTTP_CENTRALKEY'])) {
+            $sent = trim($_SERVER['HTTP_CENTRALKEY']);
+        }
+
+        if ($sent !== $expected) {
+            http_response_code(401);
+            echo json_encode(['Command' => 'ERROR', 'Message' => 'Invalid central key']);
+            return false;
+        }
+        return true;
+    }
+
+    // ── GET /sensores/{id} — detalle de un sensor (frontend, auth usuario) ──
+    public static function getSensor($id) {
+        AuthController::requireAuth();
+        try {
+            $pdo  = getConnection();
+            $stmt = $pdo->prepare(
+                "SELECT s.*, c.nombre AS cliente_nombre, c.empresa AS cliente_empresa
+                   FROM sensores s
+                   LEFT JOIN clientes_symbiot c ON s.cliente_id = c.id
+                  WHERE s.id = ?"
+            );
+            $stmt->execute([intval($id)]);
+            $sensor = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$sensor) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Sensor no encontrado']);
+                return;
+            }
+            echo json_encode(['success' => true, 'data' => $sensor]);
+        } catch (Exception $e) {
+            error_log("Error getSensor $id: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // ── POST /sensores/{id}/heartbeat — recibe telemetría del device ─────────
+    // Autenticación: token del dispositivo (campo Token: en header HTTP)
+    // Formato de respuesta: {"Command":"OK","ConfigPending":false}  (compatible con Azure)
+    public static function sensorHeartbeat($id) {
+        if (!self::verifyCentralKey()) return;
+        try {
+            $pdo   = getConnection();
+            $token = self::getDeviceToken();
+
+            // Validar sensor y token
+            $sensor = self::resolveSensor($pdo, (string)$id);
+
+            if (!$sensor) {
+                http_response_code(404);
+                echo json_encode(['Command' => 'ERROR', 'Message' => 'Sensor not found']);
+                return;
+            }
+            if (!empty($sensor['token']) && $token !== $sensor['token']) {
+                http_response_code(401);
+                echo json_encode(['Command' => 'ERROR', 'Message' => 'Invalid token']);
+                return;
+            }
+
+            $sensorId = intval($sensor['id']); // id numérico real (el $id recibido puede ser "XXXX01")
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+            // Mapear campos del firmware → DB
+            $ejeX    = isset($data['xAxis'])    ? floatval($data['xAxis'])    : null;
+            $ejeY    = isset($data['yAxis'])    ? floatval($data['yAxis'])    : null;
+            $ejeZ    = isset($data['zAxis'])    ? floatval($data['zAxis'])    : null;
+            $temp    = isset($data['aTemp'])    ? floatval($data['aTemp'])    : null;
+            $bat     = isset($data['vBattery']) ? intval($data['vBattery'])   : null;
+            $modo    = $data['opMode']           ?? null;
+            $ver     = $data['version']          ?? null;
+            $ipWifi  = $data['wDhcpIP']          ?? null;
+            $sdUsado = isset($data['sdUsed'])   ? intval($data['sdUsed'])     : null;
+            $sdLibre = isset($data['sdFree'])   ? intval($data['sdFree'])     : null;
+            $freq    = isset($data['opFreq'])   ? intval($data['opFreq'])     : null;
+
+            // Actualizar sensor con últimos datos de telemetría
+            $pdo->prepare(
+                "UPDATE sensores SET
+                    eje_x          = COALESCE(?, eje_x),
+                    eje_y          = COALESCE(?, eje_y),
+                    eje_z          = COALESCE(?, eje_z),
+                    temperatura    = COALESCE(?, temperatura),
+                    bateria_mv     = COALESCE(?, bateria_mv),
+                    modo_operacion = COALESCE(?, modo_operacion),
+                    version        = COALESCE(?, version),
+                    ip_wifi        = COALESCE(?, ip_wifi),
+                    sd_usado_kb    = COALESCE(?, sd_usado_kb),
+                    sd_libre_kb    = COALESCE(?, sd_libre_kb),
+                    frecuencia     = COALESCE(?, frecuencia),
+                    fecha_ultimo_contacto = NOW(),
+                    estado = IF(estado IN ('Fabricacion', 'Inactivo'), 'Activo', estado)
+                 WHERE id = ?"
+            )->execute([$ejeX, $ejeY, $ejeZ, $temp, $bat, $modo, $ver,
+                        $ipWifi, $sdUsado, $sdLibre, $freq, $sensorId]);
+
+            // Registrar en historial de telemetría
+            $pdo->prepare(
+                "INSERT INTO sensor_telemetry
+                    (sensor_id, eje_x, eje_y, eje_z, temperatura, bateria_mv, modo_operacion, ip_wifi, sd_usado_kb, sd_libre_kb)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            )->execute([$sensorId, $ejeX, $ejeY, $ejeZ, $temp, $bat, $modo, $ipWifi, $sdUsado, $sdLibre]);
+
+            // Leer y limpiar comando pendiente
+            $stmt = $pdo->prepare("SELECT comando_pendiente, config_pendiente, firmware_pendiente FROM sensores WHERE id = ?");
+            $stmt->execute([$sensorId]);
+            $pending = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $command       = 'OK';
+            $configPending = false;
+
+            if (!empty($pending['comando_pendiente'])) {
+                $command = strtoupper($pending['comando_pendiente']);
+                $pdo->prepare("UPDATE sensores SET comando_pendiente = NULL WHERE id = ?")->execute([$sensorId]);
+            }
+            if (!empty($pending['config_pendiente'])) {
+                $configPending = true;
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode(['Command' => $command, 'ConfigPending' => $configPending]);
+
+        } catch (Exception $e) {
+            error_log("Error sensorHeartbeat $id: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['Command' => 'ERROR', 'Message' => $e->getMessage()]);
+        }
+    }
+
+    // ── GET /sensores/{id}/config — device descarga config pendiente ──────────
+    // Autenticación: token del dispositivo
+    public static function getSensorConfig($id) {
+        if (!self::verifyCentralKey()) return;
+        try {
+            $pdo   = getConnection();
+            $token = self::getDeviceToken();
+
+            $sensor = self::resolveSensor($pdo, (string)$id, 'config_pendiente');
+
+            if (!$sensor) {
+                http_response_code(404);
+                echo json_encode(['configPending' => false]);
+                return;
+            }
+            if (!empty($sensor['token']) && $token !== $sensor['token']) {
+                http_response_code(401);
+                echo json_encode(['configPending' => false]);
+                return;
+            }
+
+            if (empty($sensor['config_pendiente'])) {
+                header('Content-Type: application/json');
+                echo json_encode(['configPending' => false]);
+                return;
+            }
+
+            $config = json_decode($sensor['config_pendiente'], true) ?? [];
+            // Limpiar config tras entrega exitosa
+            $pdo->prepare("UPDATE sensores SET config_pendiente = NULL WHERE id = ?")->execute([intval($sensor['id'])]);
+
+            $config['configPending'] = true;
+            header('Content-Type: application/json');
+            echo json_encode($config);
+
+        } catch (Exception $e) {
+            error_log("Error getSensorConfig $id: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['configPending' => false]);
+        }
+    }
+
+    // ── GET /sensores/{id}/firmware — device descarga info de actualización OTA ──
+    // Autenticación: token del dispositivo
+    public static function getSensorFirmware($id) {
+        if (!self::verifyCentralKey()) return;
+        try {
+            $pdo   = getConnection();
+            $token = self::getDeviceToken();
+
+            $sensor = self::resolveSensor($pdo, (string)$id, 'firmware_pendiente');
+
+            if (!$sensor) {
+                http_response_code(404);
+                echo json_encode(['updateAvailable' => false]);
+                return;
+            }
+            if (!empty($sensor['token']) && $token !== $sensor['token']) {
+                http_response_code(401);
+                echo json_encode(['updateAvailable' => false]);
+                return;
+            }
+
+            if (empty($sensor['firmware_pendiente'])) {
+                header('Content-Type: application/json');
+                echo json_encode(['updateAvailable' => false]);
+                return;
+            }
+
+            $fw = json_decode($sensor['firmware_pendiente'], true) ?? [];
+            // Limpiar tras entrega
+            $pdo->prepare("UPDATE sensores SET firmware_pendiente = NULL WHERE id = ?")->execute([intval($sensor['id'])]);
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'updateAvailable' => true,
+                'firmwareUrl'     => $fw['firmwareUrl']   ?? '',
+                'targetVersion'   => $fw['targetVersion'] ?? '',
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error getSensorFirmware $id: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['updateAvailable' => false]);
+        }
+    }
+
+    // ── POST /sensores/{id}/comando — frontend encola comando al device ────────
+    // Autenticación: usuario (sesión)
+    public static function sensorComando($id) {
+        AuthController::requireAuth();
+        try {
+            $pdo  = getConnection();
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+            $validos = ['STANDBY', 'CONTINUE', 'RESTART', 'START', 'STOP', 'SETUPMODE', 'OTA_UPDATE'];
+            $comando = strtoupper(trim($data['comando'] ?? ''));
+
+            if (!in_array($comando, $validos)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Comando inválido: ' . htmlspecialchars($comando)]);
+                return;
+            }
+
+            $stmt = $pdo->prepare("UPDATE sensores SET comando_pendiente = ? WHERE id = ?");
+            $stmt->execute([$comando, intval($id)]);
+
+            if ($stmt->rowCount() === 0) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Sensor no encontrado']);
+                return;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => "Comando '$comando' encolado. Se ejecutará en el próximo heartbeat del dispositivo.",
+            ]);
+        } catch (Exception $e) {
+            error_log("Error sensorComando $id: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // ── PUT /sensores/{id}/config — frontend guarda config para enviar al device ─
+    // Autenticación: usuario (sesión)
+    public static function sensorSetConfig($id) {
+        AuthController::requireAuth();
+        try {
+            $pdo  = getConnection();
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+            // Construir payload compatible con el parser del firmware
+            $config = [];
+            foreach (['name', 'description', 'license', 'nameSSID', 'pwdSSID',
+                      'wStaticIP', 'wStaticGw', 'wStaticDNS1', 'wStaticDNS2',
+                      'calFactX', 'calFactY', 'calFactZ'] as $k) {
+                if (isset($data[$k]) && $data[$k] !== '') $config[$k] = strval($data[$k]);
+            }
+            foreach (['opFreq', 'opFileIntervalMinutes', 'networkType'] as $k) {
+                if (isset($data[$k])) $config[$k] = intval($data[$k]);
+            }
+
+            if (empty($config)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Sin parámetros de configuración']);
+                return;
+            }
+
+            $pdo->prepare("UPDATE sensores SET config_pendiente = ? WHERE id = ?")
+                ->execute([json_encode($config), intval($id)]);
+
+            // Reflejar frecuencia en DB local
+            if (isset($config['opFreq'])) {
+                $pdo->prepare("UPDATE sensores SET frecuencia = ? WHERE id = ?")
+                    ->execute([$config['opFreq'], intval($id)]);
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Configuración guardada. El dispositivo la recibirá en el próximo heartbeat.',
+            ]);
+        } catch (Exception $e) {
+            error_log("Error sensorSetConfig $id: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // ── PUT /sensores/{id}/firmware — frontend programa actualización OTA ──────
+    // Autenticación: usuario (sesión)
+    public static function sensorSetFirmware($id) {
+        AuthController::requireAuth();
+        try {
+            $pdo  = getConnection();
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+
+            if (empty($data['firmwareUrl'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Falta firmwareUrl']);
+                return;
+            }
+
+            $fw = [
+                'firmwareUrl'   => $data['firmwareUrl'],
+                'targetVersion' => $data['targetVersion'] ?? '',
+            ];
+
+            $pdo->prepare("UPDATE sensores SET firmware_pendiente = ?, comando_pendiente = 'OTA_UPDATE' WHERE id = ?")
+                ->execute([json_encode($fw), intval($id)]);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'OTA programado. El dispositivo iniciará la descarga en el próximo heartbeat.',
+            ]);
+        } catch (Exception $e) {
+            error_log("Error sensorSetFirmware $id: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // ── GET /sensores/{id}/historial — últimas N muestras de telemetría ───────
+    // Autenticación: usuario (sesión)
+    public static function getSensorHistorial($id) {
+        AuthController::requireAuth();
+        try {
+            $pdo   = getConnection();
+            $limit = min(intval($_GET['limit'] ?? 60), 500);
+
+            $stmt = $pdo->prepare(
+                "SELECT recorded_at, eje_x, eje_y, eje_z, temperatura, bateria_mv,
+                        modo_operacion, sd_usado_kb, sd_libre_kb, ip_wifi
+                   FROM sensor_telemetry
+                  WHERE sensor_id = ?
+                  ORDER BY recorded_at DESC
+                  LIMIT ?"
+            );
+            $stmt->execute([intval($id), $limit]);
+            $rows = array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
+
+            echo json_encode(['success' => true, 'data' => $rows, 'total' => count($rows)]);
+        } catch (Exception $e) {
+            error_log("Error getSensorHistorial $id: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // ── GET /sensores/generar-credenciales — genera UUID v4 aleatorio ─────────
+    public static function generarCredencialesSensor() {
+        AuthController::requireAuth();
+        header('Content-Type: application/json; charset=utf-8');
+
+        $uuid = function() {
+            $data = random_bytes(16);
+            $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // version 4
+            $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // variant RFC 4122
+            return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+        };
+
+        echo json_encode([
+            'success'   => true,
+            'device_id' => $uuid(),
+            'token'     => $uuid(),
+        ]);
     }
 }

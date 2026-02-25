@@ -141,3 +141,19 @@ function executeInsert($query, $params = []) {
 function testConnection() {
     return Database::getInstance()->testConnection();
 }
+
+function getEnvValue($key, $default = '') {
+    static $envCache = null;
+    if ($envCache === null) {
+        $envCache = [];
+        $envPath = __DIR__ . '/../../.env';
+        if (file_exists($envPath)) {
+            foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+                if ($line[0] === '#' || strpos($line, '=') === false) continue;
+                [$k, $v] = explode('=', $line, 2);
+                $envCache[trim($k)] = trim($v);
+            }
+        }
+    }
+    return $envCache[$key] ?? getenv($key) ?: $default;
+}

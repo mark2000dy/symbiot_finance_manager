@@ -272,14 +272,44 @@ try {
         exit;
     }
 
+    if ($requestUri === '/sensores/generar-credenciales' && $requestMethod === 'GET') {
+        TransaccionesController::generarCredencialesSensor();
+        exit;
+    }
+
     if ($requestUri === '/sensores' && $requestMethod === 'POST') {
         TransaccionesController::createSensor();
         exit;
     }
 
     if (preg_match('#^/sensores/(\d+)$#', $requestUri, $m)) {
-        if ($requestMethod === 'PUT') { TransaccionesController::updateSensor($m[1]); exit; }
+        if ($requestMethod === 'GET')    { TransaccionesController::getSensor($m[1]); exit; }
+        if ($requestMethod === 'PUT')    { TransaccionesController::updateSensor($m[1]); exit; }
         if ($requestMethod === 'DELETE') { TransaccionesController::deleteSensor($m[1]); exit; }
+    }
+
+    // ── Rutas de dispositivo — acepta id numérico o device_code (ej. "XXXX01") ─
+    if (preg_match('#^/sensores/([\w.-]+)/heartbeat$#', $requestUri, $m) && $requestMethod === 'POST') {
+        TransaccionesController::sensorHeartbeat($m[1]); exit;
+    }
+
+    if (preg_match('#^/sensores/([\w.-]+)/config$#', $requestUri, $m)) {
+        if ($requestMethod === 'GET') { TransaccionesController::getSensorConfig($m[1]);   exit; }
+        if ($requestMethod === 'PUT') { TransaccionesController::sensorSetConfig($m[1]);   exit; }
+    }
+
+    if (preg_match('#^/sensores/([\w.-]+)/firmware$#', $requestUri, $m)) {
+        if ($requestMethod === 'GET') { TransaccionesController::getSensorFirmware($m[1]); exit; }
+        if ($requestMethod === 'PUT') { TransaccionesController::sensorSetFirmware($m[1]); exit; }
+    }
+
+    // ── Rutas de frontend (auth por sesión) ──────────────────────────────────
+    if (preg_match('#^/sensores/(\d+)/comando$#', $requestUri, $m) && $requestMethod === 'POST') {
+        TransaccionesController::sensorComando($m[1]); exit;
+    }
+
+    if (preg_match('#^/sensores/(\d+)/historial$#', $requestUri, $m) && $requestMethod === 'GET') {
+        TransaccionesController::getSensorHistorial($m[1]); exit;
     }
 
     if ($requestUri === '/clientes-symbiot' && $requestMethod === 'GET') {

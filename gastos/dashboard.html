@@ -964,7 +964,12 @@
                             <hr class="border-secondary">
 
                             <!-- Sección 2: Identificación del dispositivo -->
-                            <h6 class="text-info mb-3"><i class="fas fa-id-card me-2"></i>Identificación del Dispositivo</h6>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h6 class="text-info mb-0"><i class="fas fa-id-card me-2"></i>Identificación del Dispositivo</h6>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="generarCredencialesSensor()" title="Genera un Device ID y Token aleatorios">
+                                    <i class="fas fa-dice me-1"></i>Generar ID y Token
+                                </button>
+                            </div>
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label">ID del Dispositivo</label>
