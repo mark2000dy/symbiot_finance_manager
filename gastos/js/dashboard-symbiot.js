@@ -828,11 +828,11 @@ async function viewSensorDetail(id) {
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" title="Cerrar"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body" style="overflow-x:hidden">
 
                         <!-- SECCIÓN 1: Información General -->
                         <h6 class="text-info mb-3"><i class="fas fa-info-circle me-2"></i>Información General</h6>
-                        <div class="row g-3 mb-3">
+                        <div class="row gy-2 gx-0 mb-3">
                             <div class="col-md-6">
                                 <table class="table table-dark table-sm mb-0" style="table-layout:fixed;width:100%">
                                     <tr><td class="text-muted" style="width:38%">Dispositivo</td><td class="font-monospace text-break">${s.device_code || '—'}</td></tr>
@@ -857,7 +857,7 @@ async function viewSensorDetail(id) {
 
                         <!-- SECCIÓN 2: Información del Dispositivo -->
                         <h6 class="text-info mb-3"><i class="fas fa-cog me-2"></i>Información del Dispositivo</h6>
-                        <div class="row g-2 mb-1">
+                        <div class="row gy-2 gx-0 mb-1">
                             <div class="col-md-6">
                                 <table class="table table-dark table-sm mb-0" style="table-layout:fixed;width:100%">
                                     <tr><td class="text-muted" style="width:50%">Versión</td><td class="text-break">${s.version || '—'}</td></tr>
