@@ -1,7 +1,7 @@
 ﻿{
-  "name": "Sistema de Gastos Symbiot",
-  "short_name": "Gastos Symbiot",
-  "description": "Aplicación para control de gastos e ingresos",
+  "name": "Symbiot SIGEST",
+  "short_name": "SIGEST",
+  "description": "Sistema Integral de Gestión — Symbiot Technologies",
   "start_url": "/gastos/",
   "display": "standalone",
   "theme_color": "#191C24",
