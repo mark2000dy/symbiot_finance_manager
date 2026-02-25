@@ -17,6 +17,10 @@ localhost_ingresos_corregidos.tsv
 # Configuración SMTP con credenciales reales
 forms/smtp-config.php
 
+# Firmware ESP32 (contiene keys/secrets hardcodeados)
+main.cpp
+*.ino
+
 # Archivos de debug/test
 debug_*.py
 test_*.php
