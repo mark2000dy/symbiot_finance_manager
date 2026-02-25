@@ -94,6 +94,31 @@ async function initializeDashboard() {
 
         // FASE 4: Configurar filtros de empresa
         console.log('📋 FASE 4: Configurando filtros de empresa...');
+
+        // Determinar filtro correcto según usuario (admin siempre parte de "Todas" salvo selección previa confirmada)
+        {
+            const _savedFilter = sessionStorage.getItem('dashboardCompanyFilter');
+            const _savedEmail  = sessionStorage.getItem('dashboardFilterEmail');
+            const _curEmail    = typeof getCurrentUserEmail === 'function' ? getCurrentUserEmail() : '';
+            const _perms       = typeof getUserPermissions   === 'function' ? getUserPermissions()  : null;
+
+            if (_perms && _perms.canFilterAllEmpresas) {
+                // Admin: solo restaurar si el MISMO usuario (email confirmado) guardó el filtro
+                const _sameUserHasFilter = _savedEmail && _curEmail
+                                        && _savedEmail === _curEmail
+                                        && _savedFilter !== null;
+                if (!_sameUserHasFilter) {
+                    window.currentCompanyFilter = '';
+                    sessionStorage.setItem('dashboardCompanyFilter', '');
+                    if (_curEmail) sessionStorage.setItem('dashboardFilterEmail', _curEmail);
+                    console.log(`👑 Admin (${_curEmail}) → Todas las empresas por defecto`);
+                } else {
+                    console.log(`📂 Admin (${_curEmail}) → filtro previo restaurado: "${_savedFilter || 'Todas'}"`);
+                }
+            }
+            // Usuarios restringidos (Hugo/Escuela): applyEmpresaRestriction() ya forzó su empresa en FASE 3
+        }
+
         let statsRetries = 0;
         while (typeof window.loadCompanyFilterFromURL !== 'function' && statsRetries < 10) {
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -535,14 +560,26 @@ function handleCompanySpecificSetup() {
             loadStudentsList(1);
         }
     } else {
-        // Ocultar widgets específicos
-        console.log('❌ Ocultando widgets de RockstarSkull (empresa diferente)');
+        // Ocultar widgets y stats específicos de RockstarSkull
+        console.log('❌ Ocultando widgets de RockstarSkull (empresa diferente o Todas)');
         if (rockstarWidgets) {
             rockstarWidgets.style.display = 'none';
         }
+        const rockstarMetrics = document.getElementById('rockstarSpecificIndicators');
+        if (rockstarMetrics) rockstarMetrics.style.display = 'none';
+
+        // Ocultar columna "Alumnos Activos" (es exclusiva de RockstarSkull)
+        const companyStudentsContainer = document.querySelector('#companyStudents')?.closest('.col-md-3');
+        if (companyStudentsContainer) companyStudentsContainer.style.display = 'none';
+
         if (typeof hideRockstarSkullIndicators === 'function') {
             hideRockstarSkullIndicators();
         }
+    }
+
+    // Actualizar título del banner según empresa (cubre los 3 casos: '1', '2', '')
+    if (typeof window.updateCompanyLogo === 'function') {
+        window.updateCompanyLogo(companyFilter);
     }
 }
 
@@ -652,22 +689,18 @@ function handleKeyboardShortcuts(event) {
 function loadUserPreferences() {
     try {
         const savedPreferences = localStorage.getItem('dashboardPreferences');
-        
+
         if (savedPreferences) {
             const preferences = JSON.parse(savedPreferences);
-            
-            // Aplicar filtro de empresa guardado (solo si no hay filtro activo)
-            if (preferences.companyFilter && !window.currentCompanyFilter) {
-                window.currentCompanyFilter = preferences.companyFilter;
-                const companySelect = document.getElementById('companyFilter');
-                if (companySelect) {
-                    companySelect.value = preferences.companyFilter;
-                }
+            // Limpiar companyFilter legado (ya no se persiste en localStorage)
+            if ('companyFilter' in preferences) {
+                delete preferences.companyFilter;
+                localStorage.setItem('dashboardPreferences', JSON.stringify(preferences));
             }
-            
+            // La persistencia del filtro de empresa se maneja en FASE 4 vía sessionStorage + email tracking.
             console.log('✅ Preferencias de usuario cargadas');
         }
-        
+
     } catch (error) {
         console.error('❌ Error cargando preferencias:', error);
     }
@@ -679,13 +712,12 @@ function loadUserPreferences() {
 function saveUserPreferences() {
     try {
         const preferences = {
-            companyFilter: window.currentCompanyFilter || '',
             lastUpdate: new Date().toISOString()
         };
-        
+
         localStorage.setItem('dashboardPreferences', JSON.stringify(preferences));
         console.log('✅ Preferencias guardadas');
-        
+
     } catch (error) {
         console.error('❌ Error guardando preferencias:', error);
     }

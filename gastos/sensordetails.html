@@ -7,6 +7,7 @@
 
     <!-- PWA Configuration -->
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/images/Symbiot_logo_dark_horizon.png">
     <meta name="theme-color" content="#191C24">
 
     <!-- Bootstrap CSS -->
@@ -17,7 +18,9 @@
     <!-- CSS compartido con el dashboard -->
     <link rel="stylesheet" href="css/dashboard-main.css?v=3.2.1">
     <link rel="stylesheet" href="css/dashboard-widgets.css?v=3.2.1">
-    <link rel="stylesheet" href="css/theme-toggle.css?v=1.0.0">
+    <link rel="stylesheet" href="css/theme-toggle.css?v=1.0.2">
+    <!-- Anti-FOUC: aplicar tema antes del primer render -->
+    <script>(function(){var t=localStorage.getItem('symbiot-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}());</script>
 
     <style>
         /* Forzar colores con variables del proyecto (dark/light) */
@@ -88,8 +91,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="dashboard.html">
-                <img class="logo-dark"  src="assets/images/Symbiot_logo_dark_horizon.png"  alt="SYMBIOT" style="height:30px;margin-right:8px;">
-                <img class="logo-light" src="assets/images/Symbiot_logo_clear_horizon.png" alt="SYMBIOT" style="height:30px;margin-right:8px;">
+                <img class="logo-dark"  src="assets/images/Symbiot_logo_dark_horizon.png"  alt="SYMBIOT">
+                <img class="logo-light" src="assets/images/Symbiot_logo_clear_horizon.png" alt="SYMBIOT">
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Menú de navegación" title="Menú de navegación">
@@ -507,7 +510,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Theme Toggle -->
-    <script src="js/theme-toggle.js?v=1.0.0"></script>
+    <script src="js/theme-toggle.js?v=1.0.1"></script>
 
     <!-- API Client (debe cargarse primero) -->
     <script src="assets/js/api-client.js?v=3.1.3"></script>

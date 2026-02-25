@@ -642,6 +642,8 @@ async function handleCompanyChange() {
         // ✅ Guardar en sessionStorage (persiste en la misma pestaña, no entre sesiones)
         try {
             sessionStorage.setItem('dashboardCompanyFilter', selectedCompany);
+            const _email = typeof getCurrentUserEmail === 'function' ? getCurrentUserEmail() : '';
+            if (_email) sessionStorage.setItem('dashboardFilterEmail', _email);
             console.log(`💾 Filtro guardado en sessionStorage: ${selectedCompany || 'Todas'}`);
         } catch (e) {
             console.warn('⚠️ No se pudo guardar en sessionStorage:', e);
@@ -1169,5 +1171,29 @@ if (typeof window.loadCompanyFilterFromURL !== 'function') {
 window.startStatsAutoRefresh = startStatsAutoRefresh;
 window.showRockstarSkullIndicators = showRockstarSkullIndicators;
 window.hideRockstarSkullIndicators = hideRockstarSkullIndicators;
+
+/**
+ * Actualizar título del welcome-banner y visibilidad de indicadores según la empresa seleccionada.
+ * Definida aquí para que dashboard-init.js y handleCompanyChange() puedan llamarla.
+ */
+window.updateCompanyLogo = function(companyId) {
+    const dashboardTitle = document.querySelector('.welcome-banner h4');
+    const currentStudentsIndicator = document.getElementById('currentStudentsIndicator');
+    const pendingStudentsIndicator  = document.getElementById('pendingStudentsIndicator');
+
+    if (companyId === '1') {
+        if (dashboardTitle) dashboardTitle.innerHTML = '<i class="fas fa-guitar me-2"></i>Dashboard RockstarSkull';
+        if (currentStudentsIndicator) currentStudentsIndicator.style.display = 'block';
+        if (pendingStudentsIndicator)  pendingStudentsIndicator.style.display  = 'block';
+    } else if (companyId === '2') {
+        if (dashboardTitle) dashboardTitle.innerHTML = '<i class="fas fa-microchip me-2"></i>Dashboard Symbiot';
+        if (currentStudentsIndicator) currentStudentsIndicator.style.display = 'none';
+        if (pendingStudentsIndicator)  pendingStudentsIndicator.style.display  = 'none';
+    } else {
+        if (dashboardTitle) dashboardTitle.innerHTML = '<i class="fas fa-chart-pie me-2"></i>Dashboard Financiero';
+        if (currentStudentsIndicator) currentStudentsIndicator.style.display = 'none';
+        if (pendingStudentsIndicator)  pendingStudentsIndicator.style.display  = 'none';
+    }
+};
 
 console.log('✅ Dashboard Stats Module cargado - Todas las funciones disponibles');

@@ -3,12 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard - Sistema de Gastos Symbiot</title>
+    <title>Dashboard - Sistema Integral de Gestion</title>
     
     <!-- PWA Configuration -->
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="assets/images/Symbiot_logo_dark_horizon.png">
     <meta name="theme-color" content="#191C24">
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -18,15 +19,17 @@
     <link rel="stylesheet" href="css/dashboard-main.css?v=3.2.1">
     <link rel="stylesheet" href="css/dashboard-widgets.css?v=3.2.1">
     <link rel="stylesheet" href="css/dashboard-responsive.css?v=3.2.1">
-    <link rel="stylesheet" href="css/theme-toggle.css?v=1.0.0">
+    <link rel="stylesheet" href="css/theme-toggle.css?v=1.0.2">
+    <!-- Anti-FOUC: aplicar tema antes del primer render -->
+    <script>(function(){var t=localStorage.getItem('symbiot-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}());</script>
 </head>
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="dashboard.html"><img class="logo-dark" src="assets/images/Symbiot_logo_dark_horizon.png" alt="SYMBIOT Logo" style="height: 30px; margin-right: 8px;"><img class="logo-light" src="assets/images/Symbiot_logo_clear_horizon.png" alt="SYMBIOT Logo" style="height: 30px; margin-right: 8px;"></a>
+            <a class="navbar-brand" href="dashboard.html"><img class="logo-dark" src="assets/images/Symbiot_logo_dark_horizon.png" alt="SYMBIOT Logo"><img class="logo-light" src="assets/images/Symbiot_logo_clear_horizon.png" alt="SYMBIOT Logo"></a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Abrir navegación">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
@@ -295,13 +298,13 @@
                                     <div class="col-md-2">
                                         <div class="metric-item">
                                             <div class="stat-number text-info" id="symPaisMX">0</div>
-                                            <div class="stat-label">México</div>
+                                            <div class="stat-label">Activos MX</div>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="metric-item">
                                             <div class="stat-number text-info" id="symPaisCL">0</div>
-                                            <div class="stat-label">Chile</div>
+                                            <div class="stat-label">Activos CL</div>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
@@ -612,79 +615,121 @@
             <!-- ===================================================== -->
             <div id="symbiotWidgets" style="display: none;">
 
-                <!-- Widget 1: Sensores Instalados -->
+                <!-- Widget 1: Sensores Instalados + Widget 2: Clientes -->
                 <div class="row mb-4">
+
+                    <!-- Sensores Instalados (homologado con Alumnos Inscritos) -->
                     <div class="col-xl-6 mb-3">
                         <div class="card h-100">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h6 class="text-white mb-0">
                                     <i class="fas fa-microchip me-2"></i>Sensores Instalados
                                 </h6>
-                                <span class="badge bg-primary badge-stat" id="symTotalSensores">0</span>
+                                <span class="badge bg-primary" id="symTotalSensores" style="font-size: 1.1rem; padding: 0.5rem 0.75rem;">0</span>
                             </div>
                             <div class="card-body">
-                                <div class="row text-center mb-3">
-                                    <div class="col-4">
-                                        <div class="stat-number text-success" id="symActivosCard">0</div>
-                                        <div class="stat-label">Activos</div>
+                                <!-- Stats principales: Activos / Fuera de línea -->
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="student-stat">
+                                            <h2 class="text-success mb-2 fw-bold" id="symActivosCard" style="font-size: 2.5rem;">0</h2>
+                                            <small style="color: #4ac711 !important; font-weight: 700; font-size: 0.95rem;">Activos</small>
+                                        </div>
                                     </div>
-                                    <div class="col-4">
-                                        <div class="stat-number text-danger" id="symInactivosCard">0</div>
-                                        <div class="stat-label">Fuera de línea</div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="stat-number text-warning" id="symFabricacionCard">0</div>
-                                        <div class="stat-label">En fabricación</div>
+                                    <div class="col-6">
+                                        <div class="student-stat">
+                                            <h2 class="text-danger mb-2 fw-bold" id="symInactivosCard" style="font-size: 2.5rem;">0</h2>
+                                            <small style="color: #dc1313 !important; font-weight: 700; font-size: 0.95rem;">Fuera de línea</small>
+                                        </div>
                                     </div>
                                 </div>
-                                <hr class="my-2">
-                                <div class="row text-center">
-                                    <div class="col-12 mb-1">
-                                        <small class="text-muted">Distribución Geográfica</small>
-                                    </div>
-                                    <div id="symGeoDistribution" class="col-12 d-flex flex-wrap justify-content-center gap-2">
+
+                                <!-- Distribución Geográfica -->
+                                <div class="mt-3">
+                                    <small style="color: var(--text-secondary); font-weight: 600;">Distribución Geográfica:</small>
+                                    <div id="symGeoDistribution" class="mt-2">
                                         <!-- Se llena dinámicamente -->
                                     </div>
                                 </div>
+
+                                <!-- Iconos decorativos -->
+                                <div class="mt-3 d-flex justify-content-around" style="font-size: 1.5rem; opacity: 0.6;">
+                                    <i class="fas fa-microchip text-primary" title="Sensores"></i>
+                                    <i class="fas fa-wifi text-success" title="Conectados"></i>
+                                    <i class="fas fa-plug text-danger" title="Desconectados"></i>
+                                    <i class="fas fa-tools text-warning" title="En fabricación"></i>
+                                </div>
+
+                                <!-- Modelos de Sensor -->
+                                <div class="mt-3">
+                                    <small style="color: var(--text-secondary); font-weight: 600;">
+                                        <i class="fas fa-microchip me-1"></i>Modelos de Sensor:
+                                    </small>
+                                    <div id="symModelosSensor" class="mt-2">
+                                        <!-- Se llena dinámicamente -->
+                                    </div>
+                                </div>
+
+                                <!-- Movimientos del Mes -->
+                                <div class="mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                                    <small style="color: var(--text-secondary); font-weight: 600;">
+                                        <i class="fas fa-exchange-alt me-1"></i>Movimientos del Mes:
+                                    </small>
+                                    <div class="row text-center mt-2">
+                                        <div class="col-4">
+                                            <div style="background: rgba(40,167,69,0.15); border-radius: 8px; padding: 8px;">
+                                                <i class="fas fa-power-off text-success"></i>
+                                                <div class="fw-bold text-success" id="symEncendidosMes" style="font-size: 1.3rem;">-</div>
+                                                <small style="color: #adb5bd; font-size: 0.75rem;">Encendidos</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div style="background: rgba(220,53,69,0.15); border-radius: 8px; padding: 8px;">
+                                                <i class="fas fa-unlink text-danger"></i>
+                                                <div class="fw-bold text-danger" id="symDesconectadosMes" style="font-size: 1.3rem;">-</div>
+                                                <small style="color: #adb5bd; font-size: 0.75rem;">Desconectados</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div style="background: rgba(255,193,7,0.15); border-radius: 8px; padding: 8px;">
+                                                <i class="fas fa-tools text-warning"></i>
+                                                <div class="fw-bold text-warning" id="symNuevosPedidosMes" style="font-size: 1.3rem;">-</div>
+                                                <small style="color: #adb5bd; font-size: 0.75rem;">En fabricación</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ID oculto para mantener compat. con _updateSensoresCard -->
+                                <span id="symFabricacionCard" style="display:none;">0</span>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-6 mb-3">
+
+                    <!-- Clientes Symbiot — formato Maestros -->
+                    <div class="col-xl-6 mb-3" id="symClientesWidget">
                         <div class="card h-100">
                             <div class="card-header">
                                 <h6 class="text-white mb-0">
-                                    <i class="fas fa-calendar-alt me-2"></i>Movimientos del Mes
+                                    <i class="fas fa-handshake me-2"></i>Clientes Symbiot
                                 </h6>
                             </div>
-                            <div class="card-body">
-                                <div class="row text-center">
-                                    <div class="col-4">
-                                        <div class="stat-number text-success" id="symEncendidosMes">0</div>
-                                        <div class="stat-label">Encendidos</div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="stat-number text-danger" id="symDesconectadosMes">0</div>
-                                        <div class="stat-label">Desconectados</div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="stat-number text-warning" id="symNuevosPedidosMes">0</div>
-                                        <div class="stat-label">En Fabricación</div>
+                            <div class="card-body" style="overflow-y: auto; max-height: 520px;">
+                                <!-- Cards de clientes (formato Maestros) -->
+                                <div id="symClientesOverview">
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-spinner fa-spin text-info fa-2x mb-2"></i>
+                                        <p class="text-muted mb-0">Cargando clientes...</p>
                                     </div>
                                 </div>
-                                <hr class="my-3">
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <div class="stat-number text-info" id="symClientesActivos">0</div>
-                                        <div class="stat-label">Clientes Activos</div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="stat-number text-secondary" id="symClientesTotal">0</div>
-                                        <div class="stat-label">Clientes Total</div>
-                                    </div>
-                                </div>
+
+                                <!-- IDs ocultos para compat. con _updateMovimientosMes -->
+                                <span id="symClientesActivos" style="display:none;">0</span>
+                                <span id="symClientesTotal"   style="display:none;">0</span>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
                 <!-- Widget 2: Alertas de Suscripción -->
@@ -1136,7 +1181,7 @@
                         <h5 class="modal-title text-white">
                             <i class="fas fa-plus-circle me-2"></i>Nueva Transacción
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
                         <form id="addTransactionForm">
@@ -1305,7 +1350,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Theme Toggle - Cargar temprano para evitar flash -->
-    <script src="js/theme-toggle.js?v=1.0.0"></script>
+    <script src="js/theme-toggle.js?v=1.0.1"></script>
 
     <!-- API Client v3.1.3 - Universal API Handler (DEBE CARGARSE PRIMERO) -->
     <script src="assets/js/api-client.js?v=3.1.3"></script>

@@ -114,6 +114,7 @@ small.text-muted,
     background: rgba(25, 28, 36, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 
@@ -247,6 +248,7 @@ small.text-muted,
     background: rgba(25, 28, 36, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 
@@ -505,7 +507,7 @@ small.text-muted,
     }
     
     .teacher-card {
-        min-height: auto !important;
+        min-height: 0 !important;
     }
 }
 

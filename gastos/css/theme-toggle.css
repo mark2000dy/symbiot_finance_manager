@@ -632,10 +632,12 @@ body,
     color: #ffffff !important;
 }
 
-/* Select options */
-[data-theme="light"] select option {
-    background-color: #ffffff;
-    color: #1a1a1a;
+/* Select options — override dark-mode !important from dashboard-widgets.css */
+[data-theme="light"] select option,
+[data-theme="light"] .form-select option,
+[data-theme="light"] .company-selector-widget .form-select option {
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
 }
 
 /* Alerts texto */
@@ -1014,6 +1016,17 @@ body,
     color: #1a1a1a !important;
 }
 
+/* Textos con inline style (color hardcodeado para dark mode) dentro de class-item */
+/* Los <strong> y <div> usan style="color:#E4E6EA", los <small> usan style="color:#C8CCD0" */
+[data-theme="light"] .class-item strong,
+[data-theme="light"] .class-item > div,
+[data-theme="light"] .class-item div {
+    color: #1a1a1a !important;
+}
+[data-theme="light"] .class-item small {
+    color: #4a4a4a !important;
+}
+
 /* Línea divisoria TOTAL GENERAL en Corte de Pagos */
 .corte-total-row {
     border-top: 2px solid rgba(255, 255, 255, 0.3);
@@ -1034,6 +1047,13 @@ body,
     background-color: rgba(0, 0, 0, 0.06) !important;
     color: #1a1a1a !important;
     border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Columna sticky de horarios — la tabla se construye en oscuro, el <td> queda con #1a1d21 inline */
+[data-theme="light"] .table-dark tbody td:first-child {
+    background: #f0f2f5 !important;
+    background-color: #f0f2f5 !important;
+    color: #333 !important;
 }
 
 /* Filas alternas (table-striped) — sobrescribir variable Bootstrap */

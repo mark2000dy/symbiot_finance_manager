@@ -22,11 +22,7 @@
             return savedTheme;
         }
 
-        // Si no hay tema guardado, usar preferencia del sistema
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            return LIGHT_THEME;
-        }
-
+        // Sin preferencia guardada → siempre oscuro por defecto
         return DARK_THEME;
     }
 

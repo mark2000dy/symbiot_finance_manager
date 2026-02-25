@@ -2951,6 +2951,29 @@ class TransaccionesController {
             $stmtMov->execute([$mesActual, $mesActual, $empresa_id]);
             $movimientos = $stmtMov->fetch(PDO::FETCH_ASSOC);
 
+            // — Distribución por tipo de sensor —
+            $stmtTipos = $pdo->prepare(
+                "SELECT
+                    COALESCE(NULLIF(tipo_sensor,''), 'Sin tipo') AS tipo,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN estado = 'Activo' THEN 1 ELSE 0 END) AS activos
+                 FROM sensores WHERE empresa_id = ?
+                 GROUP BY tipo_sensor ORDER BY total DESC"
+            );
+            $stmtTipos->execute([$empresa_id]);
+            $tipos_sensor = $stmtTipos->fetchAll(PDO::FETCH_ASSOC);
+
+            // — Clientes con ingreso por suscripción —
+            $stmtClientesLista = $pdo->prepare(
+                "SELECT id, nombre, empresa, pais, tipo_suscripcion,
+                        precio_suscripcion, fecha_vencimiento, estatus
+                 FROM clientes_symbiot
+                 WHERE empresa_id = ?
+                 ORDER BY estatus ASC, nombre ASC"
+            );
+            $stmtClientesLista->execute([$empresa_id]);
+            $clientes_lista = $stmtClientesLista->fetchAll(PDO::FETCH_ASSOC);
+
             // — Alertas de suscripción: clientes con vencimiento en los próximos 10 días —
             $fechaLimite = date('Y-m-d', strtotime('+10 days'));
             $hoy = date('Y-m-d');
@@ -2972,6 +2995,8 @@ class TransaccionesController {
                     'stats'            => $stats,
                     'distribucion_geo' => $distribucion_geo,
                     'clientes'         => $clientes,
+                    'clientes_lista'   => $clientes_lista,
+                    'tipos_sensor'     => $tipos_sensor,
                     'movimientos_mes'  => $movimientos,
                     'alertas_suscripcion' => $alertas,
                 ]

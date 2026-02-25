@@ -34,6 +34,12 @@ async function loadSymbiotDataReal() {
         // — Card Movimientos del Mes —
         _updateMovimientosMes(d.movimientos_mes || {}, d.clientes || {});
 
+        // — Card Clientes: cards estilo Maestros —
+        _updateClientesOverview(d.clientes_lista || []);
+
+        // — Modelos de sensor —
+        _updateModelosSensor(d.tipos_sensor || []);
+
         // — Alertas de suscripción —
         _updateAlertasSuscripcion(d.alertas_suscripcion || []);
 
@@ -51,11 +57,11 @@ function _updateSymbiotSelectorIndicators(d) {
     _setEl('symFueraLinea',      stats.inactivos || 0);
     _setEl('symFabricacion',     stats.fabricacion || 0);
 
-    // Buscar México y Chile en distribución
-    const mx = geo.find(g => g.pais === 'México') || {};
+    // Buscar México y Chile — mostrar solo activos (consistente con geo cards y H2 principal)
+    const mx = geo.find(g => g.pais === 'México' || g.pais === 'Mexico') || {};
     const cl = geo.find(g => g.pais === 'Chile')  || {};
-    _setEl('symPaisMX', (mx.activos || 0) + (mx.inactivos || 0));
-    _setEl('symPaisCL', (cl.activos || 0) + (cl.inactivos || 0));
+    _setEl('symPaisMX', mx.activos || 0);
+    _setEl('symPaisCL', cl.activos || 0);
 
     const mov = d.movimientos_mes || {};
     _setEl('symEncendidos',   mov.encendidos   || 0);
@@ -77,15 +83,33 @@ function _updateGeoDistribution(geo) {
         return;
     }
 
-    container.innerHTML = geo.map(g => `
-        <div class="text-center me-3">
-            <span class="badge bg-info" style="font-size:0.95rem;">${g.pais}</span>
-            <div class="mt-1">
-                <small class="text-success me-1"><i class="fas fa-circle" style="font-size:0.6rem;"></i> ${g.activos} activos</small>
-                <small class="text-danger"><i class="fas fa-circle" style="font-size:0.6rem;"></i> ${g.inactivos} inactivos</small>
-            </div>
-        </div>
-    `).join('');
+    const FLAG = { 'México': '🇲🇽', 'Mexico': '🇲🇽', 'Chile': '🇨🇱', 'Argentina': '🇦🇷', 'Colombia': '🇨🇴', 'Estados Unidos': '🇺🇸', 'USA': '🇺🇸' };
+    const COLOR = { 'México': 'danger', 'Mexico': 'danger', 'Chile': 'info', 'Argentina': 'warning', 'Colombia': 'success', 'Estados Unidos': 'primary', 'USA': 'primary' };
+    const totalGlobal = geo.reduce((s, g) => s + (g.activos || 0) + (g.inactivos || 0), 0);
+
+    container.innerHTML = geo.map(g => {
+        const total  = (g.activos || 0) + (g.inactivos || 0);
+        const pct    = totalGlobal > 0 ? Math.round((total / totalGlobal) * 100) : 0;
+        const flag   = FLAG[g.pais]  || '🌐';
+        const color  = COLOR[g.pais] || 'secondary';
+        return `
+            <div class="class-item d-flex justify-content-between align-items-center mb-3 p-3 rounded"
+                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;"
+                onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.2)';"
+                onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-${color} me-3 fs-6" style="padding: 8px 10px;">${flag}</span>
+                    <div>
+                        <strong style="color: #E4E6EA; font-size: 1.1em;">${g.pais}</strong>
+                        <div><small style="color: #C8CCD0; font-weight: 500;">(${total} sensores)</small></div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div style="color: #E4E6EA; font-weight: 600; font-size: 1.05em; margin-bottom: 2px;">${total}</div>
+                    <small style="color: #C8CCD0; font-weight: 500;">${g.activos || 0} activos, ${g.inactivos || 0} inactivos | ${pct}%</small>
+                </div>
+            </div>`;
+    }).join('');
 }
 
 function _updateMovimientosMes(mov, clientes) {
@@ -94,6 +118,146 @@ function _updateMovimientosMes(mov, clientes) {
     _setEl('symNuevosPedidosMes', mov.nuevos_pedidos || 0);
     _setEl('symClientesActivos',  clientes.activos  || 0);
     _setEl('symClientesTotal',    clientes.total    || 0);
+}
+
+// ============================================================
+// CLIENTES OVERVIEW — formato idéntico a Maestros RockstarSkull
+// ============================================================
+
+function _updateClientesOverview(clientes) {
+    const container = document.getElementById('symClientesOverview');
+    if (!container) return;
+
+    if (!clientes || !clientes.length) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
+                <div class="text-white fw-bold">Sin clientes registrados</div>
+                <button class="btn btn-sm btn-outline-info mt-2" onclick="if(typeof refreshSymbiotData==='function') refreshSymbiotData();">
+                    <i class="fas fa-sync-alt me-1"></i>Recargar
+                </button>
+            </div>`;
+        return;
+    }
+
+    const fmt = (v) => typeof window.formatCurrency === 'function'
+        ? window.formatCurrency(v)
+        : '$' + parseFloat(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+
+    const SUBS_ICON = { 'Anual': 'fa-calendar-check', 'Mensual': 'fa-calendar' };
+    const FLAG = { 'México': '🇲🇽', 'Mexico': '🇲🇽', 'Chile': '🇨🇱', 'Argentina': '🇦🇷',
+                   'Colombia': '🇨🇴', 'Estados Unidos': '🇺🇸', 'USA': '🇺🇸' };
+
+    container.innerHTML = `
+        <div class="teachers-grid">
+            ${clientes.map(c => {
+                const precio     = parseFloat(c.precio_suscripcion) || 0;
+                const isActivo   = c.estatus === 'Activo';
+                const border     = isActivo ? '#28a745' : '#6c757d';
+                const subsIcon   = SUBS_ICON[c.tipo_suscripcion] || 'fa-calendar';
+                const periodoLbl = c.tipo_suscripcion === 'Anual' ? 'Año' : 'Mes';
+                const flag       = FLAG[c.pais] || '🌐';
+                const estatusBadge = isActivo
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-secondary">Baja</span>';
+
+                return `
+                    <div class="teacher-card mb-3 p-3"
+                         style="background: rgba(255,255,255,0.1); border-radius: 8px; border-left: 4px solid ${border};">
+                        <!-- Header del cliente -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                <h6 class="text-white mb-1 fw-bold">
+                                    <i class="fas fa-handshake me-2 text-info"></i>${c.nombre}
+                                </h6>
+                                <small class="text-info fw-bold">${c.empresa || flag + ' ' + (c.pais || '—')}</small>
+                            </div>
+                        </div>
+
+                        <!-- Resumen inline: país | suscripción | estatus -->
+                        <div class="mb-3" style="font-size: 0.85em;">
+                            <span style="font-size:1em;">${flag}</span>
+                            <strong class="text-white ms-1">${c.pais || '—'}</strong>
+                            <span class="text-muted mx-1">|</span>
+                            <i class="fas ${subsIcon} me-1 text-warning"></i>
+                            <strong class="text-white">${c.tipo_suscripcion || '—'}</strong>
+                            <span class="text-muted mx-1">|</span>
+                            ${estatusBadge}
+                        </div>
+
+                        <!-- Banner de ingreso por suscripción -->
+                        <div class="row g-2">
+                            <div class="col-7">
+                                <div class="text-center p-2"
+                                     style="background: rgba(40,167,69,0.3); border-radius: 6px; border: 1px solid rgba(40,167,69,0.5);">
+                                    <div class="text-white fw-bold" style="font-size: 0.95em;">${fmt(precio)}</div>
+                                    <small class="text-white fw-bold">Ingreso / ${periodoLbl}</small>
+                                </div>
+                            </div>
+                            <div class="col-5">
+                                <div class="text-center p-2"
+                                     style="background: rgba(23,162,184,0.2); border-radius: 6px; border: 1px solid rgba(23,162,184,0.4);">
+                                    <div class="text-white fw-bold" style="font-size: 0.85em;">${c.fecha_vencimiento || '—'}</div>
+                                    <small class="text-white fw-bold">Vence</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('')}
+        </div>`;
+}
+
+// ============================================================
+// MODELOS DE SENSOR — formato class-item (Distribución Geográfica)
+// ============================================================
+
+function _updateModelosSensor(tipos) {
+    const container = document.getElementById('symModelosSensor');
+    if (!container) return;
+
+    if (!tipos || !tipos.length) {
+        container.innerHTML = '<small class="text-muted">Sin datos de modelos</small>';
+        return;
+    }
+
+    const totalGlobal = tipos.reduce((s, t) => s + (parseInt(t.total) || 0), 0);
+
+    const TIPO_ICON = {
+        'Temperatura': 'fa-thermometer-half',
+        'Humedad':     'fa-tint',
+        'Presión':     'fa-compress-alt',
+        'Gas':         'fa-smog',
+        'Movimiento':  'fa-running',
+        'Luz':         'fa-sun',
+        'GPS':         'fa-map-marker-alt',
+    };
+
+    container.innerHTML = tipos.map(t => {
+        const total = parseInt(t.total) || 0;
+        const activos = parseInt(t.activos) || 0;
+        const pct = totalGlobal > 0 ? Math.round((total / totalGlobal) * 100) : 0;
+        const icon = TIPO_ICON[t.tipo] || 'fa-microchip';
+
+        return `
+            <div class="class-item d-flex justify-content-between align-items-center mb-2 p-3 rounded"
+                 style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;"
+                 onmouseover="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.2)';"
+                 onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.1)';">
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-3 fs-6" style="padding: 8px 10px;">
+                        <i class="fas ${icon}"></i>
+                    </span>
+                    <div>
+                        <strong style="color: #E4E6EA; font-size: 1.05em;">${t.tipo}</strong>
+                        <div><small style="color: #C8CCD0; font-weight: 500;">(${total} sensores)</small></div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div style="color: #E4E6EA; font-weight: 600; font-size: 1.05em; margin-bottom: 2px;">${total}</div>
+                    <small style="color: #C8CCD0; font-weight: 500;">${activos} activos | ${pct}%</small>
+                </div>
+            </div>`;
+    }).join('');
 }
 
 function _updateAlertasSuscripcion(alertas) {
