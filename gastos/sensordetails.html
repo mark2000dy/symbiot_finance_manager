@@ -47,6 +47,26 @@
         .copy-btn  { padding: 0 0.35rem; font-size: 0.75rem; color: var(--text-muted) !important; }
         .placeholder-note { font-size: 0.78rem; color: var(--text-muted); }
         .btn-control { min-width: 140px; }
+        /* ── RESPONSIVE MOBILE ─────────────────────────────────── */
+        @media (max-width: 575.98px) {
+            /* Botones header: sin min-width forzado */
+            .btn-control { min-width: unset !important; font-size: 0.85rem; }
+            /* Controles de la gráfica: envolver en varias líneas */
+            .chart-controls-right {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 6px !important;
+                justify-content: flex-start !important;
+                margin-top: 8px;
+            }
+            .chart-controls-right .btn-group,
+            .chart-controls-right > button { margin: 0 !important; }
+            /* Stats X/Y/Z: wrap */
+            .stats-row { display: flex !important; flex-wrap: wrap; gap: 6px; }
+            .stats-row span { white-space: nowrap; }
+            /* Factores de calibración: wrap */
+            .cal-factors { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        }
         .sensor-header { padding: 2rem 0 1rem; }
         [data-theme="light"] .card-header { background: rgba(0,0,0,0.04) !important; }
         [data-theme="light"] code.field-value { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
@@ -92,6 +112,13 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.3; }
+        }
+        /* ── ALTURAS DE GRÁFICAS ───────────────────────────────── */
+        .chart-accel     { height: 300px; }
+        .chart-secondary { height: 200px; }
+        @media (max-width: 767.98px) {
+            .chart-accel     { height: 200px; }
+            .chart-secondary { height: 150px; }
         }
     </style>
 </head>
@@ -347,7 +374,7 @@
                                     </h5>
                                     <small class="text-muted"><span id="readingCount">0</span> muestras — haz clic en la leyenda para ocultar ejes</small>
                                 </div>
-                                <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                                <div class="col-md-6 text-md-end mt-2 mt-md-0 chart-controls-right">
                                     <div class="btn-group btn-group-sm me-2" role="group" id="rangoGroup">
                                         <button type="button" class="btn btn-outline-secondary active" data-horas="1">1h</button>
                                         <button type="button" class="btn btn-outline-secondary" data-horas="6">6h</button>
@@ -373,7 +400,7 @@
                 <div class="col-12 mb-3">
                     <div class="card">
                         <div class="card-body">
-                            <canvas id="accelChart" height="80"></canvas>
+                            <canvas id="accelChart" class="chart-accel"></canvas>
                         </div>
                     </div>
                 </div>
@@ -385,10 +412,10 @@
                         </div>
                         <div class="card-body py-2">
                             <h4 class="text-danger mb-0"><span id="currentX">--</span> <small class="unit-label fs-6">bits</small></h4>
-                            <small class="text-muted">
-                                Min: <span id="minX">--</span> &nbsp;|&nbsp;
-                                Max: <span id="maxX">--</span> &nbsp;|&nbsp;
-                                Avg: <span id="avgX">--</span>
+                            <small class="text-muted stats-row">
+                                <span>Min: <span id="minX">--</span></span>
+                                <span>Max: <span id="maxX">--</span></span>
+                                <span>Avg: <span id="avgX">--</span></span>
                             </small>
                         </div>
                     </div>
@@ -400,10 +427,10 @@
                         </div>
                         <div class="card-body py-2">
                             <h4 class="text-success mb-0"><span id="currentY">--</span> <small class="unit-label fs-6">bits</small></h4>
-                            <small class="text-muted">
-                                Min: <span id="minY">--</span> &nbsp;|&nbsp;
-                                Max: <span id="maxY">--</span> &nbsp;|&nbsp;
-                                Avg: <span id="avgY">--</span>
+                            <small class="text-muted stats-row">
+                                <span>Min: <span id="minY">--</span></span>
+                                <span>Max: <span id="maxY">--</span></span>
+                                <span>Avg: <span id="avgY">--</span></span>
                             </small>
                         </div>
                     </div>
@@ -415,10 +442,10 @@
                         </div>
                         <div class="card-body py-2">
                             <h4 class="text-info mb-0"><span id="currentZ">--</span> <small class="unit-label fs-6">bits</small></h4>
-                            <small class="text-muted">
-                                Min: <span id="minZ">--</span> &nbsp;|&nbsp;
-                                Max: <span id="maxZ">--</span> &nbsp;|&nbsp;
-                                Avg: <span id="avgZ">--</span>
+                            <small class="text-muted stats-row">
+                                <span>Min: <span id="minZ">--</span></span>
+                                <span>Max: <span id="maxZ">--</span></span>
+                                <span>Avg: <span id="avgZ">--</span></span>
                             </small>
                         </div>
                     </div>
@@ -426,11 +453,12 @@
                 <!-- factores de calibración -->
                 <div class="col-12 mb-3">
                     <div class="alert alert-info py-2 mb-0">
-                        <i class="fas fa-info-circle me-1"></i>
-                        <strong>Factores de calibración:</strong>
-                        X: <span id="calLabelX">--</span> &nbsp;|&nbsp;
-                        Y: <span id="calLabelY">--</span> &nbsp;|&nbsp;
-                        Z: <span id="calLabelZ">--</span>
+                        <div class="cal-factors">
+                            <span><i class="fas fa-info-circle me-1"></i><strong>Factores de calibración:</strong></span>
+                            <span>X: <span id="calLabelX">--</span></span>
+                            <span>Y: <span id="calLabelY">--</span></span>
+                            <span>Z: <span id="calLabelZ">--</span></span>
+                        </div>
                     </div>
                 </div>
 
@@ -443,7 +471,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <canvas id="tempChart" height="120"></canvas>
+                            <canvas id="tempChart" class="chart-secondary"></canvas>
                         </div>
                     </div>
                 </div>
@@ -457,7 +485,7 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <canvas id="voltChart" height="120"></canvas>
+                            <canvas id="voltChart" class="chart-secondary"></canvas>
                         </div>
                     </div>
                 </div>
@@ -1218,6 +1246,7 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: { labels: { color: textColor } },
@@ -1256,6 +1285,7 @@
                         },
                         options: {
                             responsive: true,
+                            maintainAspectRatio: false,
                             interaction: { mode: 'index', intersect: false },
                             plugins: { legend: { labels: { color: textColor } }, tooltip: { mode: 'index' } },
                             scales: {
@@ -1287,6 +1317,7 @@
                         },
                         options: {
                             responsive: true,
+                            maintainAspectRatio: false,
                             interaction: { mode: 'index', intersect: false },
                             plugins: { legend: { labels: { color: textColor } }, tooltip: { mode: 'index' } },
                             scales: {

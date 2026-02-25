@@ -717,7 +717,7 @@ async function viewSensorDetail(id) {
     if (!modalEl) return;
 
     const SPINNER_HTML = `
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="fas fa-microchip me-2"></i>Información del Sensor</h5>
@@ -819,7 +819,7 @@ async function viewSensorDetail(id) {
             </div>` : '';
 
         modalEl.innerHTML = `
-            <div class="modal-dialog modal-xl">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content bg-dark text-white">
                     <div class="modal-header">
                         <h5 class="modal-title" id="sensorDetailModalLabel">
@@ -836,8 +836,8 @@ async function viewSensorDetail(id) {
                             <div class="col-md-6">
                                 <table class="table table-dark table-sm mb-0">
                                     <tr><td class="text-muted" style="width:40%">Dispositivo</td><td class="font-monospace">${s.device_code || '—'}</td></tr>
-                                    <tr><td class="text-muted">ID</td><td class="font-monospace small">${s.device_id || '—'}</td></tr>
-                                    <tr><td class="text-muted">Token</td><td class="font-monospace small">${s.token || '—'}</td></tr>
+                                    <tr><td class="text-muted">ID</td><td class="font-monospace small text-break">${s.device_id || '—'}</td></tr>
+                                    <tr><td class="text-muted">Token</td><td class="font-monospace small text-break">${s.token || '—'}</td></tr>
                                 </table>
                             </div>
                             <div class="col-md-6">
