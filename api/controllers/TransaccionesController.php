@@ -3696,24 +3696,36 @@ class TransaccionesController {
         }
     }
 
-    // ── GET /sensores/{id}/historial — últimas N muestras de telemetría ───────
+    // ── GET /sensores/{id}/historial — telemetría por rango de tiempo ──────────
+    // Parámetros: horas=N (1–24, filtro temporal) | limit=N (fallback por conteo)
     // Autenticación: usuario (sesión)
     public static function getSensorHistorial($id) {
         AuthController::requireAuth();
         try {
-            $pdo   = getConnection();
-            $limit = min(intval($_GET['limit'] ?? 60), 500);
+            $pdo  = getConnection();
+            $cols = "recorded_at, eje_x, eje_y, eje_z, temperatura, bateria_mv,
+                     modo_operacion, sd_usado_kb, sd_libre_kb, ip_wifi";
 
-            $stmt = $pdo->prepare(
-                "SELECT recorded_at, eje_x, eje_y, eje_z, temperatura, bateria_mv,
-                        modo_operacion, sd_usado_kb, sd_libre_kb, ip_wifi
-                   FROM sensor_telemetry
-                  WHERE sensor_id = ?
-                  ORDER BY recorded_at DESC
-                  LIMIT ?"
-            );
-            $stmt->execute([intval($id), $limit]);
-            $rows = array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
+            if (isset($_GET['horas'])) {
+                $horas = min(max(intval($_GET['horas']), 1), 24);
+                $stmt  = $pdo->prepare(
+                    "SELECT $cols FROM sensor_telemetry
+                      WHERE sensor_id = ?
+                        AND recorded_at >= NOW() - INTERVAL ? HOUR
+                      ORDER BY recorded_at ASC"
+                );
+                $stmt->execute([intval($id), $horas]);
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $limit = min(intval($_GET['limit'] ?? 60), 500);
+                $stmt  = $pdo->prepare(
+                    "SELECT $cols FROM sensor_telemetry
+                      WHERE sensor_id = ?
+                      ORDER BY recorded_at DESC LIMIT ?"
+                );
+                $stmt->execute([intval($id), $limit]);
+                $rows = array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
+            }
 
             echo json_encode(['success' => true, 'data' => $rows, 'total' => count($rows)]);
         } catch (Exception $e) {

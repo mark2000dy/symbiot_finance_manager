@@ -345,15 +345,20 @@
                                         <i class="fas fa-wave-square me-2 text-info"></i>Acelerómetro
                                         <span class="badge bg-secondary ms-2" id="chartStatus">Cargando…</span>
                                     </h5>
-                                    <small class="text-muted">Últimas <span id="readingCount">0</span> muestras — haz clic en la leyenda para ocultar ejes</small>
+                                    <small class="text-muted"><span id="readingCount">0</span> muestras — haz clic en la leyenda para ocultar ejes</small>
                                 </div>
                                 <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                                    <div class="btn-group btn-group-sm me-2" role="group" id="rangoGroup">
+                                        <button type="button" class="btn btn-outline-secondary active" data-horas="1">1h</button>
+                                        <button type="button" class="btn btn-outline-secondary" data-horas="6">6h</button>
+                                        <button type="button" class="btn btn-outline-secondary" data-horas="24">24h</button>
+                                    </div>
                                     <div class="btn-group btn-group-sm" role="group">
                                         <button type="button" class="btn btn-outline-info active" id="btnRawValues">
-                                            <i class="fas fa-hashtag me-1"></i>Valores Raw
+                                            <i class="fas fa-hashtag me-1"></i>Raw
                                         </button>
                                         <button type="button" class="btn btn-outline-info" id="btnGValues">
-                                            <i class="fas fa-chart-line me-1"></i>Valores en G
+                                            <i class="fas fa-chart-line me-1"></i>G
                                         </button>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-outline-success ms-2" onclick="loadChart()">
@@ -1098,6 +1103,7 @@
 
         // ── Gráficas ──────────────────────────────────────────────
         var chartDisplayMode = 'raw'; // 'raw' | 'g'
+        var chartHoras       = 1;     // rango temporal activo
         var chartRawData     = [];
         var chartCalX = 3.814697266e-6;
         var chartCalY = 3.814697266e-6;
@@ -1158,13 +1164,21 @@
             el('btnRawValues').classList.remove('active');
             chartApplyMode();
         });
+        document.getElementById('rangoGroup').addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-horas]');
+            if (!btn) return;
+            chartHoras = parseInt(btn.dataset.horas, 10);
+            document.querySelectorAll('#rangoGroup button').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            loadChart();
+        });
 
         window.loadChart = async function loadChart() {
             var chartRow    = el('chartRow');
             var statusBadge = el('chartStatus');
 
             try {
-                var result = await window.apiGet('sensores/' + sensorId + '/historial', { limit: 60 });
+                var result = await window.apiGet('sensores/' + sensorId + '/historial', { horas: chartHoras });
                 if (!result.success || !result.data || result.data.length === 0) {
                     if (statusBadge) { statusBadge.className = 'badge bg-secondary'; statusBadge.textContent = 'Sin datos'; }
                     return;
