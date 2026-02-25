@@ -419,13 +419,41 @@
                     </div>
                 </div>
                 <!-- factores de calibración -->
-                <div class="col-12">
+                <div class="col-12 mb-3">
                     <div class="alert alert-info py-2 mb-0">
                         <i class="fas fa-info-circle me-1"></i>
                         <strong>Factores de calibración:</strong>
                         X: <span id="calLabelX">--</span> &nbsp;|&nbsp;
                         Y: <span id="calLabelY">--</span> &nbsp;|&nbsp;
                         Z: <span id="calLabelZ">--</span>
+                    </div>
+                </div>
+
+                <!-- gráfica temperatura -->
+                <div class="col-md-6 mb-2">
+                    <div class="card h-100">
+                        <div class="card-header bg-warning text-dark py-2">
+                            <h6 class="mb-0"><i class="fas fa-thermometer-half me-1"></i>Temperatura
+                                <span class="badge bg-dark ms-2" id="tempStatus">--</span>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="tempChart" height="120"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- gráfica voltaje -->
+                <div class="col-md-6 mb-2">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-battery-three-quarters me-1"></i>Batería
+                                <span class="badge bg-dark ms-2" id="voltStatus">--</span>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="voltChart" height="120"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1068,12 +1096,14 @@
             window.location.href = 'dashboard.html#edit-sensor-' + sensorId;
         };
 
-        // ── Gráfica de acelerómetro ───────────────────────────────
+        // ── Gráficas ──────────────────────────────────────────────
         var chartDisplayMode = 'raw'; // 'raw' | 'g'
         var chartRawData     = [];
         var chartCalX = 3.814697266e-6;
         var chartCalY = 3.814697266e-6;
         var chartCalZ = 3.814697266e-6;
+        var tempChart = null;
+        var voltChart = null;
 
         function chartApplyMode() {
             if (!accelChart || chartRawData.length === 0) return;
@@ -1192,6 +1222,68 @@
                 chartApplyMode();
                 if (chartRow) chartRow.classList.remove('d-none');
                 if (statusBadge) { statusBadge.className = 'badge bg-success'; statusBadge.textContent = rows.length + ' muestras'; }
+
+                // ── Gráfica Temperatura ───────────────────────────
+                var tempData = rows.map(function (r) { return r.temperatura !== null ? parseFloat(r.temperatura) : null; });
+                var hasTemp  = tempData.some(function (v) { return v !== null; });
+                if (hasTemp) {
+                    if (tempChart) { tempChart.destroy(); tempChart = null; }
+                    tempChart = new Chart(el('tempChart').getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Temperatura',
+                                data: tempData,
+                                borderColor: 'rgba(255,193,7,0.9)',
+                                backgroundColor: 'rgba(255,193,7,0.1)',
+                                borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: { legend: { labels: { color: textColor } }, tooltip: { mode: 'index' } },
+                            scales: {
+                                x: { ticks: { maxTicksLimit: 10, color: textColor }, grid: { color: gridColor } },
+                                y: { title: { display: true, text: 'Temperatura (°C)', color: textColor }, ticks: { color: textColor }, grid: { color: gridColor } }
+                            }
+                        }
+                    });
+                    var lastTemp = tempData.filter(function (v) { return v !== null; }).pop();
+                    if (el('tempStatus')) { el('tempStatus').className = 'badge bg-dark ms-2'; el('tempStatus').textContent = lastTemp !== undefined ? lastTemp.toFixed(1) + ' °C' : '--'; }
+                }
+
+                // ── Gráfica Voltaje / Batería ─────────────────────
+                var voltData = rows.map(function (r) { return r.bateria_mv !== null ? parseFloat(r.bateria_mv) : null; });
+                var hasVolt  = voltData.some(function (v) { return v !== null; });
+                if (hasVolt) {
+                    if (voltChart) { voltChart.destroy(); voltChart = null; }
+                    voltChart = new Chart(el('voltChart').getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Batería',
+                                data: voltData,
+                                borderColor: 'rgba(25,135,84,0.9)',
+                                backgroundColor: 'rgba(25,135,84,0.1)',
+                                borderWidth: 1.5, pointRadius: 2, tension: 0.3, spanGaps: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: { legend: { labels: { color: textColor } }, tooltip: { mode: 'index' } },
+                            scales: {
+                                x: { ticks: { maxTicksLimit: 10, color: textColor }, grid: { color: gridColor } },
+                                y: { title: { display: true, text: 'Batería (mV)', color: textColor }, ticks: { color: textColor }, grid: { color: gridColor } }
+                            }
+                        }
+                    });
+                    var lastVolt = voltData.filter(function (v) { return v !== null; }).pop();
+                    if (el('voltStatus')) { el('voltStatus').className = 'badge bg-dark ms-2'; el('voltStatus').textContent = lastVolt !== undefined ? lastVolt + ' mV' : '--'; }
+                }
 
             } catch (e) {
                 console.error('Error cargando gráfica:', e);
