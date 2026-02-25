@@ -762,22 +762,37 @@ async function viewSensorDetail(id) {
             <h6 class="text-info mb-3"><i class="fas fa-chart-bar me-2"></i>Datos del Sensor</h6>
             <div class="row g-2">
                 ${esAcelerometro ? `
-                <div class="col-md-4">
-                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
-                        <div class="small text-muted mb-1">Eje X</div>
-                        <div class="fs-5 text-white fw-bold">${s.eje_x !== null ? s.eje_x : '—'}</div>
+                <div class="col-md-4 mb-2">
+                    <div class="card border-danger h-100">
+                        <div class="card-header bg-danger text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-arrow-right me-1"></i>Eje X</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <h4 class="text-danger mb-0">${s.eje_x !== null ? s.eje_x : '—'} <small class="fs-6">g</small></h4>
+                            <small class="text-muted">Factor: <span class="font-monospace">${s.factor_x !== null ? parseFloat(s.factor_x).toExponential(4) : '—'}</span></small>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
-                        <div class="small text-muted mb-1">Eje Y</div>
-                        <div class="fs-5 text-white fw-bold">${s.eje_y !== null ? s.eje_y : '—'}</div>
+                <div class="col-md-4 mb-2">
+                    <div class="card border-success h-100">
+                        <div class="card-header bg-success text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-arrow-up me-1"></i>Eje Y</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <h4 class="text-success mb-0">${s.eje_y !== null ? s.eje_y : '—'} <small class="fs-6">g</small></h4>
+                            <small class="text-muted">Factor: <span class="font-monospace">${s.factor_y !== null ? parseFloat(s.factor_y).toExponential(4) : '—'}</span></small>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
-                        <div class="small text-muted mb-1">Eje Z</div>
-                        <div class="fs-5 text-white fw-bold">${s.eje_z !== null ? s.eje_z : '—'}</div>
+                <div class="col-md-4 mb-2">
+                    <div class="card border-info h-100">
+                        <div class="card-header bg-info text-white py-2">
+                            <h6 class="mb-0"><i class="fas fa-arrows-alt-v me-1"></i>Eje Z</h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <h4 class="text-info mb-0">${s.eje_z !== null ? s.eje_z : '—'} <small class="fs-6">g</small></h4>
+                            <small class="text-muted">Factor: <span class="font-monospace">${s.factor_z !== null ? parseFloat(s.factor_z).toExponential(4) : '—'}</span></small>
+                        </div>
                     </div>
                 </div>` : ''}
                 ${tieneTemperatura ? `
@@ -785,13 +800,6 @@ async function viewSensorDetail(id) {
                     <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
                         <div class="small text-muted mb-1">Temperatura</div>
                         <div class="fs-5 text-warning fw-bold">${s.temperatura}°C</div>
-                    </div>
-                </div>` : ''}
-                ${esAcelerometro && s.factor_x !== null ? `
-                <div class="col-md-4">
-                    <div class="card bg-secondary bg-opacity-25 border-secondary text-center p-2">
-                        <div class="small text-muted mb-1">Factor X / Y / Z</div>
-                        <div class="small text-white font-monospace">${parseFloat(s.factor_x).toExponential(9)}</div>
                     </div>
                 </div>` : ''}
                 ${s.bateria_mv !== null ? `
