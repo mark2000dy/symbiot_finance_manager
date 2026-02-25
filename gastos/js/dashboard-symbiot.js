@@ -702,6 +702,12 @@ async function refreshSymbiotData() {
     await _populateClienteSelect('symFilterCliente');
 }
 
+// Auto-poll: recarga la lista de sensores cada 60 s para reflejar
+// cambios de estado (Activo → Inactivo por timeout de heartbeat)
+(function startSensorStatePolling() {
+    setInterval(loadSensoresList, 60 * 1000);
+})();
+
 // ============================================================
 // MODAL DETALLE — SENSOR (vista de solo lectura)
 // ============================================================
