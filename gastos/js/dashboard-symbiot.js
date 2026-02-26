@@ -835,17 +835,17 @@ async function viewSensorDetail(id) {
                         <div class="row gy-2 gx-0 mb-3">
                             <div class="col-md-6">
                                 <table class="table table-dark table-sm mb-0" style="table-layout:fixed;width:100%">
-                                    <tr><td class="text-muted" style="width:38%">Dispositivo</td><td class="font-monospace text-break">${s.device_code || '—'}</td></tr>
-                                    <tr><td class="text-muted">ID</td><td class="font-monospace small text-break">${s.device_id || '—'}</td></tr>
-                                    <tr><td class="text-muted">Token</td><td class="font-monospace small text-break">${s.token || '—'}</td></tr>
+                                    <tr><td class="text-muted" style="width:38%;overflow:hidden;white-space:nowrap">Dispositivo</td><td class="font-monospace small" style="word-break:break-all;overflow-wrap:anywhere">${s.device_code || '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">ID</td><td class="font-monospace small" style="word-break:break-all;overflow-wrap:anywhere">${s.device_id || '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Token</td><td class="font-monospace small" style="word-break:break-all;overflow-wrap:anywhere">${s.token || '—'}</td></tr>
                                 </table>
                             </div>
                             <div class="col-md-6">
                                 <table class="table table-dark table-sm mb-0" style="table-layout:fixed;width:100%">
-                                    <tr><td class="text-muted" style="width:42%">Tipo</td><td class="text-break">${s.tipo_sensor || '—'}</td></tr>
-                                    <tr><td class="text-muted">Estado</td><td>${estadoBadge}</td></tr>
-                                    <tr><td class="text-muted">Ubicación</td><td class="text-break">${s.ubicacion_pais || '—'}${s.ubicacion_ciudad ? ' / ' + s.ubicacion_ciudad : ''}</td></tr>
-                                    <tr><td class="text-muted">Cliente</td><td class="text-break">${s.cliente_nombre ? '<strong>' + s.cliente_nombre + '</strong>' : '<span class="text-muted">Sin asignar</span>'}</td></tr>
+                                    <tr><td class="text-muted" style="width:40%;overflow:hidden;white-space:nowrap">Tipo</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.tipo_sensor || '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Estado</td><td>${estadoBadge}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Ubicación</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.ubicacion_pais || '—'}${s.ubicacion_ciudad ? ' / ' + s.ubicacion_ciudad : ''}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Cliente</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.cliente_nombre ? '<strong>' + s.cliente_nombre + '</strong>' : '<span class="text-muted">Sin asignar</span>'}</td></tr>
                                 </table>
                             </div>
                             <div class="col-md-4"><div class="text-muted small">Fecha Creación</div><div class="small">${fechaCreacion}</div></div>
@@ -860,18 +860,18 @@ async function viewSensorDetail(id) {
                         <div class="row gy-2 gx-0 mb-1">
                             <div class="col-md-6">
                                 <table class="table table-dark table-sm mb-0" style="table-layout:fixed;width:100%">
-                                    <tr><td class="text-muted" style="width:50%">Versión</td><td class="text-break">${s.version || '—'}</td></tr>
-                                    <tr><td class="text-muted">Licencia</td><td class="text-break">${s.licencia !== null ? s.licencia : '—'}</td></tr>
-                                    <tr><td class="text-muted">Modo Operación</td><td class="text-break">${s.modo_operacion || '—'}</td></tr>
-                                    <tr><td class="text-muted">Conexión</td><td class="text-break">${s.conexion || '—'}</td></tr>
+                                    <tr><td class="text-muted" style="width:44%;overflow:hidden;white-space:nowrap">Versión</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.version || '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Licencia</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.licencia !== null ? s.licencia : '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Modo Operación</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.modo_operacion || '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Conexión</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.conexion || '—'}</td></tr>
                                 </table>
                             </div>
                             <div class="col-md-6">
                                 <table class="table table-dark table-sm mb-0" style="table-layout:fixed;width:100%">
-                                    <tr><td class="text-muted" style="width:45%">URL de API</td><td class="small font-monospace text-break">${s.api_url || '—'}</td></tr>
-                                    <tr><td class="text-muted">Frecuencia (Hz)</td><td class="text-break">${s.frecuencia !== null ? s.frecuencia : '—'}</td></tr>
-                                    <tr><td class="text-muted">Intervalo (min)</td><td class="text-break">${s.intervalo_min !== null ? s.intervalo_min : '—'}</td></tr>
-                                    <tr><td class="text-muted">Instalación</td><td class="text-break">${fechaInstalacion}</td></tr>
+                                    <tr><td class="text-muted" style="width:44%;overflow:hidden;white-space:nowrap">URL de API</td><td class="small font-monospace" style="word-break:break-all;overflow-wrap:anywhere">${s.api_url || '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Frecuencia (Hz)</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.frecuencia !== null ? s.frecuencia : '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Intervalo (min)</td><td style="word-break:break-all;overflow-wrap:anywhere">${s.intervalo_min !== null ? s.intervalo_min : '—'}</td></tr>
+                                    <tr><td class="text-muted" style="overflow:hidden;white-space:nowrap">Instalación</td><td style="word-break:break-all;overflow-wrap:anywhere">${fechaInstalacion}</td></tr>
                                 </table>
                             </div>
                         </div>

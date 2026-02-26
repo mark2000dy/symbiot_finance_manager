@@ -35,11 +35,19 @@
 
     function getTypeIcon(tipo) {
         var map = {
-            alta_alumno:       'fa-user-plus text-success',
-            baja_alumno:       'fa-user-minus text-danger',
-            modificacion_alumno: 'fa-user-edit text-warning',
-            transaccion:       'fa-receipt text-info',
-            login_maestro:     'fa-sign-in-alt'
+            alta_alumno:          'fa-user-plus text-success',
+            baja_alumno:          'fa-user-minus text-danger',
+            modificacion_alumno:  'fa-user-edit text-warning',
+            transaccion:          'fa-receipt text-info',
+            login_maestro:        'fa-sign-in-alt text-secondary',
+            login_usuario:        'fa-sign-in-alt text-info',
+            logout_usuario:       'fa-sign-out-alt text-secondary',
+            alta_sensor:          'fa-satellite-dish text-success',
+            baja_sensor:          'fa-satellite-dish text-danger',
+            modificacion_sensor:  'fa-satellite-dish text-warning',
+            alta_cliente:         'fa-building text-success',
+            baja_cliente:         'fa-building text-danger',
+            modificacion_cliente: 'fa-building text-warning'
         };
         return map[tipo] || 'fa-bell text-secondary';
     }

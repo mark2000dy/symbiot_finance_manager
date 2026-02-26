@@ -3050,7 +3050,7 @@ class TransaccionesController {
     }
 
     public static function createSensor() {
-        AuthController::requireAuth();
+        $user = AuthController::requireAuth();
         try {
             $pdo  = getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -3094,7 +3094,12 @@ class TransaccionesController {
                 isset($data['intervalo_min'])   ? intval($data['intervalo_min']) : null,
             ]);
 
-            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId(), 'message' => 'Sensor creado']);
+            $newId      = $pdo->lastInsertId();
+            $nombreUser = $user['nombre'] ?? 'Sistema';
+            $nombreSensor = $data['nombre'];
+            NotificacionesController::crearNotificacion('alta_sensor', "$nombreUser dio de alta el sensor \"$nombreSensor\"", 2);
+
+            echo json_encode(['success' => true, 'id' => $newId, 'message' => 'Sensor creado']);
         } catch (Exception $e) {
             error_log("Error createSensor: " . $e->getMessage());
             http_response_code(500);
@@ -3103,7 +3108,7 @@ class TransaccionesController {
     }
 
     public static function updateSensor($id) {
-        AuthController::requireAuth();
+        $user = AuthController::requireAuth();
         try {
             $pdo  = getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -3143,6 +3148,10 @@ class TransaccionesController {
                 intval($data['empresa_id']      ?? 2),
             ]);
 
+            $nombreUser   = $user['nombre'] ?? 'Sistema';
+            $nombreSensor = $data['nombre'] ?? "ID $id";
+            NotificacionesController::crearNotificacion('modificacion_sensor', "$nombreUser modificó el sensor \"$nombreSensor\"", 2);
+
             echo json_encode(['success' => true, 'message' => 'Sensor actualizado']);
         } catch (Exception $e) {
             error_log("Error updateSensor: " . $e->getMessage());
@@ -3152,11 +3161,22 @@ class TransaccionesController {
     }
 
     public static function deleteSensor($id) {
-        AuthController::requireAuth();
+        $user = AuthController::requireAuth();
         try {
             $pdo  = getConnection();
+
+            // Obtener nombre antes de borrar
+            $stmtN = $pdo->prepare("SELECT nombre FROM sensores WHERE id = ?");
+            $stmtN->execute([intval($id)]);
+            $sensorRow    = $stmtN->fetch(PDO::FETCH_ASSOC);
+            $nombreSensor = $sensorRow ? $sensorRow['nombre'] : "ID $id";
+
             $stmt = $pdo->prepare("DELETE FROM sensores WHERE id = ?");
             $stmt->execute([intval($id)]);
+
+            $nombreUser = $user['nombre'] ?? 'Sistema';
+            NotificacionesController::crearNotificacion('baja_sensor', "$nombreUser eliminó el sensor \"$nombreSensor\"", 2);
+
             echo json_encode(['success' => true, 'message' => 'Sensor eliminado']);
         } catch (Exception $e) {
             error_log("Error deleteSensor: " . $e->getMessage());
@@ -3191,7 +3211,7 @@ class TransaccionesController {
     }
 
     public static function createClienteSymbiot() {
-        AuthController::requireAuth();
+        $user = AuthController::requireAuth();
         try {
             $pdo  = getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -3223,7 +3243,11 @@ class TransaccionesController {
                 $data['notas']               ?? null,
             ]);
 
-            $newId = $pdo->lastInsertId();
+            $newId        = $pdo->lastInsertId();
+            $nombreUser   = $user['nombre'] ?? 'Sistema';
+            $nombreCliente = $data['nombre'];
+            NotificacionesController::crearNotificacion('alta_cliente', "$nombreUser dio de alta al cliente \"$nombreCliente\"", 2);
+
             echo json_encode(['success' => true, 'id' => $newId, 'message' => 'Cliente creado']);
         } catch (Exception $e) {
             error_log("Error createClienteSymbiot: " . $e->getMessage());
@@ -3233,7 +3257,7 @@ class TransaccionesController {
     }
 
     public static function updateClienteSymbiot($id) {
-        AuthController::requireAuth();
+        $user = AuthController::requireAuth();
         try {
             $pdo  = getConnection();
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -3261,6 +3285,10 @@ class TransaccionesController {
                 intval($data['empresa_id']   ?? 2),
             ]);
 
+            $nombreUser    = $user['nombre'] ?? 'Sistema';
+            $nombreCliente = $data['nombre'] ?? "ID $id";
+            NotificacionesController::crearNotificacion('modificacion_cliente', "$nombreUser modificó al cliente \"$nombreCliente\"", 2);
+
             echo json_encode(['success' => true, 'message' => 'Cliente actualizado']);
         } catch (Exception $e) {
             error_log("Error updateClienteSymbiot: " . $e->getMessage());
@@ -3270,12 +3298,23 @@ class TransaccionesController {
     }
 
     public static function deleteClienteSymbiot($id) {
-        AuthController::requireAuth();
+        $user = AuthController::requireAuth();
         try {
             $pdo = getConnection();
+
+            // Obtener nombre antes de borrar
+            $stmtN = $pdo->prepare("SELECT nombre FROM clientes_symbiot WHERE id = ?");
+            $stmtN->execute([intval($id)]);
+            $clienteRow    = $stmtN->fetch(PDO::FETCH_ASSOC);
+            $nombreCliente = $clienteRow ? $clienteRow['nombre'] : "ID $id";
+
             // Desasociar sensores antes de eliminar
             $pdo->prepare("UPDATE sensores SET cliente_id = NULL WHERE cliente_id = ?")->execute([intval($id)]);
             $pdo->prepare("DELETE FROM clientes_symbiot WHERE id = ?")->execute([intval($id)]);
+
+            $nombreUser = $user['nombre'] ?? 'Sistema';
+            NotificacionesController::crearNotificacion('baja_cliente', "$nombreUser eliminó al cliente \"$nombreCliente\"", 2);
+
             echo json_encode(['success' => true, 'message' => 'Cliente eliminado']);
         } catch (Exception $e) {
             error_log("Error deleteClienteSymbiot: " . $e->getMessage());

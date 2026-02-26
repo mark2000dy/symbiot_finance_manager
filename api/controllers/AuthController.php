@@ -82,7 +82,9 @@ class AuthController {
 
             error_log("✅ Login exitoso: {$user['email']} ({$user['rol']})");
 
-            // Notificación: inicio de sesión de maestro
+            require_once __DIR__ . '/NotificacionesController.php';
+
+            // Notificación: inicio de sesión de maestro (empresa_id=1)
             $maestroEmailsNot = [
                 'hvazquez@rockstarskull.com', 'jolvera@rockstarskull.com',
                 'dandrade@rockstarskull.com', 'ihernandez@rockstarskull.com',
@@ -90,9 +92,11 @@ class AuthController {
                 'mreyes@rockstarskull.com',   'hlopez@rockstarskull.com'
             ];
             if (in_array($user['email'], $maestroEmailsNot)) {
-                require_once __DIR__ . '/NotificacionesController.php';
                 NotificacionesController::crearNotificacion('login_maestro', "{$user['nombre']} ha iniciado sesión", $user['empresa'] ?? 1);
             }
+
+            // Notificación: cualquier login → Symbiot (empresa_id=2)
+            NotificacionesController::crearNotificacion('login_usuario', "{$user['nombre']} ha iniciado sesión ({$user['email']})", 2);
 
             echo json_encode([
                 'success' => true,
@@ -121,7 +125,20 @@ class AuthController {
     public static function logout() {
         try {
             session_start();
+
+            // Capturar usuario antes de destruir la sesión
+            $logoutUser = $_SESSION['user'] ?? null;
             session_destroy();
+
+            // Notificación: cierre de sesión → Symbiot (empresa_id=2)
+            if ($logoutUser) {
+                require_once __DIR__ . '/NotificacionesController.php';
+                NotificacionesController::crearNotificacion(
+                    'logout_usuario',
+                    "{$logoutUser['nombre']} ha cerrado sesión ({$logoutUser['email']})",
+                    2
+                );
+            }
 
             echo json_encode([
                 'success' => true,
