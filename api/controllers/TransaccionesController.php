@@ -195,6 +195,9 @@ class TransaccionesController {
             $cantidad = $input['cantidad'] ?? null;
             $precio_unitario = $input['precio_unitario'] ?? null;
             $tipo = $input['tipo'] ?? null;
+            $referencia = $input['referencia'] ?? null;
+            $conciliada = isset($input['conciliada']) ? (int)$input['conciliada'] : 0;
+            $cuenta = $input['cuenta'] ?? null;
 
             // Validaciones
             if (!$fecha || !$concepto || !$empresa_id || !$forma_pago || !$cantidad || !$precio_unitario || !$tipo) {
@@ -222,13 +225,13 @@ class TransaccionesController {
             $query = "
                 INSERT INTO transacciones (
                     fecha, concepto, socio, empresa_id, forma_pago,
-                    cantidad, precio_unitario, tipo, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    cuenta, referencia, conciliada, cantidad, precio_unitario, tipo, created_by
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ";
 
             $insertId = executeInsert($query, [
                 $fecha, $concepto, $socio, $empresa_id, $forma_pago,
-                $cantidad, $precio_unitario, $tipo, $created_by
+                $cuenta, $referencia, $conciliada, $cantidad, $precio_unitario, $tipo, $created_by
             ]);
 
             // Actualizar fecha_ultimo_pago si es un pago de alumno
@@ -281,6 +284,9 @@ class TransaccionesController {
             $cantidad = $input['cantidad'] ?? null;
             $precio_unitario = $input['precio_unitario'] ?? null;
             $tipo = $input['tipo'] ?? null;
+            $referencia = $input['referencia'] ?? null;
+            $conciliada = isset($input['conciliada']) ? (int)$input['conciliada'] : 0;
+            $cuenta = $input['cuenta'] ?? null;
 
             // Verificar que la transacción existe
             // Allow admin and viewer roles to bypass created_by check
@@ -307,16 +313,16 @@ class TransaccionesController {
             $query = $bypassCreatedByCheck
                 ? "UPDATE transacciones SET
                     fecha = ?, concepto = ?, socio = ?, empresa_id = ?, forma_pago = ?,
-                    cantidad = ?, precio_unitario = ?, tipo = ?
+                    cuenta = ?, referencia = ?, conciliada = ?, cantidad = ?, precio_unitario = ?, tipo = ?
                 WHERE id = ?"
                 : "UPDATE transacciones SET
                     fecha = ?, concepto = ?, socio = ?, empresa_id = ?, forma_pago = ?,
-                    cantidad = ?, precio_unitario = ?, tipo = ?
+                    cuenta = ?, referencia = ?, conciliada = ?, cantidad = ?, precio_unitario = ?, tipo = ?
                 WHERE id = ? AND created_by = ?";
 
             $queryParams = $bypassCreatedByCheck
-                ? [$fecha, $concepto, $socio, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id]
-                : [$fecha, $concepto, $socio, $empresa_id, $forma_pago, $cantidad, $precio_unitario, $tipo, $id, $user['id']];
+                ? [$fecha, $concepto, $socio, $empresa_id, $forma_pago, $cuenta, $referencia, $conciliada, $cantidad, $precio_unitario, $tipo, $id]
+                : [$fecha, $concepto, $socio, $empresa_id, $forma_pago, $cuenta, $referencia, $conciliada, $cantidad, $precio_unitario, $tipo, $id, $user['id']];
 
             $oldConcepto   = $existeTransaccion[0]['concepto'];
             $oldTipo       = $existeTransaccion[0]['tipo'];
@@ -2904,6 +2910,7 @@ class TransaccionesController {
 
             // Marcar inactivos antes de leer estadísticas
             self::markInactiveSensors($pdo, $empresa_id);
+            self::checkSubscriptionExpiry($pdo, $empresa_id);
 
             // — Estadísticas generales de sensores —
             $stmtStats = $pdo->prepare(
@@ -3019,6 +3026,7 @@ class TransaccionesController {
 
             // Marcar inactivos antes de leer la lista
             self::markInactiveSensors($pdo, $empresa_id);
+            self::checkSubscriptionExpiry($pdo, $empresa_id);
 
             $estado     = $_GET['estado']     ?? null;
             $pais       = $_GET['pais']       ?? null;
@@ -3338,6 +3346,17 @@ class TransaccionesController {
      */
     private static function markInactiveSensors(PDO $pdo, int $empresa_id): void {
         $timeoutMinutes = 3; // 3x el intervalo de heartbeat del firmware (1 min)
+
+        // Identificar cuáles van a pasar a Inactivo ANTES del UPDATE
+        $stmtSel = $pdo->prepare(
+            "SELECT id, nombre FROM sensores
+              WHERE empresa_id = ? AND estado = 'Activo'
+                AND fecha_ultimo_contacto IS NOT NULL
+                AND fecha_ultimo_contacto < NOW() - INTERVAL ? MINUTE"
+        );
+        $stmtSel->execute([$empresa_id, $timeoutMinutes]);
+        $toInactivate = $stmtSel->fetchAll(PDO::FETCH_ASSOC);
+
         $pdo->prepare(
             "UPDATE sensores
                 SET estado = 'Inactivo'
@@ -3346,6 +3365,51 @@ class TransaccionesController {
                 AND fecha_ultimo_contacto IS NOT NULL
                 AND fecha_ultimo_contacto < NOW() - INTERVAL ? MINUTE"
         )->execute([$empresa_id, $timeoutMinutes]);
+
+        // Notificar desconexión de cada sensor que acaba de pasar a Inactivo
+        if (!empty($toInactivate)) {
+            require_once __DIR__ . '/NotificacionesController.php';
+            foreach ($toInactivate as $s) {
+                NotificacionesController::crearNotificacion(
+                    'sensor_desconexion',
+                    "Sensor \"{$s['nombre']}\" se desconectó (sin heartbeat)",
+                    $empresa_id
+                );
+            }
+        }
+    }
+
+    /**
+     * Crea notificaciones de alerta para suscripciones próximas a vencer.
+     * Ventanas: 30, 7 y 1 días antes del vencimiento.
+     * Deduplicación: solo genera 1 notif por cliente por ventana por día.
+     */
+    private static function checkSubscriptionExpiry(PDO $pdo, int $empresa_id): void {
+        require_once __DIR__ . '/NotificacionesController.php';
+        foreach ([30, 7, 1] as $dias) {
+            $stmt = $pdo->prepare(
+                "SELECT nombre, fecha_vencimiento,
+                        DATEDIFF(fecha_vencimiento, CURDATE()) AS dias_restantes
+                   FROM clientes_symbiot
+                  WHERE empresa_id = ? AND estatus = 'Activo'
+                    AND DATEDIFF(fecha_vencimiento, CURDATE()) = ?"
+            );
+            $stmt->execute([$empresa_id, $dias]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $c) {
+                $d   = (int)$c['dias_restantes'];
+                $msg = "Suscripción de \"{$c['nombre']}\" vence en $d " . ($d === 1 ? 'día' : 'días') . " ({$c['fecha_vencimiento']})";
+                // Deduplicar: no insertar si ya existe sin leer hoy para este cliente
+                $dup = $pdo->prepare(
+                    "SELECT COUNT(*) FROM notificaciones
+                      WHERE empresa_id = ? AND tipo = 'suscripcion_vencimiento'
+                        AND mensaje LIKE ? AND leida = 0 AND DATE(created_at) = CURDATE()"
+                );
+                $dup->execute([$empresa_id, '%' . $c['nombre'] . '%']);
+                if ((int)$dup->fetchColumn() === 0) {
+                    NotificacionesController::crearNotificacion('suscripcion_vencimiento', $msg, $empresa_id);
+                }
+            }
+        }
     }
 
     private static function getDeviceToken() {
@@ -3450,8 +3514,8 @@ class TransaccionesController {
             $pdo   = getConnection();
             $token = self::getDeviceToken();
 
-            // Validar sensor y token
-            $sensor = self::resolveSensor($pdo, (string)$id);
+            // Validar sensor y token (incluir estado, nombre y empresa_id para notificación)
+            $sensor = self::resolveSensor($pdo, (string)$id, 'estado, nombre, empresa_id');
 
             if (!$sensor) {
                 http_response_code(404);
@@ -3464,7 +3528,10 @@ class TransaccionesController {
                 return;
             }
 
-            $sensorId = intval($sensor['id']); // id numérico real (el $id recibido puede ser "XXXX01")
+            $sensorId      = intval($sensor['id']); // id numérico real (el $id recibido puede ser "XXXX01")
+            $estadoAnterior = $sensor['estado'] ?? null;
+            $nombreSensor   = $sensor['nombre'] ?? "ID $sensorId";
+            $empresaSensor  = intval($sensor['empresa_id'] ?? 2);
             $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
             // Mapear campos del firmware → DB
@@ -3499,6 +3566,16 @@ class TransaccionesController {
                  WHERE id = ?"
             )->execute([$ejeX, $ejeY, $ejeZ, $temp, $bat, $modo, $ver,
                         $ipWifi, $sdUsado, $sdLibre, $freq, $sensorId]);
+
+            // Notificar conexión si el sensor estaba Inactivo o en Fabricacion
+            if (in_array($estadoAnterior, ['Inactivo', 'Fabricacion'])) {
+                require_once __DIR__ . '/NotificacionesController.php';
+                NotificacionesController::crearNotificacion(
+                    'sensor_conexion',
+                    "Sensor \"$nombreSensor\" se conectó",
+                    $empresaSensor
+                );
+            }
 
             // Registrar en historial de telemetría
             $pdo->prepare(

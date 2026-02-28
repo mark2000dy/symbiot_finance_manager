@@ -1,7 +1,9 @@
 <?php
 // ====================================================
 // CONTROLADOR DE NOTIFICACIONES
-// Version: 1.2.0  — leídas expiran en 24 hrs
+// Version: 1.4.0  — leídas expiran en 24 hrs
+//                  — Marco/Antonio ven empresa 1+2
+//                  — Hugo (coordinador) ve personales + generales RS
 // Archivo: api/controllers/NotificacionesController.php
 // ====================================================
 
@@ -18,6 +20,32 @@ define('MAESTRO_EMAIL_MAP', [
     'lblanquet@rockstarskull.com'  => 6,
     'mreyes@rockstarskull.com'     => 7,
     'hlopez@rockstarskull.com'     => 8,
+]);
+
+// Admins que ven notificaciones de ambas empresas (Rockstar Skull + Symbiot)
+define('NOTIF_ADMIN_EMAILS', [
+    'marco.delgado@symbiot.com.mx',
+    'antonio.razo@symbiot.com.mx',
+]);
+
+// Coordinadores RS: ven notificaciones personales + generales de empresa_id=1
+// (email => maestro_id, igual que MAESTRO_EMAIL_MAP)
+define('COORDINADOR_EMAIL_MAP', [
+    'hvazquez@rockstarskull.com' => 1, // Hugo: maestro y coordinador
+]);
+
+// Todos los usuarios de Rockstar Skull (empresa_id=1)
+// Sus notificaciones de login/logout se crean en empresa_id=1
+define('RS_USER_EMAILS', [
+    'hvazquez@rockstarskull.com',
+    'jolvera@rockstarskull.com',
+    'dandrade@rockstarskull.com',
+    'ihernandez@rockstarskull.com',
+    'nperez@rockstarskull.com',
+    'lblanquet@rockstarskull.com',
+    'mreyes@rockstarskull.com',
+    'hlopez@rockstarskull.com',
+    'escuela@rockstarskull.com',
 ]);
 
 class NotificacionesController {
@@ -43,7 +71,8 @@ class NotificacionesController {
     /**
      * GET /notificaciones
      * Maestro → filtra por su maestro_id (detectado por email en sesión)
-     * Admin   → filtra por empresa_id, excluye notificaciones de maestros
+     * Marco/Antonio → ven notificaciones de empresa_id IN (1, 2)
+     * Resto admins → solo empresa_id=1
      */
     public static function getNotificaciones() {
         $user = AuthController::requireAuth();
@@ -57,28 +86,70 @@ class NotificacionesController {
             $esMaestroPortal = $portal === 'maestro' && array_key_exists($email, $maestroMap);
 
             if ($esMaestroPortal) {
-                // Maestro viendo su portal: solo sus notificaciones personales
-                $maestroId = $maestroMap[$email];
+                $maestroId    = $maestroMap[$email];
+                $esCoordinador = array_key_exists($email, COORDINADOR_EMAIL_MAP);
 
-                // Limpiar leídas expiradas
+                if ($esCoordinador) {
+                    // Coordinador (Hugo): ve sus notificaciones personales
+                    // + las generales de empresa_id=1 (login/logout de maestros, alertas, etc.)
+                    executeQuery(
+                        "DELETE FROM notificaciones WHERE maestro_id = ? AND leida = 1 AND created_at < NOW() - INTERVAL ? HOUR",
+                        [$maestroId, NOTIF_EXPIRY_HOURS]
+                    );
+                    executeQuery(
+                        "DELETE FROM notificaciones WHERE empresa_id = 1 AND maestro_id IS NULL AND leida = 1 AND created_at < NOW() - INTERVAL ? HOUR",
+                        [NOTIF_EXPIRY_HOURS]
+                    );
+
+                    $rows = executeQuery(
+                        "SELECT id, tipo, mensaje, leida, created_at
+                         FROM notificaciones
+                         WHERE (maestro_id = ? OR (empresa_id = 1 AND maestro_id IS NULL))
+                           AND (leida = 0 OR created_at >= NOW() - INTERVAL ? HOUR)
+                         ORDER BY created_at DESC
+                         LIMIT 50",
+                        [$maestroId, NOTIF_EXPIRY_HOURS]
+                    );
+                } else {
+                    // Maestro regular: solo sus notificaciones personales
+                    executeQuery(
+                        "DELETE FROM notificaciones WHERE maestro_id = ? AND leida = 1 AND created_at < NOW() - INTERVAL ? HOUR",
+                        [$maestroId, NOTIF_EXPIRY_HOURS]
+                    );
+
+                    $rows = executeQuery(
+                        "SELECT id, tipo, mensaje, leida, created_at
+                         FROM notificaciones
+                         WHERE maestro_id = ?
+                           AND (leida = 0 OR created_at >= NOW() - INTERVAL ? HOUR)
+                         ORDER BY created_at DESC
+                         LIMIT 50",
+                        [$maestroId, NOTIF_EXPIRY_HOURS]
+                    );
+                }
+
+            } elseif (in_array($email, NOTIF_ADMIN_EMAILS)) {
+                // Marco y Antonio: notificaciones de empresa_id IN (1, 2)
                 executeQuery(
-                    "DELETE FROM notificaciones WHERE maestro_id = ? AND leida = 1 AND created_at < NOW() - INTERVAL ? HOUR",
-                    [$maestroId, NOTIF_EXPIRY_HOURS]
+                    "DELETE FROM notificaciones
+                      WHERE empresa_id IN (1,2) AND maestro_id IS NULL AND leida = 1
+                        AND created_at < NOW() - INTERVAL ? HOUR",
+                    [NOTIF_EXPIRY_HOURS]
                 );
 
                 $rows = executeQuery(
                     "SELECT id, tipo, mensaje, leida, created_at
                      FROM notificaciones
-                     WHERE maestro_id = ?
+                     WHERE empresa_id IN (1,2) AND maestro_id IS NULL
                        AND (leida = 0 OR created_at >= NOW() - INTERVAL ? HOUR)
                      ORDER BY created_at DESC
                      LIMIT 50",
-                    [$maestroId, NOTIF_EXPIRY_HOURS]
+                    [NOTIF_EXPIRY_HOURS]
                 );
+
             } else {
-                // Admin / coordinador / cualquier usuario en página de admin
-                $empresa_id = (int)($_GET['empresa_id'] ?? 0);
-                if ($empresa_id <= 0) $empresa_id = 1;
+                // Resto de usuarios: solo empresa_id=1 (Rockstar Skull)
+                $empresa_id = 1;
 
                 // Limpiar leídas expiradas
                 executeQuery(

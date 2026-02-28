@@ -84,19 +84,13 @@ class AuthController {
 
             require_once __DIR__ . '/NotificacionesController.php';
 
-            // Notificación: inicio de sesión de maestro (empresa_id=1)
-            $maestroEmailsNot = [
-                'hvazquez@rockstarskull.com', 'jolvera@rockstarskull.com',
-                'dandrade@rockstarskull.com', 'ihernandez@rockstarskull.com',
-                'nperez@rockstarskull.com',   'lblanquet@rockstarskull.com',
-                'mreyes@rockstarskull.com',   'hlopez@rockstarskull.com'
-            ];
-            if (in_array($user['email'], $maestroEmailsNot)) {
-                NotificacionesController::crearNotificacion('login_maestro', "{$user['nombre']} ha iniciado sesión", $user['empresa'] ?? 1);
+            // RS users → empresa_id=1 | Symbiot users → empresa_id=2
+            // (Marco y Antonio ven empresa_id IN(1,2) — sin duplicados)
+            if (in_array($user['email'], RS_USER_EMAILS)) {
+                NotificacionesController::crearNotificacion('login_maestro', "{$user['nombre']} ha iniciado sesión", 1);
+            } else {
+                NotificacionesController::crearNotificacion('login_usuario', "{$user['nombre']} ha iniciado sesión ({$user['email']})", 2);
             }
-
-            // Notificación: cualquier login → Symbiot (empresa_id=2)
-            NotificacionesController::crearNotificacion('login_usuario', "{$user['nombre']} ha iniciado sesión ({$user['email']})", 2);
 
             echo json_encode([
                 'success' => true,
@@ -130,13 +124,14 @@ class AuthController {
             $logoutUser = $_SESSION['user'] ?? null;
             session_destroy();
 
-            // Notificación: cierre de sesión → Symbiot (empresa_id=2)
+            // RS users → empresa_id=1 | Symbiot users → empresa_id=2
             if ($logoutUser) {
                 require_once __DIR__ . '/NotificacionesController.php';
+                $empresaNotif = in_array($logoutUser['email'] ?? '', RS_USER_EMAILS) ? 1 : 2;
                 NotificacionesController::crearNotificacion(
                     'logout_usuario',
                     "{$logoutUser['nombre']} ha cerrado sesión ({$logoutUser['email']})",
-                    2
+                    $empresaNotif
                 );
             }
 

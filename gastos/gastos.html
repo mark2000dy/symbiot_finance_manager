@@ -826,17 +826,45 @@
                             </div>
                         </div>
                         
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="transactionPaymentMethod" class="form-label">
+                                    <i class="fas fa-credit-card me-1"></i>Forma de Pago
+                                </label>
+                                <select class="form-select" id="transactionPaymentMethod" required>
+                                    <option value="">Seleccionar forma de pago</option>
+                                    <option value="Transferencia">🏦 Transferencia</option>
+                                    <option value="Efectivo">💵 Efectivo</option>
+                                    <option value="TPV">📱 TPV</option>
+                                    <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="transactionCuenta" class="form-label">
+                                    <i class="fas fa-university me-1"></i>Cuenta
+                                </label>
+                                <select class="form-select" id="transactionCuenta" required>
+                                    <option value="">Seleccionar cuenta</option>
+                                    <option value="Inbursa">🏦 Inbursa</option>
+                                    <option value="Mercado Pago">💳 Mercado Pago</option>
+                                    <option value="Caja Chica">💵 Caja Chica</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="mb-3">
-                            <label for="transactionPaymentMethod" class="form-label">
-                                <i class="fas fa-credit-card me-1"></i>Forma de Pago
+                            <label for="transactionReference" class="form-label">
+                                <i class="fas fa-tag me-1"></i>Referencia Bancaria
                             </label>
-                            <select class="form-select" id="transactionPaymentMethod" required>
-                                <option value="">Seleccionar forma de pago</option>
-                                <option value="Transferencia">🏦 Transferencia</option>
-                                <option value="Efectivo">💵 Efectivo</option>
-                                <option value="TPV">📱 TPV</option>
-                                <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
-                            </select>
+                            <input type="text" class="form-control" id="transactionReference"
+                                   placeholder="Ej. REF12345ABC (alfanumérico)" maxlength="100">
+                        </div>
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="transactionConciliada">
+                                <label class="form-check-label" for="transactionConciliada">
+                                    Transacción conciliada
+                                </label>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -1334,11 +1362,14 @@
             document.getElementById('transactionQuantity').value = transaction.cantidad || 1;
             document.getElementById('transactionUnitPrice').value = transaction.precio_unitario;
             document.getElementById('transactionPaymentMethod').value = transaction.forma_pago;
-            
+            document.getElementById('transactionCuenta').value = transaction.cuenta || '';
+            document.getElementById('transactionReference').value = transaction.referencia || '';
+            document.getElementById('transactionConciliada').checked = transaction.conciliada == 1;
+
             // Configurar listeners de cálculo
             setupCalculationListeners();
             calculateTotal();
-            
+
             const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
             modal.show();
         }
@@ -1372,7 +1403,10 @@
                     concepto: document.getElementById('transactionConcept').value,
                     cantidad: parseInt(document.getElementById('transactionQuantity').value),
                     precio_unitario: parseFloat(document.getElementById('transactionUnitPrice').value),
-                    forma_pago: document.getElementById('transactionPaymentMethod').value
+                    forma_pago: document.getElementById('transactionPaymentMethod').value,
+                    cuenta: document.getElementById('transactionCuenta').value || null,
+                    referencia: document.getElementById('transactionReference').value || null,
+                    conciliada: document.getElementById('transactionConciliada').checked ? 1 : 0
                 };
                 
                 // Validaciones

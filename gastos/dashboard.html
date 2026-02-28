@@ -1256,7 +1256,7 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4 mb-3">
+                                <div class="col-md-3 mb-3">
                                     <label for="transactionPayment" class="form-label">
                                         <i class="fas fa-credit-card me-1"></i>Forma de Pago
                                     </label>
@@ -1268,18 +1268,29 @@
                                         <option value="TPV Domiciliado">📱 TPV Domiciliado</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4 mb-3">
+                                <div class="col-md-3 mb-3">
+                                    <label for="transactionCuenta" class="form-label">
+                                        <i class="fas fa-university me-1"></i>Cuenta
+                                    </label>
+                                    <select class="form-select" id="transactionCuenta" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Inbursa">🏦 Inbursa</option>
+                                        <option value="Mercado Pago">💳 Mercado Pago</option>
+                                        <option value="Caja Chica">💵 Caja Chica</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
                                     <label for="transactionQuantity" class="form-label">
                                         <i class="fas fa-hashtag me-1"></i>Cantidad
                                     </label>
-                                    <input type="number" class="form-control" id="transactionQuantity" 
+                                    <input type="number" class="form-control" id="transactionQuantity"
                                            min="1" step="1" value="1" required onchange="calculateTotal()">
                                 </div>
-                                <div class="col-md-4 mb-3">
+                                <div class="col-md-3 mb-3">
                                     <label for="transactionUnitPrice" class="form-label">
                                         <i class="fas fa-dollar-sign me-1"></i>Precio Unitario
                                     </label>
-                                    <input type="number" class="form-control" id="transactionUnitPrice" 
+                                    <input type="number" class="form-control" id="transactionUnitPrice"
                                            min="0" step="0.01" placeholder="0.00" required onchange="calculateTotal()">
                                 </div>
                             </div>
@@ -1296,8 +1307,23 @@
                                     <label for="transactionTotal" class="form-label">
                                         <i class="fas fa-calculator me-1"></i>Total
                                     </label>
-                                    <input type="text" class="form-control" id="transactionTotal" 
+                                    <input type="text" class="form-control" id="transactionTotal"
                                            placeholder="$0.00" readonly style="background-color: rgba(255,255,255,0.05);">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transactionReference" class="form-label">
+                                    <i class="fas fa-tag me-1"></i>Referencia Bancaria
+                                </label>
+                                <input type="text" class="form-control" id="transactionReference"
+                                       placeholder="Ej. REF12345ABC (alfanumérico)" maxlength="100">
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="transactionConciliada">
+                                    <label class="form-check-label" for="transactionConciliada">
+                                        Transacción conciliada
+                                    </label>
                                 </div>
                             </div>
                         </form>

@@ -456,7 +456,10 @@ async function submitTransaction() {
             return;
         }
         
-        const transactionData = { fecha, tipo, empresa_id, socio, concepto, cantidad, precio_unitario, forma_pago };
+        const cuenta = document.getElementById('transactionCuenta')?.value || null;
+        const referencia = document.getElementById('transactionReference')?.value || null;
+        const conciliada = document.getElementById('transactionConciliada')?.checked ? 1 : 0;
+        const transactionData = { fecha, tipo, empresa_id, socio, concepto, cantidad, precio_unitario, forma_pago, cuenta, referencia, conciliada };
         
         const submitButton = document.querySelector('#addTransactionModal button[onclick="submitTransaction()"]');
         if (submitButton) {
@@ -844,22 +847,27 @@ function loadTransactionInModal(transaction) {
         'transactionPartner': transaction.socio,
         'transactionCompany': transaction.empresa_id,
         'transactionPayment': transaction.forma_pago,  // ✅ ID correcto según dashboard.html línea 578
+        'transactionCuenta': transaction.cuenta || '',
         'transactionQuantity': transaction.cantidad,
-        'transactionUnitPrice': transaction.precio_unitario
+        'transactionUnitPrice': transaction.precio_unitario,
+        'transactionReference': transaction.referencia || ''
     };
-    
+
     Object.entries(fields).forEach(([fieldId, value]) => {
         const field = document.getElementById(fieldId);
         if (field && value !== null && value !== undefined) {
             field.value = value;
         }
     });
-    
+
+    const conciliadaCheck = document.getElementById('transactionConciliada');
+    if (conciliadaCheck) conciliadaCheck.checked = transaction.conciliada == 1;
+
     // Calcular total
     if (typeof calculateTotal === 'function') {
         calculateTotal();
     }
-    
+
     // Guardar ID para actualización
     window.editingTransactionId = transaction.id;
 }
