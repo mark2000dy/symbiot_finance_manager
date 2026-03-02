@@ -25,6 +25,9 @@ main.cpp
 debug_*.py
 test_*.php
 
+# Utilidades de setup local (no deben ir a producción)
+gastos/setup-firma.php
+
 # Logs
 *.log
 logs/

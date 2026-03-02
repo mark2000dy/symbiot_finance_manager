@@ -29,8 +29,19 @@ class GoogleCalendarService {
 
         $this->client->setAuthConfig($authConfig);
         
-        // Configurar Redirect URI (debe coincidir con el JSON)
-        $this->client->setRedirectUri('http://localhost/symbiot/symbiot_finance_manager/api/oauth2callback.php');
+        // Configurar Redirect URI — detecta automáticamente localhost vs producción
+        if (!empty($_SERVER['HTTP_HOST'])) {
+            $scheme     = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host       = $_SERVER['HTTP_HOST'];
+            $docRoot    = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
+            $serviceDir = rtrim(str_replace('\\', '/', dirname(dirname(__DIR__))), '/');
+            $projectPath = $docRoot ? str_replace($docRoot, '', $serviceDir) : '/symbiot/symbiot_finance_manager';
+            $redirectUri = $scheme . '://' . $host . $projectPath . '/api/oauth2callback.php';
+        } else {
+            // Fallback para CLI / cron
+            $redirectUri = 'http://localhost/symbiot/symbiot_finance_manager/api/oauth2callback.php';
+        }
+        $this->client->setRedirectUri($redirectUri);
 
         // Cargar Token si existe
         if (file_exists($this->tokenPath)) {

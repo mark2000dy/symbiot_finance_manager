@@ -1512,6 +1512,7 @@ class TransaccionesController {
                 SELECT
                     COUNT(*) as total_alumnos,
                     SUM(CASE WHEN estatus = 'Activo' THEN 1 ELSE 0 END) as alumnos_activos,
+                    COUNT(DISTINCT CASE WHEN estatus = 'Activo' THEN nombre END) as personas_activas,
                     SUM(CASE WHEN estatus = 'Baja' THEN 1 ELSE 0 END) as alumnos_bajas
                 FROM alumnos
                 WHERE empresa_id = ?
@@ -1521,6 +1522,7 @@ class TransaccionesController {
             $estadisticas = [
                 'total_alumnos' => (int)($stats[0]['total_alumnos'] ?? 0),
                 'alumnos_activos' => (int)($stats[0]['alumnos_activos'] ?? 0),
+                'personas_activas' => (int)($stats[0]['personas_activas'] ?? 0),
                 'alumnos_bajas' => (int)($stats[0]['alumnos_bajas'] ?? 0)
             ];
 
@@ -1683,9 +1685,26 @@ class TransaccionesController {
                 ) sub
             ";
             $metricas = executeQuery($metricasQuery, [$empresa_id]);
+
+            // Calcular total de clases semanales sumando el multiplicador de cada inscripción activa
+            // (misma lógica que getClassMultiplier() en pagos-init.js)
+            $clasesActivasQuery = "
+                SELECT precio_mensual, horario
+                FROM alumnos
+                WHERE empresa_id = ?
+                  AND estatus = 'Activo'
+                  AND nombre NOT LIKE '[ELIMINADO]%'
+            ";
+            $clasesActivas = executeQuery($clasesActivasQuery, [$empresa_id]);
+            $totalClases = 0;
+            foreach ($clasesActivas as $ca) {
+                $totalClases += self::calcularMultiplicadorClase($ca);
+            }
+
             $metricas_rockstar = [
                 'clases_grupales' => (int)($metricas[0]['clases_grupales'] ?? 0),
                 'clases_individuales' => (int)($metricas[0]['clases_individuales'] ?? 0),
+                'total_clases' => $totalClases,
                 'alumnos_corriente' => (int)($metricas[0]['alumnos_corriente'] ?? 0),
                 'alumnos_pendientes' => (int)($metricas[0]['alumnos_pendientes'] ?? 0)
             ];
@@ -1695,7 +1714,7 @@ class TransaccionesController {
             echo json_encode([
                 'success' => true,
                 'data' => [
-                    'total_alumnos' => $estadisticas['alumnos_activos'], // Solo activos en el contador principal
+                    'total_alumnos' => $estadisticas['personas_activas'], // Personas únicas activas
                     'estadisticas' => $estadisticas,
                     'distribucion_clases' => $distribucion_clases,
                     'distribucion_maestros' => $distribucion_maestros,
@@ -1763,6 +1782,7 @@ class TransaccionesController {
 
             $proximos_vencer = [];
             $vencidos = [];
+            $al_corriente = 0;
 
             // Calcular estado de pago para cada alumno usando lógica homologada
             foreach ($alumnos as $alumno) {
@@ -1791,14 +1811,17 @@ class TransaccionesController {
                         'dias_vencido' => abs($estado['dias']),
                         'fecha_vencimiento' => $estado['fecha_corte']
                     ];
+                } else {
+                    $al_corriente++;
                 }
             }
 
-            error_log("✅ Alertas calculadas: " . count($proximos_vencer) . " próximos, " . count($vencidos) . " vencidos");
+            error_log("✅ Alertas calculadas: {$al_corriente} corriente, " . count($proximos_vencer) . " próximos, " . count($vencidos) . " vencidos");
 
             echo json_encode([
                 'success' => true,
                 'data' => [
+                    'al_corriente' => $al_corriente,
                     'proximos_vencer' => $proximos_vencer,
                     'vencidos' => $vencidos,
                     'total_alertas' => count($proximos_vencer) + count($vencidos)
@@ -1814,6 +1837,40 @@ class TransaccionesController {
                 'error' => $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Multiplicador de clases por inscripción activa.
+     * Espejo exacto de getClassMultiplier() en pagos-init.js.
+     *
+     * Criterio 1 (precio $2,550): 2 sesiones/semana
+     * Criterio 2 (2+ días en horario): tantos días como tenga el horario
+     * Criterio 3 (bloque ≥ 2h mismo día): 2 sesiones/semana
+     * Default: 1 sesión/semana
+     */
+    private static function calcularMultiplicadorClase($alumno) {
+        $precio = (float)($alumno['precio_mensual'] ?? 0);
+
+        // Criterio 1: precio exacto $2,550
+        if (abs($precio - 2550.0) < 0.01) return 2;
+
+        $horario = trim($alumno['horario'] ?? '');
+        if ($horario !== '') {
+            // Criterio 2: 2+ días distintos en el horario
+            $dias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+            $encontrados = array_filter($dias, function($d) use ($horario) {
+                return strpos($horario, $d) !== false;
+            });
+            if (count($encontrados) >= 2) return count($encontrados);
+
+            // Criterio 3: bloque de 2+ horas continuas en un solo día
+            if (preg_match('/(\d{1,2}):(\d{2})\s+a\s+(\d{1,2}):(\d{2})/', $horario, $m)) {
+                $minutos = ($m[3] * 60 + $m[4]) - ($m[1] * 60 + $m[2]);
+                if ($minutos >= 120) return 2;
+            }
+        }
+
+        return 1;
     }
 
     /**
@@ -1869,49 +1926,68 @@ class TransaccionesController {
                 ];
             }
 
-            // REGLA 2: Si NO pagó mes anterior → VENCIDO
-            // CORRECCIÓN: Calcular días desde cuando realmente venció (no desde el mes actual)
+            // REGLA 2: Si NO pagó el mes anterior → calcular respecto al corte real
+            // El código anterior calculaba finGraciaDeuda correctamente pero ignoraba el
+            // resultado y siempre devolvía 'overdue'. Ahora devuelve 'upcoming' mientras
+            // el período de gracia no haya expirado.
             if (!$pagoMesAnterior) {
-                $diasVencido = 0;
-
                 if ($fechaUltimoPago) {
-                    // Calcular el mes siguiente al último pago (cuando debió pagar)
+                    // Fecha de corte del mes siguiente al último pago (cuando debió pagar)
                     $mesSiguienteAlPago = clone $fechaUltimoPago;
                     $mesSiguienteAlPago->modify('+1 month');
 
-                    // Fecha de corte del mes donde debió pagar
                     $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-') . str_pad($diaCorte, 2, '0', STR_PAD_LEFT));
                     $fechaCorteDeuda->setTime(0, 0, 0);
 
-                    // Ajustar si el día no existe en ese mes
+                    // Ajustar si el día no existe en ese mes (ej: 31 en febrero)
                     if ((int)$fechaCorteDeuda->format('d') !== $diaCorte) {
                         $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-t'));
                         $fechaCorteDeuda->setTime(0, 0, 0);
                     }
 
-                    // Fin de gracia de cuando debió pagar (+5 días)
+                    // Ventana de gracia: corte + 5 días
                     $finGraciaDeuda = clone $fechaCorteDeuda;
                     $finGraciaDeuda->modify('+5 days');
 
-                    // Días vencidos desde el fin de gracia real
-                    if ($hoy > $finGraciaDeuda) {
-                        $diasVencido = $hoy->diff($finGraciaDeuda)->days;
+                    // Dentro del período de gracia → PRÓXIMO A VENCER
+                    if ($hoy <= $finGraciaDeuda) {
+                        return [
+                            'status' => 'upcoming',
+                            'dias' => $hoy->diff($finGraciaDeuda)->days,
+                            'fecha_corte' => $fechaCorteDeuda->format('Y-m-d')
+                        ];
                     }
+
+                    // Pasó el período de gracia → VENCIDO
+                    return [
+                        'status' => 'overdue',
+                        'dias' => $hoy->diff($finGraciaDeuda)->days,
+                        'fecha_corte' => $fechaCorteDeuda->format('Y-m-d')
+                    ];
+
                 } else {
-                    // Sin pagos registrados, calcular desde inscripción + 1 mes + 5 días gracia
-                    $primerVencimiento = clone $fechaInscripcion;
-                    $primerVencimiento->modify('+1 month +5 days');
+                    // Sin pagos registrados: primer vencimiento = inscripción + 1 mes
+                    $primerCorte = clone $fechaInscripcion;
+                    $primerCorte->modify('+1 month');
+                    $primerCorte->setTime(0, 0, 0);
 
-                    if ($hoy > $primerVencimiento) {
-                        $diasVencido = $hoy->diff($primerVencimiento)->days;
+                    $finGraciaPrimer = clone $primerCorte;
+                    $finGraciaPrimer->modify('+5 days');
+
+                    if ($hoy <= $finGraciaPrimer) {
+                        return [
+                            'status' => 'upcoming',
+                            'dias' => $hoy->diff($finGraciaPrimer)->days,
+                            'fecha_corte' => $primerCorte->format('Y-m-d')
+                        ];
                     }
-                }
 
-                return [
-                    'status' => 'overdue',
-                    'dias' => $diasVencido,
-                    'fecha_corte' => $fechaCorteActual->format('Y-m-d')
-                ];
+                    return [
+                        'status' => 'overdue',
+                        'dias' => $hoy->diff($finGraciaPrimer)->days,
+                        'fecha_corte' => $primerCorte->format('Y-m-d')
+                    ];
+                }
             }
 
             // REGLA 3: Pagó mes anterior Y estamos en periodo → PRÓXIMO A VENCER

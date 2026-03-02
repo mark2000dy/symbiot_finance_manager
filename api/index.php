@@ -6,6 +6,10 @@
 // Última modificación: 2024-11-10
 // ====================================================
 
+// Suprimir E_DEPRECATED del vendor google/apiclient (incompatibilidad PHP 8.x)
+// Evita que warnings contaminen las respuestas JSON
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
+
 // Iniciar sesión
 session_start();
 

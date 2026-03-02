@@ -2526,6 +2526,9 @@ async function loadPaymentHistory(studentId, studentName) {
  * v3.4.0: Muestra transacciones individuales con link a modal de detalle
  */
 async function showPaymentHistory(studentId, studentName) {
+    // Guardar nombre del alumno activo para el generador de recibos
+    window._currentStudentName = studentName;
+
     try {
         console.log(`📊 Cargando historial COMPLETO de pagos para: ${studentName}`);
 
@@ -2675,6 +2678,11 @@ async function viewPaymentTransactionDetail(transactionId) {
 
         const transaction = response.data;
 
+        // Guardar transacción activa para el generador de recibos,
+        // e inyectar el nombre del alumno (disponible en el contexto del historial)
+        transaction._alumnoNombre = window._currentStudentName || transaction.socio || '';
+        window._reciboCurrentTx = transaction;
+
         // Crear modal de solo lectura
         const modalDiv = document.createElement('div');
         modalDiv.className = 'modal fade';
@@ -2756,6 +2764,10 @@ async function viewPaymentTransactionDetail(transactionId) {
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-success"
+                                onclick="generateReciboPago(window._reciboCurrentTx)">
+                            <i class="fas fa-file-pdf me-2"></i>Generar Recibo de pago
+                        </button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="fas fa-times me-2"></i>Cerrar
                         </button>

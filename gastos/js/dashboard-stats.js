@@ -246,36 +246,6 @@ async function updateCompanyStatsReal(resumen) {
             }
         }
 
-        // Actualizar "Al Corriente" y "Pendientes"
-        const currentStudents = document.getElementById('currentStudents');
-        const pendingStudents = document.getElementById('pendingStudents');
-
-        if (window.currentCompanyFilter === '1' && (currentStudents || pendingStudents)) {
-            try {
-                // v3.1.3: Usar API Client en lugar de fetch directo
-                const alertsData = await window.apiGet('dashboard/alertas-pagos', { empresa_id: 1 });
-
-                if (alertsData.success) {
-                    const proximos = Array.isArray(alertsData.data.proximos_vencer) ?
-                        alertsData.data.proximos_vencer.filter(a => String(a.estatus || '').toLowerCase() !== 'baja') : [];
-                    const vencidos = Array.isArray(alertsData.data.vencidos) ?
-                        alertsData.data.vencidos.filter(a => String(a.estatus || '').toLowerCase() !== 'baja') : [];
-
-                    const totalPendientes = proximos.length + vencidos.length;
-
-                    // v3.1.3: Usar API Client en lugar de fetch directo
-                    const alumnosData = await window.apiGet('dashboard/alumnos', { empresa_id: 1 });
-                    const totalActivos = alumnosData.success ? (alumnosData.data.total_alumnos || 0) : 0;
-
-                    // v3.6.0: Eliminado - updatePaymentMetrics() es la única fuente de verdad
-                    // Los valores se calculan con getPaymentStatusHomologado() para consistencia
-                    console.log(`Selector: alertas cargadas (${proximos.length} próximos, ${vencidos.length} vencidos)`);
-                }
-            } catch (error) {
-                console.error('Error calculando pendientes:', error);
-            }
-        }
-        
         console.log('✅ Estadísticas del selector actualizadas');
         
     } catch (error) {
@@ -300,12 +270,12 @@ async function loadRockstarSkullDataReal() {
             
             console.log('📊 Datos REALES recibidos:', { stats, clases, maestros, metricas });
 
-            // Actualizar campo companyStudents en el selector
-            if (stats && stats.alumnos_activos) {
+            // Actualizar campo companyStudents en el selector (personas únicas activas)
+            if (stats && stats.personas_activas !== undefined) {
                 const companyStudentsElement = document.getElementById('companyStudents');
                 if (companyStudentsElement) {
-                    companyStudentsElement.textContent = stats.alumnos_activos;
-                    console.log(`✅ Alumnos activos en selector: ${stats.alumnos_activos}`);
+                    companyStudentsElement.textContent = stats.personas_activas;
+                    console.log(`✅ Alumnos activos (únicos) en selector: ${stats.personas_activas}`);
                 }
             }
             
@@ -324,7 +294,7 @@ async function loadRockstarSkullDataReal() {
             
             // Métricas específicas
             if (metricas) {
-                updateElement('groupClasses', metricas.clases_grupales || 0);
+                updateElement('groupClasses', metricas.total_clases || 0);
                 updateElement('individualClasses', metricas.clases_individuales || 0);
                 // v3.6.0: currentStudents y pendingStudents se actualizan en updatePaymentMetrics()
                 // para usar getPaymentStatusHomologado() como única fuente de verdad
@@ -443,45 +413,28 @@ async function loadInversionMKT() {
 }
 
 /**
- * ✅ HOMOLOGADO: Calcular y actualizar métricas de pagos de alumnos
+ * Actualizar métricas de pagos del widget usando la misma fuente que las alertas.
+ * Usa /dashboard/alertas-pagos (alumnos únicos, lógica PHP calcularEstadoPagoHomologado)
+ * para que "Al Corriente" y "Pendientes" cuadren siempre con el widget de alertas.
  */
 async function updatePaymentMetrics() {
     try {
-        console.log('💰 Calculando métricas HOMOLOGADAS de pagos de alumnos...');
+        console.log('💰 Actualizando métricas de pagos desde alertas...');
 
-        const result = await window.apiGet('alumnos', {
-            empresa_id: 1,
-            estatus: 'Activo',
-            limit: 1000,
-            unificar: '0'   // Contar filas individuales (igual base que el stats card de alumnos activos)
-        });
+        const result = await window.apiGet('dashboard/alertas-pagos', { empresa_id: 1 });
 
         if (result.success && result.data) {
-            const alumnos = result.data;
-            let alCorriente = 0;
-            let pendientes = 0;
+            const alCorriente = result.data.al_corriente || 0;
+            const pendientes  = (result.data.proximos_vencer || []).length
+                              + (result.data.vencidos || []).length;
 
-            alumnos.forEach(alumno => {
-                const estadoPago = getPaymentStatusHomologado(alumno);
-
-                switch (estadoPago) {
-                    case 'current':
-                        alCorriente++;
-                        break;
-                    case 'upcoming':
-                    case 'overdue':
-                        pendientes++;
-                        break;
-                }
-            });
-            
             updateElement('currentStudents', alCorriente);
-            updateElement('pendingStudents', pendientes);
-            
-            console.log(`✅ MÉTRICAS HOMOLOGADAS: ${alCorriente} al corriente, ${pendientes} pendientes`);
+            updateElement('pendingStudents',  pendientes);
+
+            console.log(`✅ MÉTRICAS: ${alCorriente} al corriente, ${pendientes} pendientes`);
         }
     } catch (error) {
-        console.error('❌ Error calculando métricas homologadas:', error);
+        console.error('❌ Error actualizando métricas de pagos:', error);
     }
 }
 
