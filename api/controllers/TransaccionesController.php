@@ -1926,68 +1926,31 @@ class TransaccionesController {
                 ];
             }
 
-            // REGLA 2: Si NO pagó el mes anterior → calcular respecto al corte real
-            // El código anterior calculaba finGraciaDeuda correctamente pero ignoraba el
-            // resultado y siempre devolvía 'overdue'. Ahora devuelve 'upcoming' mientras
-            // el período de gracia no haya expirado.
+            // REGLA 2: Si NO pagó el mes anterior → VENCIDO
+            // La gracia de 5 días solo aplica al mes en curso (REGLA 3/4).
+            // Si el mes anterior pasó completo sin pago, es vencido sin excepción.
             if (!$pagoMesAnterior) {
                 if ($fechaUltimoPago) {
-                    // Fecha de corte del mes siguiente al último pago (cuando debió pagar)
+                    // Calcular fecha del primer corte incumplido (para mostrar días vencido)
                     $mesSiguienteAlPago = clone $fechaUltimoPago;
                     $mesSiguienteAlPago->modify('+1 month');
-
                     $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-') . str_pad($diaCorte, 2, '0', STR_PAD_LEFT));
                     $fechaCorteDeuda->setTime(0, 0, 0);
-
-                    // Ajustar si el día no existe en ese mes (ej: 31 en febrero)
                     if ((int)$fechaCorteDeuda->format('d') !== $diaCorte) {
                         $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-t'));
                         $fechaCorteDeuda->setTime(0, 0, 0);
                     }
-
-                    // Ventana de gracia: corte + 5 días
-                    $finGraciaDeuda = clone $fechaCorteDeuda;
-                    $finGraciaDeuda->modify('+5 days');
-
-                    // Dentro del período de gracia → PRÓXIMO A VENCER
-                    if ($hoy <= $finGraciaDeuda) {
-                        return [
-                            'status' => 'upcoming',
-                            'dias' => $hoy->diff($finGraciaDeuda)->days,
-                            'fecha_corte' => $fechaCorteDeuda->format('Y-m-d')
-                        ];
-                    }
-
-                    // Pasó el período de gracia → VENCIDO
-                    return [
-                        'status' => 'overdue',
-                        'dias' => $hoy->diff($finGraciaDeuda)->days,
-                        'fecha_corte' => $fechaCorteDeuda->format('Y-m-d')
-                    ];
-
                 } else {
-                    // Sin pagos registrados: primer vencimiento = inscripción + 1 mes
-                    $primerCorte = clone $fechaInscripcion;
-                    $primerCorte->modify('+1 month');
-                    $primerCorte->setTime(0, 0, 0);
-
-                    $finGraciaPrimer = clone $primerCorte;
-                    $finGraciaPrimer->modify('+5 days');
-
-                    if ($hoy <= $finGraciaPrimer) {
-                        return [
-                            'status' => 'upcoming',
-                            'dias' => $hoy->diff($finGraciaPrimer)->days,
-                            'fecha_corte' => $primerCorte->format('Y-m-d')
-                        ];
-                    }
-
-                    return [
-                        'status' => 'overdue',
-                        'dias' => $hoy->diff($finGraciaPrimer)->days,
-                        'fecha_corte' => $primerCorte->format('Y-m-d')
-                    ];
+                    // Sin pagos: primer corte = inscripción + 1 mes
+                    $fechaCorteDeuda = clone $fechaInscripcion;
+                    $fechaCorteDeuda->modify('+1 month');
+                    $fechaCorteDeuda->setTime(0, 0, 0);
                 }
+                return [
+                    'status' => 'overdue',
+                    'dias' => $fechaCorteDeuda < $hoy ? $hoy->diff($fechaCorteDeuda)->days : 0,
+                    'fecha_corte' => $fechaCorteDeuda->format('Y-m-d')
+                ];
             }
 
             // REGLA 3: Pagó mes anterior Y estamos en periodo → PRÓXIMO A VENCER

@@ -64,24 +64,8 @@ function getPaymentStatusHomologado(student) {
              (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
 
         if (pagoEsteMes) return 'current';
-
-        // REGLA 2: No pagó el mes anterior → verificar si aún está en gracia del corte incumplido
-        if (!pagoMesAnterior) {
-            if (fechaUltimoPago) {
-                // Corte del mes siguiente al último pago (primer mes incumplido)
-                var mesSigPago = new Date(fechaUltimoPago.getFullYear(), fechaUltimoPago.getMonth() + 1, 1);
-                var fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth(), diaCorte);
-                if (fechaCorteDeuda.getDate() !== diaCorte) {
-                    fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth() + 1, 0);
-                }
-                fechaCorteDeuda.setHours(0, 0, 0, 0);
-                var finGraciaDeuda = new Date(fechaCorteDeuda);
-                finGraciaDeuda.setDate(finGraciaDeuda.getDate() + 5);
-                if (today <= finGraciaDeuda) return 'upcoming';
-            }
-            return 'overdue';
-        }
-
+        // REGLA 2: No pagó el mes anterior → VENCIDO (gracia solo aplica al mes en curso)
+        if (!pagoMesAnterior) return 'overdue';
         if (pagoMesAnterior && enPeriodoPago) return 'upcoming';
         if (pagoMesAnterior && today > finPeriodoGracia) return 'overdue';
         if (pagoMesAnterior && today < inicioPeriodoPago) return 'current';
