@@ -502,13 +502,16 @@ function getPaymentStatusHomologado(student) {
         }
 
         // ✅ REGLA 2: No pagó el mes anterior → verificar gracia del primer corte incumplido.
-        // Corte incumplido = diaCorte del mes siguiente al último pago + 5 días de gracia.
+        // Usar el DÍA del último pago (no diaCorte de inscripción) para reflejar el ciclo real del alumno.
+        // Ej: Andrés pagó ene-9 → corte feb-9, gracia feb-14. Mar-2 > feb-14 → VENCIDO ✓
+        // Ej: alumno pagó ene-28 → corte feb-28, gracia mar-5. Mar-2 ≤ mar-5 → PRÓXIMO ✓
         if (!pagoMesAnterior) {
             if (fechaUltimoPago) {
+                const diaUltimoPago = fechaUltimoPago.getDate();
                 const mesSigPago = new Date(fechaUltimoPago.getFullYear(), fechaUltimoPago.getMonth() + 1, 1);
-                let fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth(), diaCorte);
+                let fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth(), diaUltimoPago);
                 fechaCorteDeuda.setHours(0, 0, 0, 0);
-                // Si diaCorte no existe en ese mes (ej: 31 en feb), usar último día del mes
+                // Si el día no existe en ese mes (ej: 31 en feb), usar último día del mes
                 if (fechaCorteDeuda.getMonth() !== mesSigPago.getMonth()) {
                     fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth() + 1, 0);
                     fechaCorteDeuda.setHours(0, 0, 0, 0);

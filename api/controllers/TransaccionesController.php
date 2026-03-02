@@ -1927,17 +1927,19 @@ class TransaccionesController {
             }
 
             // REGLA 2: Si NO pagó el mes anterior → verificar gracia del primer corte incumplido.
-            // El alumno tiene hasta diaCorte del mes siguiente al último pago + 5 días de gracia.
-            // Ej: inscrito el 28, pagó ene-28 → corte feb-28, gracia hasta mar-5.
-            // Ej: Andrés pagó ene-9, diaCorte=9 → corte feb-9, gracia hasta feb-14. Hoy mar-2 → VENCIDO.
+            // IMPORTANTE: usar el DÍA del último pago (no diaCorte de inscripción) para determinar
+            // cuándo era esperado el siguiente pago. Así:
+            //   Andrés pagó ene-9 → primer corte = feb-9, gracia hasta feb-14. Hoy mar-2 → VENCIDO ✓
+            //   Alumno pagó ene-28 → primer corte = feb-28, gracia hasta mar-5. Hoy mar-2 → PRÓXIMO ✓
             if (!$pagoMesAnterior) {
                 if ($fechaUltimoPago) {
-                    // Primer corte incumplido = diaCorte del mes siguiente al último pago
+                    // Usar el día del último pago real (no el diaCorte de inscripción)
+                    $diaUltimoPago = (int)$fechaUltimoPago->format('d');
                     $mesSiguienteAlPago = clone $fechaUltimoPago;
                     $mesSiguienteAlPago->modify('+1 month');
-                    $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-') . str_pad($diaCorte, 2, '0', STR_PAD_LEFT));
+                    $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-') . str_pad($diaUltimoPago, 2, '0', STR_PAD_LEFT));
                     $fechaCorteDeuda->setTime(0, 0, 0);
-                    if ((int)$fechaCorteDeuda->format('d') !== $diaCorte) {
+                    if ((int)$fechaCorteDeuda->format('d') !== $diaUltimoPago) {
                         // El día no existe en ese mes (ej: día 31 en febrero) → último día del mes
                         $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-t'));
                         $fechaCorteDeuda->setTime(0, 0, 0);
