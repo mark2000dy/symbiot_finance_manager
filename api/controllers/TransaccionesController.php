@@ -1926,23 +1926,45 @@ class TransaccionesController {
                 ];
             }
 
-            // REGLA 2: Si NO pagó el mes anterior → verificar gracia del primer corte incumplido.
-            // IMPORTANTE: usar el DÍA del último pago (no diaCorte de inscripción) para determinar
-            // cuándo era esperado el siguiente pago. Así:
-            //   Andrés pagó ene-9 → primer corte = feb-9, gracia hasta feb-14. Hoy mar-2 → VENCIDO ✓
-            //   Alumno pagó ene-28 → primer corte = feb-28, gracia hasta mar-5. Hoy mar-2 → PRÓXIMO ✓
+            // REGLA 2: No pagó el mes anterior → verificar si el último pago cubrió su corte.
+            // Se usa diaCorte de fecha_inscripcion (no el día del pago).
+            // Lógica:
+            //   1. Calcular el corte del mismo mes que el último pago (usando diaCorte).
+            //   2. Si el pago fue >= corte-3días → cubre ese mes → siguiente corte = mes siguiente.
+            //   3. Si el pago fue < corte-3días (muy antes) → no cubrió ese corte → fechaCorteDeuda = ese mismo corte.
+            //   4. Si hoy <= fechaCorteDeuda + 5 días → PRÓXIMO. Si no → VENCIDO.
+            //
+            // Casos verificados (hoy 2-mar-2026, diaCorte desde inscripción):
+            //   Andrés (diaCorte=30, pagó ene-9): ventana ene=[27-ene,4-feb], ene-9 < 27-ene
+            //     → corteDeuda = ene-30, gracia = feb-4, hoy mar-2 > feb-4 → VENCIDO ✓
+            //   Inscrito ene-31 (diaCorte=31, pagó ene-31): ene-31 >= ene-28
+            //     → corteDeuda = feb-28 (clamped), gracia = mar-5, hoy mar-2 ≤ mar-5 → PRÓXIMO ✓
             if (!$pagoMesAnterior) {
                 if ($fechaUltimoPago) {
-                    // Usar el día del último pago real (no el diaCorte de inscripción)
-                    $diaUltimoPago = (int)$fechaUltimoPago->format('d');
-                    $mesSiguienteAlPago = clone $fechaUltimoPago;
-                    $mesSiguienteAlPago->modify('+1 month');
-                    $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-') . str_pad($diaUltimoPago, 2, '0', STR_PAD_LEFT));
-                    $fechaCorteDeuda->setTime(0, 0, 0);
-                    if ((int)$fechaCorteDeuda->format('d') !== $diaUltimoPago) {
-                        // El día no existe en ese mes (ej: día 31 en febrero) → último día del mes
-                        $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-t'));
+                    // Corte del mismo mes que el último pago
+                    $corteMismoMes = new DateTime($fechaUltimoPago->format('Y-m-') . str_pad($diaCorte, 2, '0', STR_PAD_LEFT));
+                    $corteMismoMes->setTime(0, 0, 0);
+                    if ((int)$corteMismoMes->format('d') !== $diaCorte) {
+                        $corteMismoMes = new DateTime($fechaUltimoPago->format('Y-m-t'));
+                        $corteMismoMes->setTime(0, 0, 0);
+                    }
+                    // Inicio de la ventana de pago (3 días antes del corte)
+                    $inicioVentana = clone $corteMismoMes;
+                    $inicioVentana->modify('-3 days');
+
+                    if ($fechaUltimoPago >= $inicioVentana) {
+                        // Pago dentro/después de la ventana → cubre ese mes → siguiente corte = mes siguiente
+                        $mesSig = clone $fechaUltimoPago;
+                        $mesSig->modify('+1 month');
+                        $fechaCorteDeuda = new DateTime($mesSig->format('Y-m-') . str_pad($diaCorte, 2, '0', STR_PAD_LEFT));
                         $fechaCorteDeuda->setTime(0, 0, 0);
+                        if ((int)$fechaCorteDeuda->format('d') !== $diaCorte) {
+                            $fechaCorteDeuda = new DateTime($mesSig->format('Y-m-t'));
+                            $fechaCorteDeuda->setTime(0, 0, 0);
+                        }
+                    } else {
+                        // Pago antes de la ventana → no cubrió el corte → primer incumplido = ese mismo corte
+                        $fechaCorteDeuda = clone $corteMismoMes;
                     }
                 } else {
                     // Sin pagos previos: primer corte = inscripción + 1 mes
@@ -1950,7 +1972,6 @@ class TransaccionesController {
                     $fechaCorteDeuda->modify('+1 month');
                     $fechaCorteDeuda->setTime(0, 0, 0);
                 }
-                // Gracia de 5 días a partir del primer corte incumplido
                 $finGraciaDeuda = clone $fechaCorteDeuda;
                 $finGraciaDeuda->modify('+5 days');
                 $finGraciaDeuda->setTime(23, 59, 59);

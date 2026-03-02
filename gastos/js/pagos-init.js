@@ -64,20 +64,39 @@ function getPaymentStatusHomologado(student) {
              (today.getMonth() === 0 && fechaUltimoPago.getFullYear() === today.getFullYear() - 1));
 
         if (pagoEsteMes) return 'current';
-        // REGLA 2: No pagó el mes anterior → verificar gracia del primer corte incumplido.
-        // Usar el DÍA del último pago (no diaCorte de inscripción) para reflejar el ciclo real del alumno.
-        // Ej: Andrés pagó ene-9 → corte feb-9, gracia feb-14. Mar-2 > feb-14 → VENCIDO ✓
-        // Ej: alumno pagó ene-28 → corte feb-28, gracia mar-5. Mar-2 ≤ mar-5 → PRÓXIMO ✓
+        // REGLA 2: No pagó el mes anterior → verificar si el último pago cubrió su corte.
+        // diaCorte viene de fecha_inscripcion (regla del negocio).
+        // Si pago >= corte-3días del mismo mes → cubre ese mes → fechaCorteDeuda = mes siguiente.
+        // Si pago < corte-3días (muy temprano) → no cubrió → fechaCorteDeuda = ese mismo corte.
+        // Andrés (diaCorte=30, pagó ene-9): ventana ene=[ene-27,feb-4], ene-9 < ene-27
+        //   → corteDeuda=ene-30, gracia=feb-4, hoy mar-2 > feb-4 → VENCIDO ✓
+        // Inscrito ene-31 (diaCorte=31, pagó ene-31): ene-31 >= ene-28
+        //   → corteDeuda=feb-28(clamped), gracia=mar-5, hoy mar-2 ≤ mar-5 → PRÓXIMO ✓
         if (!pagoMesAnterior) {
             if (fechaUltimoPago) {
-                const diaUltimoPago = fechaUltimoPago.getDate();
-                const mesSigPago = new Date(fechaUltimoPago.getFullYear(), fechaUltimoPago.getMonth() + 1, 1);
-                let fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth(), diaUltimoPago);
-                fechaCorteDeuda.setHours(0, 0, 0, 0);
-                // Si el día no existe en ese mes (ej: 31 en feb), usar último día del mes
-                if (fechaCorteDeuda.getMonth() !== mesSigPago.getMonth()) {
-                    fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth() + 1, 0);
+                // Corte del mismo mes que el último pago (usando diaCorte de inscripción)
+                let corteMismoMes = new Date(fechaUltimoPago.getFullYear(), fechaUltimoPago.getMonth(), diaCorte);
+                corteMismoMes.setHours(0, 0, 0, 0);
+                if (corteMismoMes.getMonth() !== fechaUltimoPago.getMonth()) {
+                    corteMismoMes = new Date(fechaUltimoPago.getFullYear(), fechaUltimoPago.getMonth() + 1, 0);
+                    corteMismoMes.setHours(0, 0, 0, 0);
+                }
+                const inicioVentana = new Date(corteMismoMes);
+                inicioVentana.setDate(inicioVentana.getDate() - 3);
+
+                let fechaCorteDeuda;
+                if (fechaUltimoPago >= inicioVentana) {
+                    // Pago dentro/después de la ventana → cubre ese mes → siguiente corte = mes siguiente
+                    const mesSig = new Date(fechaUltimoPago.getFullYear(), fechaUltimoPago.getMonth() + 1, 1);
+                    fechaCorteDeuda = new Date(mesSig.getFullYear(), mesSig.getMonth(), diaCorte);
                     fechaCorteDeuda.setHours(0, 0, 0, 0);
+                    if (fechaCorteDeuda.getMonth() !== mesSig.getMonth()) {
+                        fechaCorteDeuda = new Date(mesSig.getFullYear(), mesSig.getMonth() + 1, 0);
+                        fechaCorteDeuda.setHours(0, 0, 0, 0);
+                    }
+                } else {
+                    // Pago antes de la ventana → no cubrió el corte → primer incumplido = ese mismo corte
+                    fechaCorteDeuda = corteMismoMes;
                 }
                 const finGraciaDeuda = new Date(fechaCorteDeuda);
                 finGraciaDeuda.setDate(finGraciaDeuda.getDate() + 5);
