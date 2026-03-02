@@ -501,9 +501,20 @@ function getPaymentStatusHomologado(student) {
             return 'current';
         }
 
-        // ✅ REGLA 2: Si NO pagó mes anterior → VENCIDO (sin importar el periodo actual)
-        // Ya debió haber pagado en el periodo del mes anterior
+        // ✅ REGLA 2: No pagó el mes anterior → verificar si aún está en gracia del corte incumplido
+        // (espejo exacto de calcularEstadoPagoHomologado PHP)
         if (!pagoMesAnterior) {
+            if (fechaUltimoPago) {
+                const mesSigPago = new Date(fechaUltimoPago.getFullYear(), fechaUltimoPago.getMonth() + 1, 1);
+                let fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth(), diaCorte);
+                if (fechaCorteDeuda.getDate() !== diaCorte) {
+                    fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth() + 1, 0);
+                }
+                fechaCorteDeuda.setHours(0, 0, 0, 0);
+                const finGraciaDeuda = new Date(fechaCorteDeuda);
+                finGraciaDeuda.setDate(finGraciaDeuda.getDate() + 5);
+                if (today <= finGraciaDeuda) return 'upcoming';
+            }
             return 'overdue';
         }
         
