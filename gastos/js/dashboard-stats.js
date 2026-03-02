@@ -501,11 +501,26 @@ function getPaymentStatusHomologado(student) {
             return 'current';
         }
 
-        // ✅ REGLA 2: No pagó el mes anterior → VENCIDO (gracia solo aplica al mes en curso)
+        // ✅ REGLA 2: No pagó el mes anterior → verificar gracia del primer corte incumplido.
+        // Corte incumplido = diaCorte del mes siguiente al último pago + 5 días de gracia.
         if (!pagoMesAnterior) {
+            if (fechaUltimoPago) {
+                const mesSigPago = new Date(fechaUltimoPago.getFullYear(), fechaUltimoPago.getMonth() + 1, 1);
+                let fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth(), diaCorte);
+                fechaCorteDeuda.setHours(0, 0, 0, 0);
+                // Si diaCorte no existe en ese mes (ej: 31 en feb), usar último día del mes
+                if (fechaCorteDeuda.getMonth() !== mesSigPago.getMonth()) {
+                    fechaCorteDeuda = new Date(mesSigPago.getFullYear(), mesSigPago.getMonth() + 1, 0);
+                    fechaCorteDeuda.setHours(0, 0, 0, 0);
+                }
+                const finGraciaDeuda = new Date(fechaCorteDeuda);
+                finGraciaDeuda.setDate(finGraciaDeuda.getDate() + 5);
+                finGraciaDeuda.setHours(23, 59, 59, 999);
+                if (today <= finGraciaDeuda) return 'upcoming';
+            }
             return 'overdue';
         }
-        
+
         // ✅ REGLA 3: Pagó mes anterior Y estamos en periodo de pago → PRÓXIMO A VENCER
         if (pagoMesAnterior && enPeriodoPago) {
             return 'upcoming';

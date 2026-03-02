@@ -1926,25 +1926,38 @@ class TransaccionesController {
                 ];
             }
 
-            // REGLA 2: Si NO pagó el mes anterior → VENCIDO
-            // La gracia de 5 días solo aplica al mes en curso (REGLA 3/4).
-            // Si el mes anterior pasó completo sin pago, es vencido sin excepción.
+            // REGLA 2: Si NO pagó el mes anterior → verificar gracia del primer corte incumplido.
+            // El alumno tiene hasta diaCorte del mes siguiente al último pago + 5 días de gracia.
+            // Ej: inscrito el 28, pagó ene-28 → corte feb-28, gracia hasta mar-5.
+            // Ej: Andrés pagó ene-9, diaCorte=9 → corte feb-9, gracia hasta feb-14. Hoy mar-2 → VENCIDO.
             if (!$pagoMesAnterior) {
                 if ($fechaUltimoPago) {
-                    // Calcular fecha del primer corte incumplido (para mostrar días vencido)
+                    // Primer corte incumplido = diaCorte del mes siguiente al último pago
                     $mesSiguienteAlPago = clone $fechaUltimoPago;
                     $mesSiguienteAlPago->modify('+1 month');
                     $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-') . str_pad($diaCorte, 2, '0', STR_PAD_LEFT));
                     $fechaCorteDeuda->setTime(0, 0, 0);
                     if ((int)$fechaCorteDeuda->format('d') !== $diaCorte) {
+                        // El día no existe en ese mes (ej: día 31 en febrero) → último día del mes
                         $fechaCorteDeuda = new DateTime($mesSiguienteAlPago->format('Y-m-t'));
                         $fechaCorteDeuda->setTime(0, 0, 0);
                     }
                 } else {
-                    // Sin pagos: primer corte = inscripción + 1 mes
+                    // Sin pagos previos: primer corte = inscripción + 1 mes
                     $fechaCorteDeuda = clone $fechaInscripcion;
                     $fechaCorteDeuda->modify('+1 month');
                     $fechaCorteDeuda->setTime(0, 0, 0);
+                }
+                // Gracia de 5 días a partir del primer corte incumplido
+                $finGraciaDeuda = clone $fechaCorteDeuda;
+                $finGraciaDeuda->modify('+5 days');
+                $finGraciaDeuda->setTime(23, 59, 59);
+                if ($hoy <= $finGraciaDeuda) {
+                    return [
+                        'status' => 'upcoming',
+                        'dias' => $hoy->diff($finGraciaDeuda)->days + 1,
+                        'fecha_corte' => $fechaCorteDeuda->format('Y-m-d')
+                    ];
                 }
                 return [
                     'status' => 'overdue',
