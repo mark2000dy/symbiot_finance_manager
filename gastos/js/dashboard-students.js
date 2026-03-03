@@ -2751,6 +2751,10 @@ async function viewPaymentTransactionDetail(transactionId) {
                                         <td><strong>Forma de Pago:</strong></td>
                                         <td>${transaction.forma_pago || 'No especificada'}</td>
                                     </tr>
+                                    <tr>
+                                        <td><strong>Referencia de Pago:</strong></td>
+                                        <td>${transaction.referencia || '—'}</td>
+                                    </tr>
                                 </table>
                             </div>
                         </div>
