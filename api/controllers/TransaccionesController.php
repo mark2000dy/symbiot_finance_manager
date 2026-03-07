@@ -638,6 +638,9 @@ class TransaccionesController {
                         a.tipo_clase,
                         a.horario,
                         a.fecha_inscripcion,
+                        (SELECT MIN(a2.fecha_inscripcion) FROM alumnos a2
+                         WHERE a2.nombre = a.nombre AND a2.empresa_id = a.empresa_id
+                        ) as min_fecha_inscripcion,
                         NULLIF(
                             GREATEST(
                                 COALESCE(a.fecha_ultimo_pago, '1900-01-01'),

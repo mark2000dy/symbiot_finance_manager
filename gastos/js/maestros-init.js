@@ -37,7 +37,8 @@ function getPaymentStatusHomologado(student) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const fechaInscripcion = parseLocalDate(student.fecha_inscripcion);
+        // Usar min_fecha_inscripcion (igual que alertas/gestión) para diaCorte consistente
+        const fechaInscripcion = parseLocalDate(student.min_fecha_inscripcion || student.fecha_inscripcion);
         const diaCorte = fechaInscripcion.getDate();
 
         let fechaCorteActual = new Date(today.getFullYear(), today.getMonth(), diaCorte);
@@ -106,14 +107,14 @@ function getFormattedNextPaymentDate(student) {
         if (student.estatus === 'Baja') {
             return '<span class="text-muted">No aplica</span>';
         }
-        if (!student.fecha_inscripcion) {
+        if (!student.fecha_inscripcion && !student.min_fecha_inscripcion) {
             return '<span class="text-muted">Sin fecha</span>';
         }
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const fechaInscripcion = parseLocalDate(student.fecha_inscripcion);
+        const fechaInscripcion = parseLocalDate(student.min_fecha_inscripcion || student.fecha_inscripcion);
         const diaCorte = fechaInscripcion.getDate();
 
         let fechaCorteActual = new Date(today.getFullYear(), today.getMonth(), diaCorte);
