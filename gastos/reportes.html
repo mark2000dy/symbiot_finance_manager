@@ -775,16 +775,37 @@
                     <div class="card-body">
                         <!-- Indicadores -->
                         <div class="row mb-4">
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-2 mb-3">
                                 <div class="card" style="background: rgba(25, 135, 84, 0.1); border: 1px solid rgba(25, 135, 84, 0.3);">
                                     <div class="card-body text-center">
                                         <i class="fas fa-user-plus fa-2x text-success mb-2"></i>
                                         <h6 class="text-muted">Total Altas</h6>
                                         <h3 class="text-success mb-0" id="totalAltas">0</h3>
+                                        <small class="text-muted">Nuevos + Reingresos</small>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-2 mb-3">
+                                <div class="card" style="background: rgba(25, 135, 84, 0.07); border: 1px solid rgba(25, 135, 84, 0.2);">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-graduate fa-2x text-success mb-2" style="opacity:.7"></i>
+                                        <h6 class="text-muted">Nuevos</h6>
+                                        <h3 class="text-success mb-0" id="totalNuevos">0</h3>
+                                        <small class="text-muted">Primera inscripción</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <div class="card" style="background: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-check fa-2x text-info mb-2"></i>
+                                        <h6 class="text-muted">Reingresos</h6>
+                                        <h3 class="text-info mb-0" id="totalReingresos">0</h3>
+                                        <small class="text-muted">Regresaron de baja</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 mb-3">
                                 <div class="card" style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3);">
                                     <div class="card-body text-center">
                                         <i class="fas fa-user-minus fa-2x text-danger mb-2"></i>
@@ -793,7 +814,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-2 mb-3">
                                 <div class="card" style="background: rgba(13, 202, 240, 0.1); border: 1px solid rgba(13, 202, 240, 0.3);">
                                     <div class="card-body text-center">
                                         <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
@@ -802,7 +823,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-2 mb-3">
                                 <div class="card" style="background: rgba(255, 165, 0, 0.1); border: 1px solid rgba(255, 165, 0, 0.3);">
                                     <div class="card-body text-center">
                                         <i class="fas fa-users fa-2x text-orange mb-2"></i>
@@ -836,15 +857,16 @@
                                         <thead>
                                             <tr>
                                                 <th><i class="fas fa-calendar me-1"></i>Mes</th>
-                                                <th class="text-end"><i class="fas fa-user-plus me-1 text-success"></i>Altas</th>
+                                                <th class="text-end"><i class="fas fa-user-plus me-1 text-success"></i>Nuevos</th>
+                                                <th class="text-end"><i class="fas fa-user-check me-1 text-info"></i>Reingresos</th>
                                                 <th class="text-end"><i class="fas fa-user-minus me-1 text-danger"></i>Bajas</th>
-                                                <th class="text-end"><i class="fas fa-chart-line me-1 text-info"></i>Neto</th>
+                                                <th class="text-end"><i class="fas fa-chart-line me-1 text-warning"></i>Neto</th>
                                                 <th class="text-end"><i class="fas fa-users me-1 text-warning"></i>Activos</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tablaAltasBajas">
                                             <tr>
-                                                <td colspan="5" class="text-center text-muted">
+                                                <td colspan="6" class="text-center text-muted">
                                                     <i class="fas fa-info-circle me-2"></i>
                                                     Selecciona la empresa Rockstar Skull para ver este reporte
                                                 </td>

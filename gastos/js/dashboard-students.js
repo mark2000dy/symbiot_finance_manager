@@ -469,8 +469,11 @@ async function saveNewStudent() {
             // Limpiar formulario
             form.reset();
 
-            // Recargar lista
+            // Recargar lista y estadísticas del selector de empresa
             await loadStudentsList(1);
+            if (typeof window.loadRockstarSkullDataReal === 'function') {
+                window.loadRockstarSkullDataReal();
+            }
         } else {
             throw new Error(result.message || 'Error al crear alumno');
         }
@@ -521,8 +524,11 @@ async function saveStudentChanges() {
             editModal.hide();
         }
 
-        // Recargar lista
+        // Recargar lista y estadísticas del selector de empresa
         await loadStudentsList(currentStudentsPage);
+        if (typeof window.loadRockstarSkullDataReal === 'function') {
+            window.loadRockstarSkullDataReal();
+        }
 
         console.log('✅ Alumno actualizado correctamente');
 
@@ -563,6 +569,15 @@ async function saveSingleStudentChanges() {
 
     if (result.success) {
         showAlert('success', `Informacion de ${studentData.nombre} actualizada exitosamente`);
+
+        // Validar si el evento anterior en GCal fue encontrado y eliminado/actualizado
+        if (result.gcal_remove != null) {
+            if (result.gcal_remove.error) {
+                setTimeout(() => showAlert('warning', `⚠️ Google Calendar: ${result.gcal_remove.error}. Verifica el evento anterior manualmente.`), 600);
+            } else if (result.gcal_remove.found === 0) {
+                setTimeout(() => showAlert('warning', `⚠️ No se encontró el evento anterior de ${studentData.nombre} en Google Calendar. Elimínalo manualmente si aún aparece.`), 600);
+            }
+        }
 
         // Refrescar campana de notificaciones
         if (window.NotificationsModule && typeof window.NotificationsModule.refresh === 'function') {

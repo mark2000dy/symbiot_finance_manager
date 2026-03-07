@@ -1536,7 +1536,7 @@ async function loadAltasBajasData(filters = {}) {
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-danger">
+                    <td colspan="6" class="text-center text-danger">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         Error cargando datos: ${error.message}
                     </td>
@@ -1552,6 +1552,12 @@ async function loadAltasBajasData(filters = {}) {
 function updateAltasBajasIndicators(resumen) {
     const totalAltasEl = document.getElementById('totalAltas');
     if (totalAltasEl) totalAltasEl.textContent = resumen.total_altas || 0;
+
+    const totalNuevosEl = document.getElementById('totalNuevos');
+    if (totalNuevosEl) totalNuevosEl.textContent = resumen.total_nuevos || 0;
+
+    const totalReingresosEl = document.getElementById('totalReingresos');
+    if (totalReingresosEl) totalReingresosEl.textContent = resumen.total_reingresos || 0;
 
     const totalBajasEl = document.getElementById('totalBajas');
     if (totalBajasEl) totalBajasEl.textContent = resumen.total_bajas || 0;
@@ -1582,10 +1588,11 @@ function updateAltasBajasChart(meses) {
         return;
     }
 
-    const labels = meses.map(d => d.mes);
-    const altas = meses.map(d => d.altas);
-    const bajas = meses.map(d => d.bajas);
-    const netos = meses.map(d => d.neto);
+    const labels    = meses.map(d => d.mes);
+    const nuevos    = meses.map(d => d.nuevos    ?? 0);
+    const reingresos= meses.map(d => d.reingresos ?? 0);
+    const bajas     = meses.map(d => d.bajas);
+    const netos     = meses.map(d => d.neto);
 
     const mobile = isMobileViewport();
 
@@ -1612,10 +1619,17 @@ function updateAltasBajasChart(meses) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Altas',
-                    data: altas,
-                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    label: 'Nuevos',
+                    data: nuevos,
+                    backgroundColor: 'rgba(25, 135, 84, 0.8)',
                     borderColor: 'rgb(25, 135, 84)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Reingresos',
+                    data: reingresos,
+                    backgroundColor: 'rgba(13, 202, 240, 0.7)',
+                    borderColor: 'rgb(13, 202, 240)',
                     borderWidth: 1
                 },
                 {
@@ -1689,7 +1703,7 @@ function updateAltasBajasTable(meses) {
     if (!meses || meses.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center text-muted">
+                <td colspan="6" class="text-center text-muted">
                     <i class="fas fa-info-circle me-2"></i>
                     No hay datos disponibles para los filtros seleccionados
                 </td>
@@ -1716,7 +1730,11 @@ function updateAltasBajasTable(meses) {
                 </td>
                 <td class="text-end text-success">
                     <i class="fas fa-user-plus me-1"></i>
-                    ${item.altas}
+                    ${item.nuevos ?? 0}
+                </td>
+                <td class="text-end text-info">
+                    <i class="fas fa-user-check me-1"></i>
+                    ${item.reingresos ?? 0}
                 </td>
                 <td class="text-end text-danger">
                     <i class="fas fa-user-minus me-1"></i>

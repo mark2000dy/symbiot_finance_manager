@@ -521,28 +521,32 @@ class GoogleCalendarService {
      * Si es el único alumno, borra el evento. Si hay más (con &), solo quita su nombre.
      */
     public function removeStudentFromSchedule($studentName, $instrument) {
-        if (!$this->isConnected()) return false;
+        if (!$this->isConnected()) return ['found' => 0, 'deleted' => 0, 'updated' => 0, 'error' => 'No conectado a Google Calendar'];
         if (!$this->service) $this->service = new Calendar($this->client);
 
         // Limpiar nombre para búsqueda
         $cleanName = trim(preg_replace('/\s+/', ' ', $studentName));
         $nameParts = explode(' ', $cleanName);
         $firstName = $nameParts[0] ?? '';
-        
-        // Buscar eventos futuros
+
+        // Buscar desde el inicio de la semana actual hacia adelante
+        // (preserva el historial de GCal — no toca eventos pasados de semanas anteriores)
+        $lunesActual = new DateTime('monday this week', new DateTimeZone('America/Mexico_City'));
+        $lunesActual->setTime(0, 0, 0);
+
         $optParams = [
             'q' => $firstName,
             'maxResults' => 50,
             'orderBy' => 'startTime',
             'singleEvents' => true,
-            'timeMin' => date('c'), // Desde hoy
+            'timeMin' => $lunesActual->format('c'), // Desde lunes de la semana actual
             'timeMax' => date('c', strtotime('+3 months')),
         ];
 
         try {
             $results = $this->service->events->listEvents($this->calendarId, $optParams);
             $events = $results->getItems();
-            
+
             // Normalización
             $normalize = function($str) {
                 $str = mb_strtolower($str, 'UTF-8');
@@ -553,81 +557,109 @@ class GoogleCalendarService {
             $instrumentNorm = $normalize($instrument);
             $studentNameNorm = $normalize($studentName);
             $studentNameParts = array_filter(explode(' ', $studentNameNorm), function($p) { return strlen($p) > 2; });
-            
-            $processedSeries = [];
 
-            foreach ($events as $event) {
-                $summaryRaw = $event->getSummary();
-                $summaryNorm = $normalize($summaryRaw);
-
-                // Verificar instrumento
-                if (!empty($instrumentNorm) && strpos($summaryNorm, $instrumentNorm) === false) continue;
-
-                // Verificar nombre (lógica difusa)
+            // Función para verificar coincidencia de nombre (lógica difusa)
+            $matchesName = function($summaryNorm) use ($studentNameParts) {
                 $matchCount = 0;
                 foreach ($studentNameParts as $part) {
                     if (strpos($summaryNorm, $part) !== false) $matchCount++;
                 }
-                if (count($studentNameParts) > 1 && $matchCount < 2) continue;
-                if (count($studentNameParts) == 1 && $matchCount < 1) continue;
+                if (count($studentNameParts) > 1 && $matchCount < 2) return false;
+                if (count($studentNameParts) == 1 && $matchCount < 1) return false;
+                return true;
+            };
 
-                // ENCONTRADO - Proceder a eliminar/actualizar
-                $eventId = $event->getId();
+            // Filtrar candidatos: primero con instrumento + nombre
+            $candidatos = [];
+            foreach ($events as $event) {
+                $summaryNorm = $normalize($event->getSummary() ?? '');
+                if (!empty($instrumentNorm) && strpos($summaryNorm, $instrumentNorm) === false) continue;
+                if (!$matchesName($summaryNorm)) continue;
+                $candidatos[] = $event;
+            }
+
+            // Fallback: si no hay coincidencias con instrumento, buscar solo por nombre
+            // (cubre casos donde el instrumento en GCal tiene nombre diferente al de BD)
+            if (empty($candidatos) && !empty($instrumentNorm)) {
+                error_log("⚠️ [Calendar] 0 eventos con instrumento '$instrument' para '$studentName'. Reintentando sin filtro de instrumento...");
+                foreach ($events as $event) {
+                    $summaryNorm = $normalize($event->getSummary() ?? '');
+                    if (!$matchesName($summaryNorm)) continue;
+                    $candidatos[] = $event;
+                }
+                if (!empty($candidatos)) {
+                    error_log("⚠️ [Calendar] Encontrado(s) " . count($candidatos) . " evento(s) por nombre sin filtro de instrumento.");
+                }
+            }
+
+            $found = 0;
+            $deleted = 0;
+            $updated = 0;
+            $processedSeries = [];
+
+            foreach ($candidatos as $event) {
+                $summaryRaw = $event->getSummary();
+
+                // Deduplicar series recurrentes: operar solo sobre el evento maestro
                 $recurringId = $event->getRecurringEventId();
-                $targetEventId = $recurringId ? $recurringId : $eventId;
-                
+                $targetEventId = $recurringId ? $recurringId : $event->getId();
+
                 if (isset($processedSeries[$targetEventId])) continue;
                 $processedSeries[$targetEventId] = true;
+                $found++;
 
                 // Obtener evento maestro
                 $eventToUpdate = $this->service->events->get($this->calendarId, $targetEventId);
                 $currentTitle = $eventToUpdate->getSummary();
-                
+
                 // Parsear título: INSTRUMENTO - ALUMNOS - MAESTRO
                 $parts = array_map('trim', explode('-', $currentTitle));
-                
-                // Reconstruir lista de alumnos
+
+                // Reconstruir lista de alumnos eliminando al alumno objetivo
                 $newParts = [];
                 $studentsFound = false;
 
                 foreach ($parts as $i => $part) {
-                    // Asumimos que la parte con '&' o que coincide con el nombre es la de alumnos
                     if ($i > 0 && mb_stripos($part, $firstName) !== false) {
                         $studentsList = array_map('trim', explode('&', $part));
                         $filteredList = array_filter($studentsList, function($s) use ($normalize, $studentNameParts) {
                             $sNorm = $normalize($s);
-                            foreach ($studentNameParts as $np) if (strpos($sNorm, $np) !== false) return false; // Eliminar si coincide
+                            foreach ($studentNameParts as $np) if (strpos($sNorm, $np) !== false) return false;
                             return true;
                         });
-                        
+
                         if (!empty($filteredList)) {
                             $newParts[] = implode(' & ', $filteredList);
                             $studentsFound = true;
                         }
-                        // Si está vacío, no lo agregamos (se elimina el alumno de esta parte)
                     } else {
                         $newParts[] = $part;
                     }
                 }
 
                 if (!$studentsFound && count($newParts) < count($parts)) {
-                    // Si se eliminó la parte de alumnos y no quedan otros, borrar evento
+                    // Alumno era el único — eliminar evento completo
                     $this->service->events->delete($this->calendarId, $targetEventId);
+                    $deleted++;
                     error_log("🗑️ Evento eliminado de Calendar: $currentTitle");
                 } else {
-                    // Actualizar evento con alumnos restantes
+                    // Quedan otros alumnos — actualizar título
                     $newTitle = implode(' - ', $newParts);
                     if ($newTitle !== $currentTitle) {
                         $eventToUpdate->setSummary($newTitle);
                         $this->service->events->update($this->calendarId, $targetEventId, $eventToUpdate);
+                        $updated++;
                         error_log("✏️ Evento actualizado en Calendar: $newTitle");
                     }
                 }
             }
-            return true;
+
+            error_log("🗑️ [Calendar] removeStudentFromSchedule '$studentName' ($instrument): encontrados=$found, eliminados=$deleted, actualizados=$updated");
+            return ['found' => $found, 'deleted' => $deleted, 'updated' => $updated];
+
         } catch (Exception $e) {
             error_log("Error removiendo alumno de Calendar: " . $e->getMessage());
-            return false;
+            return ['found' => 0, 'deleted' => 0, 'updated' => 0, 'error' => $e->getMessage()];
         }
     }
 }

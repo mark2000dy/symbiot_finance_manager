@@ -294,7 +294,7 @@ async function loadRockstarSkullDataReal() {
             
             // Métricas específicas
             if (metricas) {
-                updateElement('groupClasses', metricas.total_clases || 0);
+                updateElement('groupClasses',     metricas.clases_grupales    || 0);
                 updateElement('individualClasses', metricas.clases_individuales || 0);
                 // v3.6.0: currentStudents y pendingStudents se actualizan en updatePaymentMetrics()
                 // para usar getPaymentStatusHomologado() como única fuente de verdad
@@ -364,15 +364,74 @@ async function loadAltasBajasCurrentMonth() {
 
         if (result.success && result.data && result.data.meses) {
             const mesActual = result.data.meses.find(m => m.mes === currentMonthKey);
-            const altasEl = document.getElementById('altasMesActual');
-            const bajasEl = document.getElementById('bajasMesActual');
-            const nuevosEl = document.getElementById('nuevosAlumnosMes');
-            if (altasEl) altasEl.textContent = mesActual ? mesActual.altas : 0;
-            if (bajasEl) bajasEl.textContent = mesActual ? mesActual.bajas : 0;
-            if (nuevosEl) nuevosEl.textContent = mesActual ? mesActual.altas : 0;
+            const altasEl      = document.getElementById('altasMesActual');
+            const reingresosEl = document.getElementById('reingresosMesActual');
+            const bajasEl      = document.getElementById('bajasMesActual');
+            const nuevosEl     = document.getElementById('nuevosAlumnosMes');
+            if (altasEl)      altasEl.textContent      = mesActual ? mesActual.nuevos      : 0;
+            if (reingresosEl) reingresosEl.textContent = mesActual ? mesActual.reingresos  : 0;
+            if (bajasEl)      bajasEl.textContent      = mesActual ? mesActual.bajas       : 0;
+            if (nuevosEl)     nuevosEl.textContent     = mesActual ? mesActual.nuevos      : 0;
+
+            // Inicializar popovers con los nombres de alumnos por categoría
+            setupMovimientosPopovers(
+                mesActual?.nombres_nuevos     || [],
+                mesActual?.nombres_reingresos || [],
+                mesActual?.nombres_bajas      || []
+            );
         }
     } catch (error) {
         console.error('Error cargando altas/bajas del mes:', error);
+    }
+}
+
+/**
+ * Configura Bootstrap Popovers en las cards de Movimientos del Mes.
+ * Clic → aparece lista de nombres. Clic de nuevo o fuera → desaparece.
+ */
+function setupMovimientosPopovers(nombresNuevos, nombresReingresos, nombresBajas) {
+    const buildContent = (nombres) => {
+        if (!nombres.length) return '<em class="text-muted small">Sin movimientos este mes</em>';
+        return nombres
+            .map(n => `<div class="text-nowrap" style="font-size:0.82rem">• ${n}</div>`)
+            .join('');
+    };
+
+    const configs = [
+        { id: 'altasCard',       titulo: 'Altas este mes',       nombres: nombresNuevos,     cls: 'text-success' },
+        { id: 'reingresosCard',  titulo: 'Reingresos este mes',  nombres: nombresReingresos, cls: 'text-info'    },
+        { id: 'bajasCard',       titulo: 'Bajas este mes',       nombres: nombresBajas,      cls: 'text-danger'  },
+    ];
+
+    configs.forEach(({ id, titulo, nombres, cls }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        // Destruir popover previo si existe
+        const prev = bootstrap.Popover.getInstance(el);
+        if (prev) prev.dispose();
+
+        new bootstrap.Popover(el, {
+            title:     `<span class="${cls} fw-semibold">${titulo}</span>`,
+            content:   `<div style="max-height:180px;overflow-y:auto">${buildContent(nombres)}</div>`,
+            html:      true,
+            trigger:   'click',
+            placement: 'top',
+            container: 'body',
+        });
+    });
+
+    // Cerrar cualquier popover abierto al hacer clic fuera de las cards
+    if (!window._movimientosPopoverOutsideHandler) {
+        window._movimientosPopoverOutsideHandler = true;
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#altasCard, #reingresosCard, #bajasCard')) {
+                ['altasCard', 'reingresosCard', 'bajasCard'].forEach(cardId => {
+                    const inst = bootstrap.Popover.getInstance(document.getElementById(cardId));
+                    if (inst) inst.hide();
+                });
+            }
+        });
     }
 }
 
@@ -664,7 +723,7 @@ async function handleCompanyChange() {
             if (symbiotMetrics)  symbiotMetrics.style.display  = 'none';
 
             // Resetear métricas Rockstar
-            ['groupClasses', 'individualClasses', 'currentStudents', 'pendingStudents', 'companyStudents', 'inversionMKT', 'nuevosAlumnosMes'].forEach(id => {
+            ['groupClasses', 'individualClasses', 'currentStudents', 'pendingStudents', 'companyStudents', 'inversionMKT', 'nuevosAlumnosMes', 'reingresosMesActual'].forEach(id => {
                 const element = document.getElementById(id);
                 if (element) element.textContent = '0';
             });

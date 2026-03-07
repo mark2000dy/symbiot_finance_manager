@@ -913,9 +913,11 @@ class TransaccionesController {
                 require_once __DIR__ . '/../config/GoogleCalendarService.php';
                 $calendarService = new GoogleCalendarService();
                 error_log("🗑️ [Calendar] Eliminando evento de '$nombreOriginal' ($claseOriginal) por ELIMINACIÓN...");
-                $ok = $calendarService->removeStudentFromSchedule($nombreOriginal, $claseOriginal);
-                if ($ok === false) {
-                    error_log("⚠️ [Calendar] removeStudentFromSchedule devolvió false — ¿token vencido o sin conexión?");
+                $removeRes = $calendarService->removeStudentFromSchedule($nombreOriginal, $claseOriginal);
+                if (isset($removeRes['error'])) {
+                    error_log("⚠️ [Calendar] removeStudentFromSchedule error: " . $removeRes['error']);
+                } elseif ($removeRes['deleted'] + $removeRes['updated'] === 0) {
+                    error_log("⚠️ [Calendar] No se encontraron eventos de '$nombreOriginal' ($claseOriginal) en GCal para eliminar.");
                 }
             } catch (Exception $e) {
                 error_log("⚠️ Error eliminando evento de Calendar (delete): " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine());
@@ -975,6 +977,7 @@ class TransaccionesController {
 
         try {
             $input = json_decode(file_get_contents('php://input'), true);
+            $gcalRemoveResult = null; // resultado de eliminación de horario anterior en GCal
 
             error_log("✏️ Actualizando alumno ID: $id por usuario: " . $user['email']);
             error_log("📥 Datos recibidos: " . json_encode($input));
@@ -1003,9 +1006,11 @@ class TransaccionesController {
                     $nombreBaja = $alumnoExistente[0]['nombre'];
                     $claseBaja  = $alumnoExistente[0]['clase'];
                     error_log("🗑️ [Calendar] Eliminando evento de '$nombreBaja' ($claseBaja) por BAJA...");
-                    $ok = $calendarService->removeStudentFromSchedule($nombreBaja, $claseBaja);
-                    if ($ok === false) {
-                        error_log("⚠️ [Calendar] removeStudentFromSchedule devolvió false — ¿token vencido o sin conexión?");
+                    $removeRes = $calendarService->removeStudentFromSchedule($nombreBaja, $claseBaja);
+                    if (isset($removeRes['error'])) {
+                        error_log("⚠️ [Calendar] removeStudentFromSchedule error: " . $removeRes['error']);
+                    } elseif ($removeRes['deleted'] + $removeRes['updated'] === 0) {
+                        error_log("⚠️ [Calendar] No se encontraron eventos de '$nombreBaja' ($claseBaja) en GCal para eliminar.");
                     }
                 } catch (Exception $e) {
                     error_log("⚠️ Error eliminando evento de Calendar (Baja): " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine());
@@ -1031,9 +1036,23 @@ class TransaccionesController {
                 if ($horarioNuevo) {
                     try {
                         require_once __DIR__ . '/../config/GoogleCalendarService.php';
-                        error_log("📅 [Calendar] Iniciando GoogleCalendarService para reactivación...");
+                        error_log("📅 [Calendar] Iniciando GoogleCalendarService...");
                         $calendarService = new GoogleCalendarService();
                         error_log("📅 [Calendar] GoogleCalendarService instanciado OK");
+
+                        // Si es cambio de horario (alumno ya activo), eliminar el slot anterior
+                        // para que removeStudentFromSchedule() extraiga al alumno de eventos combinados
+                        if ($horarioCambia && !$esReactivacion) {
+                            $nombreAnterior = $alumnoExistente[0]['nombre'];
+                            $claseAnterior  = $alumnoExistente[0]['clase'];
+                            error_log("📅 [Calendar] Eliminando horario anterior de '$nombreAnterior' ($claseAnterior) por cambio de horario...");
+                            $gcalRemoveResult = $calendarService->removeStudentFromSchedule($nombreAnterior, $claseAnterior);
+                            if (isset($gcalRemoveResult['error'])) {
+                                error_log("⚠️ [Calendar] Error eliminando horario anterior: " . $gcalRemoveResult['error']);
+                            } elseif ($gcalRemoveResult['deleted'] + $gcalRemoveResult['updated'] === 0) {
+                                error_log("⚠️ [Calendar] No se encontraron eventos anteriores de '$nombreAnterior' ($claseAnterior) en GCal.");
+                            }
+                        }
 
                         // Datos para el evento (usar input si existe, sino fallback a DB)
                         $nombreFinal = $input['nombre'] ?? $alumnoExistente[0]['nombre'];
@@ -1263,7 +1282,8 @@ class TransaccionesController {
             echo json_encode([
                 'success' => true,
                 'message' => 'Alumno actualizado exitosamente',
-                'data' => $alumnoActualizado[0]
+                'data' => $alumnoActualizado[0],
+                'gcal_remove' => $gcalRemoveResult
             ]);
 
         } catch (Exception $e) {
@@ -1686,26 +1706,31 @@ class TransaccionesController {
             ";
             $metricas = executeQuery($metricasQuery, [$empresa_id]);
 
-            // Calcular total de clases semanales sumando el multiplicador de cada inscripción activa
-            // (misma lógica que getClassMultiplier() en pagos-init.js)
+            // Calcular sesiones semanales ponderadas por tipo (misma lógica que getClassMultiplier() en pagos-init.js)
             $clasesActivasQuery = "
-                SELECT precio_mensual, horario
+                SELECT precio_mensual, horario, tipo_clase
                 FROM alumnos
                 WHERE empresa_id = ?
                   AND estatus = 'Activo'
                   AND nombre NOT LIKE '[ELIMINADO]%'
             ";
             $clasesActivas = executeQuery($clasesActivasQuery, [$empresa_id]);
-            $totalClases = 0;
+            $grupalClases     = 0;
+            $individualClases = 0;
             foreach ($clasesActivas as $ca) {
-                $totalClases += self::calcularMultiplicadorClase($ca);
+                $mult = self::calcularMultiplicadorClase($ca);
+                if (($ca['tipo_clase'] ?? '') === 'Grupal') {
+                    $grupalClases += $mult;
+                } else {
+                    $individualClases += $mult;
+                }
             }
 
             $metricas_rockstar = [
-                'clases_grupales' => (int)($metricas[0]['clases_grupales'] ?? 0),
-                'clases_individuales' => (int)($metricas[0]['clases_individuales'] ?? 0),
-                'total_clases' => $totalClases,
-                'alumnos_corriente' => (int)($metricas[0]['alumnos_corriente'] ?? 0),
+                'clases_grupales'    => $grupalClases,
+                'clases_individuales'=> $individualClases,
+                'total_clases'       => $grupalClases + $individualClases,
+                'alumnos_corriente'  => (int)($metricas[0]['alumnos_corriente'] ?? 0),
                 'alumnos_pendientes' => (int)($metricas[0]['alumnos_pendientes'] ?? 0)
             ];
 
@@ -2779,7 +2804,6 @@ class TransaccionesController {
 
             // 5. Para cada alumno y cada mes, determinar si está activo
             // Pre-calcular mapa de actividad: alumno_id => mes => bool
-            // Esto es más eficiente que recalcular en cada iteración
             $alumnoActivoEnMes = [];
 
             foreach ($alumnos as $alumno) {
@@ -2787,8 +2811,10 @@ class TransaccionesController {
                 if (empty($alumno['fecha_inscripcion'])) continue;
 
                 $inscMes = date('Y-m', strtotime($alumno['fecha_inscripcion']));
-                $esBaja = $alumno['estatus'] === 'Baja';
-                $lastTx = isset($alumnoLastTx[$id]) ? $alumnoLastTx[$id] : null;
+                $esBaja  = $alumno['estatus'] === 'Baja';
+                $lastTx  = isset($alumnoLastTx[$id]) ? $alumnoLastTx[$id] : null;
+                // diaCorte = día del mes de la fecha de inscripción (homologado con REGLA 2)
+                $diaCorte = (int)(new DateTime($alumno['fecha_inscripcion']))->format('d');
 
                 foreach ($mesesContinuos as $mes) {
                     // Antes de inscripción: no activo
@@ -2804,69 +2830,170 @@ class TransaccionesController {
                     }
 
                     // Sin transacción este mes:
-                    // Si NO es Baja y el mes es >= última transacción → sigue activo
-                    // (no ha pagado aún pero sigue inscrito)
-                    if (!$esBaja && $lastTx !== null && $mes >= $lastTx) {
+
+                    // a) Meses POSTERIORES al último pago conocido y alumno sigue Activo en BD
+                    //    → Asumimos continuidad (pago aún no registrado o próximo)
+                    if (!$esBaja && $lastTx !== null && $mes > $lastTx) {
                         $alumnoActivoEnMes[$id][$mes] = true;
                         continue;
                     }
 
-                    // Fallback mes actual: alumno Activo en BD sin transacciones detectadas
-                    // (concepto en transacción puede tener discrepancia de acentos u ortografía)
-                    // Solo aplica al mes en curso para no distorsionar el historial
+                    // b) Gap entre pagos conocidos → verificar ventana de gracia.
+                    //    Regla homologada (REGLA 2): finGracia = corteDeuda(mesSigniente+diaCorte) + 5 días.
+                    //    Si finGracia ≥ primer día del mes siguiente a $mes → alumno activo en $mes.
+                    //    Caso Mateo Ilich: pagó ene-28 (diaCorte=28), sin pago en feb, pagó mar-2.
+                    //    finGracia(ene) = feb-28 + 5d = mar-5 ≥ mar-1 → activo en feb → sin baja/reingreso.
+                    if ($lastTx !== null && $mes < $lastTx) {
+                        $primerDiaMesSig = new DateTime($mes . '-01 +1 month');
+                        $dentroDeGracia  = false;
+                        foreach (array_keys($alumnoMeses[$id]) as $txMes) {
+                            if ($txMes >= $mes) continue; // solo pagos previos al mes analizado
+                            $mesSigPago = date('Y-m', strtotime($txMes . '-01 +1 month'));
+                            $diaStr     = str_pad($diaCorte, 2, '0', STR_PAD_LEFT);
+                            try {
+                                $corteDeuda = new DateTime($mesSigPago . '-' . $diaStr);
+                                // Si el día no existe en el mes (ej: corte=31 en feb) → último día del mes
+                                if ((int)$corteDeuda->format('d') !== $diaCorte) {
+                                    $corteDeuda = new DateTime($mesSigPago . '-01 +1 month -1 day');
+                                }
+                            } catch (Exception $ex) {
+                                $corteDeuda = new DateTime($mesSigPago . '-01 +1 month -1 day');
+                            }
+                            $finGracia = clone $corteDeuda;
+                            $finGracia->modify('+5 days');
+                            if ($finGracia >= $primerDiaMesSig) {
+                                $dentroDeGracia = true;
+                                break;
+                            }
+                        }
+                        $alumnoActivoEnMes[$id][$mes] = $dentroDeGracia;
+                        continue;
+                    }
+
+                    // c) Fallback mes actual: alumno Activo en BD sin transacciones detectadas
+                    //    (discrepancia de acentos u ortografía en el concepto de la transacción)
                     if (!$esBaja && $lastTx === null && $mes === $mesActual) {
                         $alumnoActivoEnMes[$id][$mes] = true;
                         continue;
                     }
 
                     // Cualquier otro caso: no activo
-                    // - Gap histórico entre transacciones (baja temporal)
-                    // - Estatus Baja después de última transacción (baja definitiva)
                     $alumnoActivoEnMes[$id][$mes] = false;
                 }
             }
 
-            // 6. Calcular altas, bajas y activos por mes
-            $resultado = [];
-            $totalAltas = 0;
-            $totalBajas = 0;
+            // Pre-construir mapa de mes de inscripción por alumno_id
+            $alumnoInscMes = [];
+            foreach ($alumnos as $alumno) {
+                if (!empty($alumno['fecha_inscripcion'])) {
+                    $alumnoInscMes[$alumno['id']] = date('Y-m', strtotime($alumno['fecha_inscripcion']));
+                }
+            }
+
+            // 6. Calcular nuevos, reingresos, bajas y activos por mes
+            // - Nuevo: primera inscripción (mes de inscripción coincide con el mes analizado) + transacción real
+            // - Reingreso: alumno con historial previo que regresa de inactividad + transacción real
+            // - El fallback (alumno Activo sin TX reconocida) NO genera alta ni reingreso
+            $resultado       = [];
+            $totalNuevos     = 0;
+            $totalReingresos = 0;
+            $totalBajas      = 0;
+
+            // Mapa id → nombre para incluir listas de nombres en el response
+            $alumnoNombreMap = [];
+            foreach ($alumnos as $a) {
+                $alumnoNombreMap[$a['id']] = $a['nombre'];
+            }
+
+            // Mapa (nombre, clase) → mes de primera inscripción.
+            // Permite distinguir "nuevo instrumento" (primera vez que esa persona tiene esa clase)
+            // de "clase nueva" (mismo instrumento, nuevo horario/día — ya tenía esa clase antes).
+            // Solo "nuevo instrumento" suma al contador de Altas; "clase nueva" solo afecta
+            // los contadores de Clases Grupales / Clases Individuales (getDashboardAlumnos).
+            $primeraInscClaseRows = executeQuery("
+                SELECT nombre, clase, DATE_FORMAT(MIN(fecha_inscripcion), '%Y-%m') AS mes_inicio
+                FROM alumnos
+                WHERE empresa_id = ? AND nombre NOT LIKE '[ELIMINADO]%' AND clase IS NOT NULL
+                GROUP BY nombre, clase
+            ", [(int)$empresa]);
+            // $nuevoInstrumentoEnMes[nombre][mes] = true  →  ese mes hay un instrumento nuevo para esa persona
+            $nuevoInstrumentoEnMes = [];
+            foreach ($primeraInscClaseRows as $row) {
+                $nuevoInstrumentoEnMes[$row['nombre']][$row['mes_inicio']] = true;
+            }
 
             foreach ($mesesContinuos as $idx => $mes) {
-                $altas = 0;
-                $bajas = 0;
-                $activos = 0;
+                $nuevos     = 0;
+                $reingresos = 0;
+                $bajas      = 0;
+                $activos    = 0;
+
+                $nombresNuevos     = [];
+                $nombresReingresos = [];
+                $nombresBajas      = [];
 
                 $mesAnterior = date('Y-m', strtotime($mes . '-01 -1 month'));
 
                 foreach ($alumnoActivoEnMes as $id => $mesesMap) {
-                    $activoEsteMes = isset($mesesMap[$mes]) && $mesesMap[$mes];
+                    $activoEsteMes     = isset($mesesMap[$mes])         && $mesesMap[$mes];
                     $activoMesAnterior = isset($mesesMap[$mesAnterior]) && $mesesMap[$mesAnterior];
+                    // Transacción REAL reconocida este mes (excluye el fallback de acentos)
+                    $tieneTxEsteMes    = isset($alumnoMeses[$id][$mes]);
+                    $inscMes           = $alumnoInscMes[$id] ?? null;
+                    $nombreAlumno      = $alumnoNombreMap[$id] ?? '';
 
                     if ($activoEsteMes) {
                         $activos++;
                     }
 
-                    // Alta: activo este mes, no activo el anterior
-                    if ($activoEsteMes && !$activoMesAnterior) {
-                        $altas++;
+                    // Transición inactivo → activo: solo cuenta si hay TX real este mes
+                    if ($activoEsteMes && !$activoMesAnterior && $tieneTxEsteMes) {
+                        if ($inscMes === $mes) {
+                            $nuevos++;       // Persona nueva en la escuela
+                            if ($nombreAlumno) $nombresNuevos[] = $nombreAlumno;
+                        } else {
+                            $reingresos++;   // Regresó tras baja (fuera de ventana de gracia)
+                            if ($nombreAlumno) $nombresReingresos[] = $nombreAlumno;
+                        }
                     }
 
-                    // Baja: no activo este mes, activo el anterior
+                    // Alumno ya activo que añade un instrumento NUEVO este mes.
+                    // "Nuevo instrumento" = primera vez que esa persona tiene esa clase en la escuela.
+                    // "Clase nueva" (mismo instrumento, nuevo horario) NO aparece aquí porque
+                    // MIN(fecha_inscripcion) de esa (nombre, clase) seguiría siendo la original.
+                    if ($activoEsteMes && $activoMesAnterior && $tieneTxEsteMes
+                        && !empty($nombreAlumno)
+                        && isset($nuevoInstrumentoEnMes[$nombreAlumno][$mes])) {
+                        $nuevos++;
+                        if (!in_array($nombreAlumno, $nombresNuevos)) {
+                            $nombresNuevos[] = $nombreAlumno;
+                        }
+                    }
+
+                    // Baja: activo el mes anterior, inactivo este mes
                     if (!$activoEsteMes && $activoMesAnterior) {
                         $bajas++;
+                        if ($nombreAlumno) $nombresBajas[] = $nombreAlumno;
                     }
                 }
 
+                $altas = $nuevos + $reingresos;
                 $resultado[] = [
-                    'mes' => $mes,
-                    'altas' => $altas,
-                    'bajas' => $bajas,
-                    'neto' => $altas - $bajas,
-                    'alumnos_activos' => $activos
+                    'mes'                  => $mes,
+                    'nuevos'               => $nuevos,
+                    'reingresos'           => $reingresos,
+                    'altas'                => $altas,
+                    'bajas'                => $bajas,
+                    'neto'                 => $altas - $bajas,
+                    'alumnos_activos'      => $activos,
+                    'nombres_nuevos'       => $nombresNuevos,
+                    'nombres_reingresos'   => $nombresReingresos,
+                    'nombres_bajas'        => $nombresBajas,
                 ];
 
-                $totalAltas += $altas;
-                $totalBajas += $bajas;
+                $totalNuevos     += $nuevos;
+                $totalReingresos += $reingresos;
+                $totalBajas      += $bajas;
             }
 
             echo json_encode([
@@ -2874,11 +3001,12 @@ class TransaccionesController {
                 'data' => [
                     'meses' => $resultado,
                     'resumen' => [
-                        'total_altas' => $totalAltas,
-                        'total_bajas' => $totalBajas,
-                        'neto' => $totalAltas - $totalBajas,
-                        // Contar solo alumnos únicos con estatus Activo (coherente con gestor unificar=1)
-                    'total_alumnos' => count(array_filter($alumnos, function($a) { return $a['estatus'] === 'Activo'; }))
+                        'total_nuevos'     => $totalNuevos,
+                        'total_reingresos' => $totalReingresos,
+                        'total_altas'      => $totalNuevos + $totalReingresos,
+                        'total_bajas'      => $totalBajas,
+                        'neto'             => ($totalNuevos + $totalReingresos) - $totalBajas,
+                        'total_alumnos'    => count(array_filter($alumnos, function($a) { return $a['estatus'] === 'Activo'; }))
                     ]
                 ]
             ]);

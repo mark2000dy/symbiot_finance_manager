@@ -383,15 +383,22 @@
                                         <i class="fas fa-exchange-alt me-1"></i>Movimientos del Mes:
                                     </small>
                                     <div id="altasBajasCurrentMonth" class="row text-center mt-2">
-                                        <div class="col-6">
-                                            <div style="background: rgba(40,167,69,0.15); border-radius: 8px; padding: 8px;">
+                                        <div class="col-4">
+                                            <div id="altasCard" role="button" tabindex="0" style="background: rgba(40,167,69,0.15); border-radius: 8px; padding: 8px; cursor: pointer;" title="Ver altas">
                                                 <i class="fas fa-user-plus text-success"></i>
                                                 <div class="fw-bold text-success" id="altasMesActual" style="font-size: 1.3rem;">-</div>
                                                 <small style="color: #adb5bd; font-size: 0.75rem;">Altas</small>
                                             </div>
                                         </div>
-                                        <div class="col-6">
-                                            <div style="background: rgba(220,53,69,0.15); border-radius: 8px; padding: 8px;">
+                                        <div class="col-4">
+                                            <div id="reingresosCard" role="button" tabindex="0" style="background: rgba(13,202,240,0.15); border-radius: 8px; padding: 8px; cursor: pointer;" title="Ver reingresos">
+                                                <i class="fas fa-user-check text-info"></i>
+                                                <div class="fw-bold text-info" id="reingresosMesActual" style="font-size: 1.3rem;">-</div>
+                                                <small style="color: #adb5bd; font-size: 0.75rem;">Reingresos</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div id="bajasCard" role="button" tabindex="0" style="background: rgba(220,53,69,0.15); border-radius: 8px; padding: 8px; cursor: pointer;" title="Ver bajas">
                                                 <i class="fas fa-user-minus text-danger"></i>
                                                 <div class="fw-bold text-danger" id="bajasMesActual" style="font-size: 1.3rem;">-</div>
                                                 <small style="color: #adb5bd; font-size: 0.75rem;">Bajas</small>
